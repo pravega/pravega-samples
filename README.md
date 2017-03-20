@@ -31,7 +31,7 @@ pravega-flink-examples-0.0-PRERELEASE-all.jar
 ### Turbine Heat Processor
 A Flink streaming application for processing temperature data from a Pravega stream.   Complements the Turbine Heat Sensor app (external).
 
-Automatically creates a scope ('turbine') and stream (`turbineHeatTest`) as necessary.
+Automatically creates a scope (`turbine`) and stream (`turbineHeatTest`) as necessary.
 
 #### Running
 Run the sample from the command-line:
