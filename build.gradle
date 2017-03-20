@@ -1,0 +1,34 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+}
+
+subprojects {
+    plugins.withType(org.gradle.api.plugins.JavaPlugin) {
+        sourceCompatibility = "1.8"
+        group "com.emc.pravega"
+        version pravegaVersion
+    }
+    
+    repositories {
+        mavenLocal()
+        maven {
+            name "artifactory"
+            url artifactoryUrl
+        }
+    }
+
+    plugins.withId('org.hidetake.ssh') {
+        remotes {
+            dcos {
+                host = dcosAddress
+                user = 'centos'
+                agent = true
+            }
+        }
+        ssh.settings {
+            knownHosts = allowAnyHosts
+        }
+    }
+}
