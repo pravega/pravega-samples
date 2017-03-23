@@ -11,7 +11,13 @@
 ## HelloWorldReader
 A simple application that shows how to read from a Pravega stream.
 
-Run by 
+Run by:
+
+```
+./gradlew startHelloWorldReader
+```
+
+or if you want don't want to take the defaults, use:
 
 ```
 ./gradlew startHelloWorldReader -Dexec.args="-scope aScope -name aName -uri tcp://localhost:9090"
@@ -28,7 +34,13 @@ The program reads all the events from the stream with given scope/stream name an
 ## HelloWorldWriter
 A simple application that shows how to write to a Pravega stream.
 
-Run by
+Run by:
+
+```
+./gradlew startHelloWorldWriter -Dexec.args="-scope aScope -name aName -uri tcp://localhost:9090 -routingKey someRK -message someMessage"
+```
+
+or if you want don't want to take the defaults, use:
 
 ```
 ./gradlew startHelloWorldWriter -Dexec.args="-scope aScope -name aName -uri tcp://localhost:9090 -routingKey someRK -message someMessage"
