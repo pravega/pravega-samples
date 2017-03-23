@@ -37,7 +37,7 @@ A simple application that shows how to write to a Pravega stream.
 Run by:
 
 ```
-./gradlew startHelloWorldWriter -Dexec.args="-scope aScope -name aName -uri tcp://localhost:9090 -routingKey someRK -message someMessage"
+./gradlew startHelloWorldWriter
 ```
 
 or if you want don't want to take the defaults, use:
