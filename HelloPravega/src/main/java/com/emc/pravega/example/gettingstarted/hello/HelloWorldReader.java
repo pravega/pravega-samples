@@ -52,14 +52,14 @@ public class HelloWorldReader {
 
         try {
             clientFactory = ClientFactory.withScope(scope, controllerURI);
-            streamManager = StreamManager.withScope(scope, controllerURI);
-            streamManager.createScope();
+            streamManager = StreamManager.create(controllerURI);
+            streamManager.createScope(scope);
 
             StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
-            streamManager.createStream(streamName, streamConfig);
+            streamManager.createStream(scope, streamName, streamConfig);
 
             readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI);
 

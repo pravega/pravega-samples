@@ -11,7 +11,7 @@ repositories {
 
 ext {
   junitVersion = '4.11'
-  pravegaVersion = '0.0-PRERELEASE'
+  pravegaVersion = '0.1.0-alpha-SNAPSHOT'
   commonsCLIVersion = '1.4'
 }
 
