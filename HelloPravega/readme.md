@@ -8,6 +8,19 @@
 ./gradlew startSingleNode
 ```
 
+## Publish Pravega jars to local Maven (optional)
+If you have downloaded a nightly build of Pravega, you may need to generate the latest Pravega jar files and publish them to your local Maven repository.
+
+Note: maven 2 needs to be installed and running on your machine
+
+In the root of Pravega (where Pravega's build.gradle file can be found), run:
+
+```
+./gradlew common:publishMavenPublicationToMavenLocal controller:contract:publishMavenPublicationToMavenLocal clients:streaming:publishMavenPublicationToMavenLocal
+```
+
+The above command should generate the required jar files into your local maven repo.
+
 ## HelloWorldReader
 A simple application that shows how to read from a Pravega stream.
 

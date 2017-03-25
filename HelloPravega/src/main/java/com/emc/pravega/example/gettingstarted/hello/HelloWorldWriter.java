@@ -35,13 +35,11 @@ public class HelloWorldWriter {
     }
 
     public void run(String routingKey, String message) {
-        ClientFactory clientFactory = null;
-        StreamManager streamManager = null;
         EventStreamWriter<String> writer = null;
 
-        try {
-            clientFactory = ClientFactory.withScope(scope, controllerURI);
-            streamManager = StreamManager.create(controllerURI);
+        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+             StreamManager streamManager = StreamManager.create(controllerURI) ) {
+            
             streamManager.createScope(scope);
 
             StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
@@ -53,22 +51,13 @@ public class HelloWorldWriter {
             writer = clientFactory.createEventWriter(streamName, new JavaSerializer<String>(),
                         EventWriterConfig.builder().build());
 
-            System.out.format("******** Writing message: '%s' with routing-key: '%s'%n", message, routingKey);
+            System.out.format("******** Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n", 
+                    message, routingKey, scope, streamName);
             writer.writeEvent(routingKey, message);
         } finally {
             if (writer != null) {
                 System.out.println("******** closing event writer ...");
                 writer.close();
-            }
-            
-            if (streamManager != null ) {
-                System.out.println("******** closing stream manager ... ");
-                streamManager.close();
-            }
-            
-            if (clientFactory != null) {
-                System.out.println("******** closing client factory ... ");
-                clientFactory.close();
             }
         }
     }

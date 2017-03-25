@@ -45,14 +45,12 @@ public class HelloWorldReader {
     }
 
     public void run() {
-        ClientFactory clientFactory = null;
-        StreamManager streamManager = null;
-        ReaderGroupManager readerGroupManager = null;
         EventStreamReader<String> reader = null;
 
-        try {
-            clientFactory = ClientFactory.withScope(scope, controllerURI);
-            streamManager = StreamManager.create(controllerURI);
+        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+             StreamManager streamManager = StreamManager.create(controllerURI);
+             ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
+            
             streamManager.createScope(scope);
 
             StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
@@ -61,7 +59,7 @@ public class HelloWorldReader {
 
             streamManager.createStream(scope, streamName, streamConfig);
 
-            readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI);
+            
 
             final String readerGroup = UUID.randomUUID().toString().replace("-", "");
             final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
@@ -88,21 +86,6 @@ public class HelloWorldReader {
             if (reader != null) {
                 System.out.println("******** closing reader ...");
                 reader.close();
-            }
-
-            if (readerGroupManager != null) {
-                System.out.println("******** closing reader group manager ...");
-                readerGroupManager.close();
-            }
-            
-            if (streamManager != null ) {
-                System.out.println("******** closing stream manager ... ");
-                streamManager.close();
-            }
-
-            if (clientFactory != null) {
-                System.out.println("******** closing client factory ...");
-                clientFactory.close();
             }
         }
 
