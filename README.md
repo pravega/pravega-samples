@@ -56,16 +56,35 @@ $ ./gradlew upload
 ## Flink Samples
 
 ### Turbine Heat Processor
-A Flink streaming application for processing temperature data from a Pravega stream.   Complements the Turbine Heat Sensor app (external).
+A Flink streaming application for processing temperature data from a Pravega stream.   Complements the Turbine Heat Sensor app (external).   The application computes a daily summary of the temperature range observed on that day by each sensor.
 
 Automatically creates a scope (`turbine`) and stream (`turbineHeatTest`) as necessary.
 
 #### Running
 Run the sample from the command-line:
 ```
-$ bin/run-example.sh TurbineHeatProcessor [--controller <URI>] [--scope <name>] [--stream <name>] [--startTime <long>]
+$ bin/run-example.sh [--controller <URI>] [--scope <name>] [--stream <name>]
+                     [--startTime <long>] [--output <path>]
 ```
 
 Alternately, run the sample from the Flink UI.
 - JAR: `pravega-flink-examples-0.0-PRERELEASE-all.jar`
 - Main class: `com.emc.pravega.examples.flink.TurbineHeatProcessor`
+
+#### Outputs
+The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day.   The data is
+also emitted to stdout (which may be viewed in the Flink UI).  For example:
+
+```
+...
+SensorAggregate(1065600000,12,Illinois,(60.0,100.0))
+SensorAggregate(1065600000,3,Arkansas,(60.0,100.0))
+SensorAggregate(1065600000,7,Delaware,(60.0,100.0))
+SensorAggregate(1065600000,15,Kansas,(40.0,80.0))
+SensorAggregate(1152000000,3,Arkansas,(60.0,100.0))
+SensorAggregate(1152000000,12,Illinois,(60.0,100.0))
+SensorAggregate(1152000000,15,Kansas,(40.0,80.0))
+SensorAggregate(1152000000,7,Delaware,(60.0,100.0))
+...
+```
+
