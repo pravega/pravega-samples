@@ -1,3 +1,2 @@
 include 'standalone-examples'
-include 'pravega-flink-examples'
-
+include 'flink-examples'
