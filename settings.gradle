@@ -1,0 +1,2 @@
+include 'standalone-examples'
+include 'flink-examples'
