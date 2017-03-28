@@ -4,31 +4,36 @@ buildscript {
     }
 }
 
+plugins {
+    id 'org.hidetake.ssh' version '2.8.0'
+}
+
 subprojects {
-    plugins.withType(org.gradle.api.plugins.JavaPlugin) {
-        sourceCompatibility = "1.8"
-        group "com.emc.pravega"
-        version pravegaVersion
-    }
-    
     repositories {
         mavenLocal()
-        maven {
-            name "artifactory"
-            url artifactoryUrl
-        }
+        jcenter()
+        mavenCentral()
+    }
+    
+    plugins.withType(org.gradle.api.plugins.JavaPlugin) {
+        group "com.emc.pravega"
+        version samplesVersion
     }
 
-    plugins.withId('org.hidetake.ssh') {
-        remotes {
-            dcos {
-                host = dcosAddress
-                user = 'centos'
-                agent = true
-            }
+    remotes {
+        dcos {
+            host = dcosAddress
+            user = 'centos'
+            agent = true
         }
-        ssh.settings {
-            knownHosts = allowAnyHosts
+    }
+    ssh.settings {
+        knownHosts = allowAnyHosts
+    }
+
+    afterEvaluate {
+        task upload(type: Exec, dependsOn: installDist) {
+            commandLine 'rsync', '-az', project.installDist.destinationDir, "${remotes.dcos.user}@${remotes.dcos.host}:~"
         }
     }
 }

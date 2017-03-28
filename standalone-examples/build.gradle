@@ -1,17 +1,12 @@
 
 apply plugin: 'java'
+apply plugin: 'distribution'
 
 sourceCompatibility = 1.8
-
-repositories {
-    jcenter()
-    mavenCentral()
-    mavenLocal()
-}
+archivesBaseName = 'pravega-standalone-examples'
 
 ext {
   junitVersion = '4.11'
-  pravegaVersion = '0.1.0-alpha-SNAPSHOT'
   commonsCLIVersion = '1.4'
 }
 
@@ -20,7 +15,23 @@ dependencies {
     
     compile "com.emc.pravega:pravega-clients:${pravegaVersion}",
             "com.emc.pravega:pravega-common:${pravegaVersion}",
-            "commons-cli:commons-cli:$commonsCLIVersion"
+            "commons-cli:commons-cli:${commonsCLIVersion}"
+    
+    runtime "org.slf4j:slf4j-simple:1.7.14"
+}
+
+task scriptHelloWorldWriter(type: CreateStartScripts) {
+  outputDir = file('build/scripts')
+  mainClassName = 'com.emc.pravega.example.gettingstarted.hello.HelloWorldWriter'
+  applicationName = 'helloWorldWriter'
+  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptHelloWorldReader(type: CreateStartScripts) {
+  outputDir = file('build/scripts')
+  mainClassName = 'com.emc.pravega.example.gettingstarted.hello.HelloWorldReader'
+  applicationName = 'helloWorldReader'
+  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task startHelloWorldWriter(type: JavaExec) {
@@ -36,5 +47,21 @@ task startHelloWorldReader(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
       args System.getProperty("exec.args").split()
+    }
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('bin') {
+                from project.scriptHelloWorldWriter
+                from project.scriptHelloWorldReader
+            }
+            into('lib') {
+                from(jar)
+                from(project.configurations.runtime)
+            }
+        }
     }
 }
