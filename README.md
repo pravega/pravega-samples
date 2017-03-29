@@ -29,13 +29,13 @@ Use gradle to assemble a distribution folder containing the Flink programs as a 
 ```
 $ ./gradlew installDist
 ...
-$ ls -R pravega-flink-examples/build/install/pravega-flink-examples
+$ ls -R flink-examples/build/install/pravega-flink-examples
 bin	lib
 
-pravega-flink-examples/build/install/pravega-flink-examples/bin:
+flink-examples/build/install/pravega-flink-examples/bin:
 run-example.sh
 
-pravega-flink-examples/build/install/pravega-flink-examples/lib:
+flink-examples/build/install/pravega-flink-examples/lib:
 pravega-flink-examples-0.0-PRERELEASE-all.jar
 ```
 
