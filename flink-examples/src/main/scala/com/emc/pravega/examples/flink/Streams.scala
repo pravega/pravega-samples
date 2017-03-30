@@ -27,13 +27,7 @@ object Streams {
     * @return the created scope name.
     */
   def createScope(scope: String)(implicit controller: Controller, ec: ExecutionContext): Future[String] = {
-    controller.createScope(scope).toScala.flatMap { result =>
-      result.getStatus match {
-        case CreateScopeStatus.Status.SUCCESS => Future(scope)
-        case CreateScopeStatus.Status.SCOPE_EXISTS => Future(scope)
-        case s @ _ => sys.error(s"scope could not be created ($s)")
-      }
-    }
+    controller.createScope(scope).toScala.map(_ => scope)
   }
 
   /**
@@ -51,12 +45,6 @@ object Streams {
       .scope(scope)
       .streamName(stream)
       .build()
-    controller.createStream(config).toScala.flatMap { result =>
-      result.getStatus match {
-        case CreateStreamStatus.Status.SUCCESS => Future(stream)
-        case CreateStreamStatus.Status.STREAM_EXISTS => Future(stream)
-        case s @ _ => sys.error(s"stream could not be created ($s)")
-      }
-    }
+    controller.createStream(config).toScala.map(_ => stream)
   }
 }
