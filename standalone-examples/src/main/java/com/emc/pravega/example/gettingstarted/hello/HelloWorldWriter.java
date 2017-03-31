@@ -35,30 +35,23 @@ public class HelloWorldWriter {
     }
 
     public void run(String routingKey, String message) {
-        EventStreamWriter<String> writer = null;
+        StreamManager streamManager = StreamManager.create(controllerURI);
+        streamManager.createScope(scope);
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-             StreamManager streamManager = StreamManager.create(controllerURI) ) {
-            
-            streamManager.createScope(scope);
-
-            StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
-            streamManager.createStream(scope, streamName, streamConfig);
+        streamManager.createStream(scope, streamName, streamConfig);
 
-            writer = clientFactory.createEventWriter(streamName, new JavaSerializer<String>(),
-                        EventWriterConfig.builder().build());
-
-            System.out.format("******** Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n", 
+        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+             EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
+                                                                                 new JavaSerializer<String>(),
+                                                                                 EventWriterConfig.builder().build())) {
+            
+            System.out.format("******** Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
             writer.writeEvent(routingKey, message);
-        } finally {
-            if (writer != null) {
-                System.out.println("******** closing event writer ...");
-                writer.close();
-            }
         }
     }
 

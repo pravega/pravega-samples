@@ -45,31 +45,27 @@ public class HelloWorldReader {
     }
 
     public void run() {
-        EventStreamReader<String> reader = null;
+        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
+                .build();
+        StreamManager streamManager = StreamManager.create(controllerURI);
+        streamManager.createScope(scope);
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-             StreamManager streamManager = StreamManager.create(controllerURI);
-             ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
-            
-            streamManager.createScope(scope);
-
-            StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
-            streamManager.createStream(scope, streamName, streamConfig);
+        streamManager.createStream(scope, streamName, streamConfig);
 
-            
-
-            final String readerGroup = UUID.randomUUID().toString().replace("-", "");
-            final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
-                    .build();
-
+        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
+        }
 
-            reader = clientFactory.createReader("reader", readerGroup, new JavaSerializer<String>(),
-                    ReaderConfig.builder().build());
-
+        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+             EventStreamReader<String> reader = clientFactory.createReader("reader",
+                                                                           readerGroup,
+                                                                           new JavaSerializer<String>(),
+                                                                           ReaderConfig.builder().build())) {
             System.out.format("******** Reading all the events from %s/%s%n", scope, streamName);
             EventRead<String> event = null;
             do {
@@ -82,13 +78,7 @@ public class HelloWorldReader {
                 }
             } while (event.getEvent() != null);
             System.out.format("******** No more events from %s/%s%n", scope, streamName);
-        } finally {
-            if (reader != null) {
-                System.out.println("******** closing reader ...");
-                reader.close();
-            }
         }
-
     }
 
     public static void main(String[] args) {
