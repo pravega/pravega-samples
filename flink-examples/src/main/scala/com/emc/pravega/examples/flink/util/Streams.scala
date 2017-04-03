@@ -3,9 +3,8 @@
   * Copyright (c) 2017 Dell Inc., or its subsidiaries.
   *
   */
-package com.emc.pravega.examples.flink
+package com.emc.pravega.examples.flink.util
 
-import com.emc.pravega.controller.stream.api.grpc.v1.Controller.{CreateScopeStatus, CreateStreamStatus}
 import com.emc.pravega.stream.StreamConfiguration
 import com.emc.pravega.stream.impl.Controller
 

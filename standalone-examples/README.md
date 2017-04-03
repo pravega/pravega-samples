@@ -68,3 +68,21 @@ All args are optional, if not included, the defaults are:
  * message - "hello world"
 
 The program writes the given message with the given routing key to the stream with given scope/stream name.
+
+## TurbineHeatSensor
+
+An example of a lightweight IOT application that writes simulated sensor events to a Pravega stream.
+
+To run from the IDE:
+
+```
+./gradlew startTurbineSensor
+```
+
+To run as a standalone application:
+```
+$ ./gradlew installDist
+$ cd standalone-examples/build/install/pravega-standalone-examples
+$ bin/turbineSensor [--stream <stream name>]
+
+```

@@ -69,7 +69,7 @@ $ bin/run-example.sh [--controller <URI>] [--scope <name>] [--stream <name>]
 
 Alternately, run the sample from the Flink UI.
 - JAR: `pravega-flink-examples-0.0-PRERELEASE-all.jar`
-- Main class: `com.emc.pravega.examples.flink.TurbineHeatProcessor`
+- Main class: `com.emc.pravega.examples.flink.iot.TurbineHeatProcessor`
 
 #### Outputs
 The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day.   The data is
