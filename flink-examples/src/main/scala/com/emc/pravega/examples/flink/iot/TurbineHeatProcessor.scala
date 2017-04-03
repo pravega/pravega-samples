@@ -3,13 +3,14 @@
   * Copyright (c) 2017 Dell Inc., or its subsidiaries.
   *
   */
-package com.emc.pravega.examples.flink
+package com.emc.pravega.examples.flink.iot
 
 import java.net.URI
 
 import com.emc.pravega.connectors.flink.FlinkPravegaReader
-import com.emc.pravega.examples.flink.Streams._
-import com.emc.pravega.examples.flink.serialization.PravegaDeserializationSchema
+import com.emc.pravega.examples.flink.util.Streams._
+import com.emc.pravega.examples.flink.util.serialization.PravegaDeserializationSchema
+import com.emc.pravega.examples.flink.util.PravegaParameters
 import com.emc.pravega.stream.impl.{ControllerImpl, JavaSerializer}
 import org.apache.flink.api.java.tuple.{Tuple => FlinkTuple}
 import org.apache.flink.api.java.utils.ParameterTool

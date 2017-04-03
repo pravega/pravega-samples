@@ -5,7 +5,6 @@ import com.emc.pravega.ReaderGroupManager;
 import com.emc.pravega.StreamManager;
 import com.emc.pravega.stream.*;
 import com.emc.pravega.stream.impl.JavaSerializer;
-import lombok.Cleanup;
 import org.apache.commons.cli.*;
 
 import java.net.URI;
@@ -29,7 +28,7 @@ public class TurbineHeatSensor {
     private static final String DEFAULT_STREAM_NAME = "turbineHeatTest";
 
     private static PerfStats produceStats, consumeStats;
-    private static String controllerUri = "tcp://172.16.21.4:9091";
+    private static String controllerUri = "tcp://controller-pravega.marathon.mesos:9091";
     private static int messageSize = 100;
     private static String streamName = DEFAULT_STREAM_NAME;
     private static String scopeName = DEFAULT_SCOPE_NAME;
@@ -76,7 +75,6 @@ public class TurbineHeatSensor {
                         "is " + controllerUri));
 
         // Initialize executor
-        @Cleanup("shutdown")
         ExecutorService executor = Executors.newFixedThreadPool(producerCount + 10);
 
         try {
@@ -85,6 +83,7 @@ public class TurbineHeatSensor {
             streamManager = StreamManager.create(controllerUri);
             readerGroupManager = ReaderGroupManager.withScope(scopeName, controllerUri);
 
+            streamManager.createScope(scopeName);
 
             ScalingPolicy policy = ScalingPolicy.fixed(producerCount);
             StreamConfiguration config = StreamConfiguration.builder()
@@ -93,7 +92,6 @@ public class TurbineHeatSensor {
                     .scalingPolicy(policy)
                     .build();
             streamManager.createStream(scopeName, streamName, config);
-//            return new PravegaScope.Stream(streamName);
         }
         catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -434,19 +432,22 @@ public class TurbineHeatSensor {
 
         @Override
         public void run() {
-            @Cleanup
             EventStreamReader<String> reader = createReader();
-
-            do {
-                try {
-                    final EventRead<String> result = reader.readNextEvent(0);
-                    produceStats.runAndRecordTime(() -> {
-                        return CompletableFuture.completedFuture(null);
-                    }, Long.parseLong(result.getEvent().split(",")[0]), 100);
-                } catch (ReinitializationRequiredException e) {
-                    e.printStackTrace();
-                }
-            } while ( totalEvents-- > 0 );
+            try {
+                do {
+                    try {
+                        final EventRead<String> result = reader.readNextEvent(0);
+                        produceStats.runAndRecordTime(() -> {
+                            return CompletableFuture.completedFuture(null);
+                        }, Long.parseLong(result.getEvent().split(",")[0]), 100);
+                    } catch (ReinitializationRequiredException e) {
+                        e.printStackTrace();
+                    }
+                } while ( totalEvents-- > 0 );
+            }
+            finally {
+                reader.close();
+            }
         }
 
         public EventStreamReader<String> createReader() {
