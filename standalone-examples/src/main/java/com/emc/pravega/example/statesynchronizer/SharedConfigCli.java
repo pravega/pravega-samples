@@ -90,10 +90,8 @@ public class SharedConfigCli implements AutoCloseable{
      */
     private String readLine(String format, Object... args) throws IOException {
         if (System.console() != null) {
-            System.out.println("using console");
             return System.console().readLine(format, args);
         }
-        System.out.println("NOT using console");
         System.out.print(String.format(format, args));
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 System.in));
@@ -105,7 +103,6 @@ public class SharedConfigCli implements AutoCloseable{
      * The raw format of the command is COMMAND [parm [,parm]]
      */
     private boolean processCommand(String rawString) {
-        System.out.format("%nprocess command %s%n", rawString);
         boolean ret = false;
         final Scanner sc = new Scanner(rawString);
         final String command = sc.next();
