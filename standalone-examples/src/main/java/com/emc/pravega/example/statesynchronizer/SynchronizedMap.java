@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.lang.mutable.MutableBoolean;
+
 import com.emc.pravega.ClientFactory;
 import com.emc.pravega.StreamManager;
 import com.emc.pravega.state.InitialUpdate;
@@ -303,6 +305,25 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
     }
     
     /*
+     * If the specified key is not already associated with a value (or is mapped to null) associates it with the given 
+     * value and returns null, else returns the current value.
+     */
+    public V putIfAbsent(K key, V value){
+        @SuppressWarnings("unchecked")
+        final V[] ret = (V[]) new Object[1];
+        stateSynchronizer.updateState(state -> {
+            if (state.containsKey(key) && state.get(key) != null) {
+                ret[0] = state.get(key);
+                return Collections.emptyList();
+            } else {
+                ret[0] = null;
+                return Collections.singletonList(new Put<K,V>(key,value));
+            }
+        });
+        return ret[0];
+    }
+    
+    /*
      * Removes the mapping for the specified key from this map if present.
      * Uses the countDown to determine if it is also time to compact the SharedState after removal
      */
@@ -320,6 +341,57 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
             compact();
         }
         return oldValue;
+    }
+    
+    /*
+     * Removes the entry for the specified key only if it is currently mapped to the specified value.
+     */
+    public boolean remove(K key, V value){
+        MutableBoolean ret = new MutableBoolean(false);
+        stateSynchronizer.updateState(state -> {
+            if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
+                ret.setValue(true);
+                return  Collections.singletonList(new Remove<K,V>(key));
+            } else {
+                return Collections.emptyList();
+            }
+        });
+        
+        if (countdownToCompaction.decrementAndGet() <= 0) {
+            compact();
+        }
+        return ret.isTrue();
+    }
+    
+    /*
+     * Replaces the entry for the specified key only if it is currently mapped to some value.
+     */
+    public V replace(K key, V value){
+        final V oldValue = get(key);
+        stateSynchronizer.updateState(state -> {
+            if (state.impl.containsKey(key)) {
+                return  Collections.singletonList(new Put<K,V>(key,value));
+            } else {
+                return Collections.emptyList();
+            }
+        });
+        return oldValue;
+    }
+    
+    /*
+     * Replaces the entry for the specified key only if currently mapped to the specified value.
+     */
+    public boolean replace(K key, V value, V newValue){
+        MutableBoolean ret = new MutableBoolean(false);
+        stateSynchronizer.updateState(state -> {
+            if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
+                ret.setValue(true);
+                return  Collections.singletonList(new Put<K,V>(key, newValue));
+            } else {
+                return Collections.emptyList();
+            }
+        });
+        return ret.isTrue();
     }
     
     /*

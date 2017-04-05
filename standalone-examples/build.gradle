@@ -65,6 +65,13 @@ task startTurbineSensor(type: JavaExec) {
     }
 }
 
+task scriptSharedConfigCli(type: CreateStartScripts) {
+  outputDir = file('build/scripts')
+  mainClassName = 'com.emc.pravega.example.statesynchronizer.SharedConfigCli'
+  applicationName = 'sharedConfigCli'
+  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 task startSharedConfigCli(type: JavaExec) {
     main = "com.emc.pravega.example.statesynchronizer.SharedConfigCli"
     classpath = sourceSets.main.runtimeClasspath

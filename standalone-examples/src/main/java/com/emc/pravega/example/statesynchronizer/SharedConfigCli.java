@@ -1,7 +1,6 @@
 package com.emc.pravega.example.statesynchronizer;
 
 import java.io.BufferedReader;
-import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -34,6 +33,7 @@ public class SharedConfigCli implements AutoCloseable{
             "GET {key} - print out the configuration property for the given key.",
             "PUT {key} , {value} - update the Shared Config with the given key/value pair.  Print out previous value (if it existed).",
             "REMOVE {key} - remove the given property from the Shared Config.  Print out the old value (if it existed).",
+            "CLEAR - remove all the keys from the Shared Config.",
             "REFRESH - force an update from the Synchronized State.",
             "HELP - print out a list of commands.",
             "QUIT - terminate the program."
@@ -45,32 +45,13 @@ public class SharedConfigCli implements AutoCloseable{
     private final StreamManager streamManager;
     private final SharedConfig<String, String> config;
 
-    public SharedConfigCli(String scope, String configName, URI controllerURI, boolean inMemoryConfig) {
+    public SharedConfigCli(String scope, String configName, URI controllerURI) {
         this.configName = configName;
         
         this.clientFactory = ClientFactory.withScope(scope, controllerURI);
         this.streamManager = StreamManager.create(controllerURI);
         
-        if (inMemoryConfig) {
-            this.config = new SharedConfigInMemoryImpl<>(clientFactory, streamManager, scope, configName);
-        } else {
-            this.config = new SharedConfigSynchronizedImpl<>(clientFactory, streamManager, scope, configName);
-        }
-    }
-    
-    private static Options getOptions() {
-        final Options options = new Options();
-        options.addOption("s", "scope", true, "The scope (namespace) of the Shared Config.");
-        options.addOption("n", "name", true, "The name of the Shared Config.");
-        options.addOption("u", "uri", true, "The URI to the Pravega controller in the form tcp://host:port");
-        options.addOption("i", "inMemory", false, "Use the in-memory version of SharedConfig (otherwise fully synchronized version is used.");
-        return options;
-    }
-
-    private static CommandLine parseCommandLineArgs(Options options, String[] args) throws ParseException {
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-        return cmd;
+        this.config = new SharedConfig<>(clientFactory, streamManager, scope, configName);
     }
     
     /*
@@ -78,6 +59,8 @@ public class SharedConfigCli implements AutoCloseable{
      */
     public void run() throws IOException{
         boolean done = false;
+        
+        doHelp();
         
         while(!done){
             String commandLine = readLine("%s >", configName);
@@ -119,6 +102,9 @@ public class SharedConfigCli implements AutoCloseable{
             case "REMOVE" :
                 doRemove(sc);
                 break;
+            case "CLEAR" :
+                doClear();
+                break;
             case "REFRESH" :
                 doRefresh();
                 break;
@@ -138,17 +124,21 @@ public class SharedConfigCli implements AutoCloseable{
     
     private void doGetAll() {
         Map<String, String> properties = config.getProperties();
-        System.out.format("%nProperties for SharedConfig: %s :%n", configName);
-        properties.forEach((k,v) -> System.out.format("%n    %s -> %s%n", k, v));
+        output("Properties for SharedConfig: '%s' :%n", configName);
+        properties.forEach((k,v) -> output("    '%s' -> '%s'%n", k, v));
     }
     
     private void doGet(Scanner sc) {
         if (sc.hasNext()) {
             String key = sc.next();
             String value = config.getProperty(key);
-            System.out.format("%n Property for %s is %s%n", key, value);
+            if (value == null ) {
+                output("Property '%s' is undefined%n", key);
+            } else {
+                output("The value of property '%s' is '%s'%n", key, value);
+            }
         } else {
-            System.out.format("%n Please enter a key to retrieve.");
+            output("Please enter a key to retrieve%n");
         }
     }
     
@@ -162,9 +152,9 @@ public class SharedConfigCli implements AutoCloseable{
                         String value = sc.next();
                         String oldValue = config.putProperty(key, value);
                         if (oldValue == null) {
-                            System.out.format("%nProperty %s added with value %s%n", key, value);
+                            output("Property '%s' added with value '%s'%n", key, value);
                         } else {
-                            System.out.format("%nProperty %s updated from: %s to: %s%n", key, oldValue, value);
+                            output("Property '%s' updated from: '%s' to: '%s'%n", key, oldValue, value);
                         }
                         return;
                     }
@@ -172,7 +162,7 @@ public class SharedConfigCli implements AutoCloseable{
             }
         }
         
-        System.out.println("Expecting key , value.");
+        output("Expecting key , value (note the whitespace before the comma)%n");
         
     }
     
@@ -180,23 +170,39 @@ public class SharedConfigCli implements AutoCloseable{
         if (sc.hasNext()) {
             String key = sc.next();
             String value = config.removeProperty(key);
-            System.out.format("%n Property for %s is removed.  Old value was %s%n", key, value);
+            if (value == null ) {
+                output("Property '%s' is undefined; nothing to remove%n", key);
+            } else {
+                output("Property for '%s' is removed -- old value was '%s'%n", key, value);
+            }
         } else {
-            System.out.format("%n Please enter a key to remove.");
+            output("Please enter a key to remove%n");
         }
+    }
+    
+    private void doClear() {
+        config.clear();
+        output("All properties removed%n");
     }
     
     private void doRefresh() {
         config.synchronize();
+        output("Properties refreshed%n");
     }
     
     private void doHelp(){
         Arrays.stream(HELP_TEXT).forEach(System.out::println);
+        System.out.println("");
     }
     
     private void unknownCommand(String command){
-        System.out.format("%nUnknown command: '%s'%n", command);
+        output("Unknown command: '%s'%n", command);
         doHelp();
+    }
+    
+    private void output(String format, Object... args){
+        System.out.format("**** ");
+        System.out.format(format, args);
     }
     
     @Override
@@ -214,6 +220,20 @@ public class SharedConfigCli implements AutoCloseable{
         }
     }
     
+    private static Options getOptions() {
+        final Options options = new Options();
+        options.addOption("s", "scope", true, "The scope (namespace) of the Shared Config.");
+        options.addOption("n", "name", true, "The name of the Shared Config.");
+        options.addOption("u", "uri", true, "The URI to the Pravega controller in the form tcp://host:port");
+        return options;
+    }
+
+    private static CommandLine parseCommandLineArgs(Options options, String[] args) throws ParseException {
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args);
+        return cmd;
+    }
+    
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLine cmd = null;
@@ -228,11 +248,11 @@ public class SharedConfigCli implements AutoCloseable{
         final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
         final String configName = cmd.getOptionValue("name") == null ? DEFAULT_CONFIG_NAME : cmd.getOptionValue("name");
         final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
-        final boolean useInMemory = cmd.getOptionValue("inMemory") == null;
+        
         final URI controllerURI = URI.create(uriString);
         
         try(
-            SharedConfigCli cli = new SharedConfigCli(scope, configName, controllerURI, useInMemory);
+            SharedConfigCli cli = new SharedConfigCli(scope, configName, controllerURI);
            ){
             cli.run();
         } catch (IOException e) {
