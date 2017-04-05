@@ -1,23 +1,24 @@
 package com.emc.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.emc.pravega.ClientFactory;
+import com.emc.pravega.StreamManager;
 import com.emc.pravega.state.InitialUpdate;
 import com.emc.pravega.state.Revision;
 import com.emc.pravega.state.Revisioned;
 import com.emc.pravega.state.StateSynchronizer;
 import com.emc.pravega.state.SynchronizerConfig;
 import com.emc.pravega.state.Update;
+import com.emc.pravega.stream.ScalingPolicy;
+import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
 /**
@@ -36,10 +37,10 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
     private static class SharedStateMap<K, V> implements Revisioned, Serializable {
         private static final long serialVersionUID = 1L;
         private final String scopedStreamName;
-        private final LinkedHashMap<K, V> impl;
+        private final ConcurrentHashMap<K, V> impl;
         private final Revision currentRevision;
 
-        public SharedStateMap(String scopedStreamName, LinkedHashMap<K,V> impl, Revision revision){
+        public SharedStateMap(String scopedStreamName, ConcurrentHashMap<K,V> impl, Revision revision){
             this.scopedStreamName = scopedStreamName;
             this.impl = impl;
             this.currentRevision = revision;
@@ -79,6 +80,9 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
             return impl.values();
         }
         
+        public Map<K,V> clone() {
+            return new ConcurrentHashMap<K,V>(impl);
+        }
     }
     
     /**
@@ -86,9 +90,9 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     private static class CreateState<K, V> implements InitialUpdate<SharedStateMap<K,V>>, Serializable {
         private static final long serialVersionUID = 1L;
-        private final LinkedHashMap<K, V> impl;
+        private final ConcurrentHashMap<K, V> impl;
         
-        public CreateState(LinkedHashMap<K, V> impl) {
+        public CreateState(ConcurrentHashMap<K, V> impl) {
             this.impl = impl;
         }
 
@@ -106,12 +110,12 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         
         @Override
         public SharedStateMap<K,V> applyTo(SharedStateMap<K,V> oldState, Revision newRevision) {
-            LinkedHashMap<K, V> newState = new LinkedHashMap<K, V>(oldState.impl);
+            ConcurrentHashMap<K, V> newState = new ConcurrentHashMap<K, V>(oldState.impl);
             process(newState);
             return new SharedStateMap<K,V>(oldState.getScopedStreamName(), newState, newRevision);
         }
 
-        public abstract void process(LinkedHashMap<K, V> updatableList);
+        public abstract void process(ConcurrentHashMap<K, V> updatableList);
     }
     
     /**
@@ -124,7 +128,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         }
 
         @Override
-        public void process(LinkedHashMap<K, V> impl) {
+        public void process(ConcurrentHashMap<K, V> impl) {
             impl.clear();
         }
     }
@@ -143,7 +147,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         }
 
         @Override
-        public void process(LinkedHashMap<K, V> impl) {
+        public void process(ConcurrentHashMap<K, V> impl) {
             impl.put(key, value);
         }
     }
@@ -160,7 +164,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         }
 
         @Override
-        public void process(LinkedHashMap<K, V> impl) {
+        public void process(ConcurrentHashMap<K, V> impl) {
             impl.putAll(map);
         }
     }
@@ -177,7 +181,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         }
 
         @Override
-        public void process(LinkedHashMap<K, V> impl) {
+        public void process(ConcurrentHashMap<K, V> impl) {
             impl.remove(key);
         }
     }
@@ -185,20 +189,28 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
     //+++++++++++++++++++++++++++++++++ SynchronizedMap Behavior +++++++++++++++++++++++++++++++++
     private static final int REMOVALS_BEFORE_COMPACTION = 5;
     
-    private final String scopedStreamName;
+
     private final StateSynchronizer<SharedStateMap<K,V>> stateSynchronizer;
     private final AtomicInteger countdownToCompaction = new AtomicInteger(REMOVALS_BEFORE_COMPACTION);
     
     /*
      * Creates the shared state using a synchronizer based on the given stream name.
      */
-    public SynchronizedMap(ClientFactory factory, String scopedStreamName){
-        this.scopedStreamName = scopedStreamName;
-        this.stateSynchronizer = factory.createStateSynchronizer(scopedStreamName,
+    public SynchronizedMap(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
+        streamManager.createScope(scope);
+        
+        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(name)
+                .scalingPolicy(ScalingPolicy.fixed(1))
+                .build();
+        
+        streamManager.createStream(scope, name, streamConfig);
+        
+        this.stateSynchronizer = clientFactory.createStateSynchronizer(name,
                                                 new JavaSerializer<StateUpdate<K,V>>(),
                                                 new JavaSerializer<CreateState<K,V>>(),
                                                 SynchronizerConfig.builder().build());
-        stateSynchronizer.initialize(new CreateState<K,V>(new LinkedHashMap<K,V>()));
+        
+        stateSynchronizer.initialize(new CreateState<K,V>(new ConcurrentHashMap<K,V>()));
     }
     
     //++++++++++++++++++++++++++++++++ Synchronizer-oriented API ++++++++++++++++++++++++++++++++
@@ -233,6 +245,13 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
             }
         });
         compact();
+    }
+    
+    /*
+     * Returns a copy of the map
+     */
+    public Map<K,V> clone() {
+        return stateSynchronizer.getState().clone();
     }
     
     /*
@@ -279,9 +298,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     public void putAll(Map<K,V> map){
         stateSynchronizer.updateState(state -> {
-            final List<StateUpdate<K,V>> updates = Collections.synchronizedList(new ArrayList<>(map.size()));
-            map.forEach((k,v)->updates.add(new Put<K,V>(k,v)));
-            return updates;
+            return Collections.singletonList(new PutAll<K,V>(map));
         });
     }
     
@@ -317,5 +334,12 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     public Collection<V> values(){
         return stateSynchronizer.getState().values();
+    }
+
+    public void close() {
+        if( stateSynchronizer != null) {
+            //TODO how do you close a state synchronizer?
+            //stateSynchronizer.close();
+        }
     }
 }

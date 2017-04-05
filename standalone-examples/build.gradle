@@ -65,6 +65,14 @@ task startTurbineSensor(type: JavaExec) {
     }
 }
 
+task startSharedConfigCli(type: JavaExec) {
+    main = "com.emc.pravega.example.statesynchronizer.SharedConfigCli"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+      args System.getProperty("exec.args").split()
+    }
+}
+
 distributions {
     main {
         baseName = archivesBaseName
