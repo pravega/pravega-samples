@@ -33,9 +33,25 @@ public class SharedConfig<K extends Serializable, V extends Serializable> {
     public V putProperty(K key, V value) {
         return properties.put(key, value);
     }
+    
+    public V putPropertyIfAbsent(K key, V value) {
+        return properties.putIfAbsent(key, value);
+    }
 
     public V removeProperty(K key) {
         return properties.remove(key);
+    }
+    
+    public boolean removeProperty(K key, V oldValue) {
+        return properties.remove(key, oldValue);
+    }
+    
+    public V replaceProperty(K key, V value){
+        return properties.replace(key, value);
+    }
+    
+    public boolean replaceProperty(K key, V oldValue, V newValue) {
+        return properties.replace(key, oldValue, newValue);
     }
 
     public void clear() {

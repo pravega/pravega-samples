@@ -116,7 +116,7 @@ The CLI MUST be run using the scripts.  Gradle interferes with console I/O.  Mak
 
 ```
 $ cd standalone-examples/build/install/pravega-standalone-examples
-$ ./bin/helloWorldWriter \[-scope myScope\] \[-name myStream\] \[-uri tcp://127.0.0.1:9090\] 
+$ ./bin/sharedConfigCli \[-scope myScope\] \[-name myStream\] \[-uri tcp://127.0.0.1:9090\] 
 ```
 
 Use the simple DSL to GET, PUT, REMOVE keys from the SharedConfig object identified by scope and name.

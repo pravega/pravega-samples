@@ -310,7 +310,9 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     public V putIfAbsent(K key, V value){
         @SuppressWarnings("unchecked")
-        final V[] ret = (V[]) new Object[1];
+        final V[] ret = (V[]) new Serializable[1];
+        
+        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
         stateSynchronizer.updateState(state -> {
             if (state.containsKey(key) && state.get(key) != null) {
                 ret[0] = state.get(key);
@@ -331,7 +333,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         final V oldValue = get(key);
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key)) {
-                return  Collections.singletonList(new Remove<K,V>(key));
+                return Collections.singletonList(new Remove<K,V>(key));
             } else {
                 return Collections.emptyList();
             }
@@ -348,10 +350,12 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     public boolean remove(K key, V value){
         MutableBoolean ret = new MutableBoolean(false);
+        
+        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
                 ret.setValue(true);
-                return  Collections.singletonList(new Remove<K,V>(key));
+                return Collections.singletonList(new Remove<K,V>(key));
             } else {
                 return Collections.emptyList();
             }
@@ -368,9 +372,10 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     public V replace(K key, V value){
         final V oldValue = get(key);
+        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key)) {
-                return  Collections.singletonList(new Put<K,V>(key,value));
+                return Collections.singletonList(new Put<K,V>(key,value));
             } else {
                 return Collections.emptyList();
             }
@@ -383,10 +388,12 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
      */
     public boolean replace(K key, V value, V newValue){
         MutableBoolean ret = new MutableBoolean(false);
+        
+        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
                 ret.setValue(true);
-                return  Collections.singletonList(new Put<K,V>(key, newValue));
+                return Collections.singletonList(new Put<K,V>(key, newValue));
             } else {
                 return Collections.emptyList();
             }

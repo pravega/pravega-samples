@@ -4,9 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -32,7 +35,9 @@ public class SharedConfigCli implements AutoCloseable{
             "GET_ALL - prints out all of the properties in the Shared Config.",
             "GET {key} - print out the configuration property for the given key.",
             "PUT {key} , {value} - update the Shared Config with the given key/value pair.  Print out previous value (if it existed).",
-            "REMOVE {key} - remove the given property from the Shared Config.  Print out the old value (if it existed).",
+            "PUT_IF_ABSENT {key} , {value} - update the Shared Config with the given key/value pair, only if the property is not already defined.",
+            "REMOVE {key} [ , {currentValue}] - remove the given property from the Shared Config.  If {currentValue} is given, remove only if the property's current value matches {currentValue}..",
+            "REPLACE {key} , {newValue} [ , {currentValue}] - update the value of the property.  If {currentValue} is given, update only if the property's current value matches {cuurentValue}.",
             "CLEAR - remove all the keys from the Shared Config.",
             "REFRESH - force an update from the Synchronized State.",
             "HELP - print out a list of commands.",
@@ -60,7 +65,7 @@ public class SharedConfigCli implements AutoCloseable{
     public void run() throws IOException{
         boolean done = false;
         
-        doHelp();
+        outputHelp();
         
         while(!done){
             String commandLine = readLine("%s >", configName);
@@ -89,27 +94,42 @@ public class SharedConfigCli implements AutoCloseable{
         boolean ret = false;
         final Scanner sc = new Scanner(rawString);
         final String command = sc.next();
+        List<String> parms;
+        if (sc.hasNextLine()) {
+            final String[] rawParms = sc.nextLine().split(",");
+            parms = Arrays.asList(rawParms);
+            parms.replaceAll(String::trim);
+        } else {
+            parms = new ArrayList<String>();
+        }
+        
         switch(command.toUpperCase()) {
             case "GET_ALL" :
-                doGetAll();
+                doGetAll(parms);
                 break;
             case "GET" :
-                doGet(sc);
+                doGet(parms);
                 break;
             case "PUT" :
-                doPut(sc);
+                doPut(parms);
+                break;
+            case "PUT_IF_ABSENT" :
+                doPutIfAbsent(parms);
                 break;
             case "REMOVE" :
-                doRemove(sc);
+                doRemove(parms);
+                break;
+            case "REPLACE" :
+                doReplace(parms);
                 break;
             case "CLEAR" :
-                doClear();
+                doClear(parms);
                 break;
             case "REFRESH" :
-                doRefresh();
+                doRefresh(parms);
                 break;
             case "HELP" :
-                doHelp();
+                doHelp(parms);
                 break;
             case "QUIT" :
                 ret = true;
@@ -122,82 +142,164 @@ public class SharedConfigCli implements AutoCloseable{
         return ret;
     }
     
-    private void doGetAll() {
+    private void doGetAll(List<String> parms) {
         Map<String, String> properties = config.getProperties();
         output("Properties for SharedConfig: '%s' :%n", configName);
         properties.forEach((k,v) -> output("    '%s' -> '%s'%n", k, v));
+        
+        if (parms.size() > 0) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+        }
     }
     
-    private void doGet(Scanner sc) {
-        if (sc.hasNext()) {
-            String key = sc.next();
-            String value = config.getProperty(key);
+    private void doGet(List<String> parms) {
+        try {
+            final String key = parms.get(0);
+            final String value = config.getProperty(key);
             if (value == null ) {
                 output("Property '%s' is undefined%n", key);
             } else {
                 output("The value of property '%s' is '%s'%n", key, value);
             }
-        } else {
+        } catch (IndexOutOfBoundsException e) {
             output("Please enter a key to retrieve%n");
         }
+        
+        if (parms.size() > 1) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(1).collect(Collectors.toList())));
+        }
     }
     
-    private void doPut(Scanner sc) {
-        if (sc.hasNext()) {
-            String key = sc.next();
-            if (sc.hasNext()) {
-                String comma = sc.next();
-                if (comma.equals(",")) {
-                    if (sc.hasNext()) {
-                        String value = sc.next();
-                        String oldValue = config.putProperty(key, value);
-                        if (oldValue == null) {
-                            output("Property '%s' added with value '%s'%n", key, value);
-                        } else {
-                            output("Property '%s' updated from: '%s' to: '%s'%n", key, oldValue, value);
-                        }
-                        return;
-                    }
+    private void doPut(List<String> parms) {
+        try {
+            final String key = parms.get(0);
+            final String value = parms.get(1);
+            
+            final String oldValue = config.putProperty(key, value);
+            if (oldValue == null) {
+                output("Property '%s' added with value '%s'%n", key, value);
+            } else {
+                output("Property '%s' updated from: '%s' to: '%s'%n", key, oldValue, value);
+            }
+        } catch (IndexOutOfBoundsException e) {
+            output("Expecting parameters: key , value %n");
+        }
+        
+        if (parms.size() > 2) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
+        }
+    }
+    
+    private void doPutIfAbsent(List<String> parms) {
+        try {
+            final String key = parms.get(0);
+            final String value = parms.get(1);
+            final String oldValue = config.putPropertyIfAbsent(key, value);
+            if (oldValue == null) {
+                output("Property '%s' added with value '%s'%n", key, value);
+            } else {
+                output("Property '%s' exists with value '%s'%n", key, oldValue);
+            }
+        } catch (IndexOutOfBoundsException e) {
+            output("Expecting parameters: key , value %n");
+        }
+        
+        if (parms.size() > 2) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
+        }
+    }
+    
+    private void doRemove(List<String> parms) {
+        try {
+            final String key = parms.get(0);
+            if (parms.size() > 1) {
+                final String currValue = parms.get(1);
+                final boolean removed = config.removeProperty(key, currValue);
+                if (removed) {
+                    output("Property '%s' is removed -- old value was '%s'%n", key, currValue);
+                } else {
+                    output("Property '%s' was NOT removed -- current value did not match given value '%s'%n", key, currValue);
+                }
+            } else {
+                final String currValue = config.removeProperty(key);
+                if (currValue == null ) {
+                    output("Property '%s' is undefined; nothing to remove%n", key);
+                } else {
+                    output("Property for '%s' is removed -- old value was '%s'%n", key, currValue);
                 }
             }
+        } catch (IndexOutOfBoundsException e) {
+            output("Expecting parameters: key [, currentValue]%n");
         }
         
-        output("Expecting key , value (note the whitespace before the comma)%n");
-        
+        if (parms.size() > 2) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
+        }
     }
     
-    private void doRemove(Scanner sc) {
-        if (sc.hasNext()) {
-            String key = sc.next();
-            String value = config.removeProperty(key);
-            if (value == null ) {
-                output("Property '%s' is undefined; nothing to remove%n", key);
+    private void doReplace(List<String> parms) {
+        try {
+            final String key = parms.get(0);
+            final String newValue = parms.get(1);
+            if (parms.size() > 2) {
+                final String currValue = parms.get(2);
+                final boolean replacmentMade = config.replaceProperty(key, currValue, newValue);
+                if (replacmentMade) {
+                    output("Property '%s' had value '%s', now replaced with new value '%s'%n", key, currValue, newValue);
+                } else {
+                    output("Property '%s' was NOT replaced -- current value did not match given value '%s'%n", key, currValue);
+                }
             } else {
-                output("Property for '%s' is removed -- old value was '%s'%n", key, value);
+                final String oldValue = config.replaceProperty(key, newValue);
+                if (oldValue == null) {
+                    output("Property '%s' is undefined%n", key);
+                } else {
+                    output("Property '%s' had value '%s', now replaced with new value '%s'%n", key, oldValue, newValue);
+                }
             }
-        } else {
-            output("Please enter a key to remove%n");
+        } catch (IndexOutOfBoundsException e) {
+            output("Expecting parameters: key , newValue [, currentValue]%n");
+        }
+            
+        if (parms.size() > 3) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(3).collect(Collectors.toList())));
         }
     }
     
-    private void doClear() {
+    private void doClear(List<String> parms) {
         config.clear();
         output("All properties removed%n");
+        
+        if (parms.size() > 0) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+        }
     }
     
-    private void doRefresh() {
+    private void doRefresh(List<String> parms) {
         config.synchronize();
         output("Properties refreshed%n");
+        
+        if (parms.size() > 0) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+        }
     }
     
-    private void doHelp(){
+    private void doHelp(List<String> parms){
+        outputHelp();
+        
+        if (parms.size() > 0) {
+            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+        }
+    }
+    
+    private void outputHelp() {
         Arrays.stream(HELP_TEXT).forEach(System.out::println);
         System.out.println("");
     }
     
     private void unknownCommand(String command){
         output("Unknown command: '%s'%n", command);
-        doHelp();
+        outputHelp();
     }
     
     private void output(String format, Object... args){
