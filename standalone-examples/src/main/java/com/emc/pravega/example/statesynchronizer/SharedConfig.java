@@ -6,7 +6,7 @@ import com.emc.pravega.ClientFactory;
 import com.emc.pravega.StreamManager;
 
 /**
- * An example Configuration object that wrappers a properties map implemented by a SynchronizedMap.
+ * An example Configuration object that wrappers a properties map implemented by a SharedMap.
  *
  * @param <K> - Key of the properties map.
  * @param <V> - Value of the properties map.

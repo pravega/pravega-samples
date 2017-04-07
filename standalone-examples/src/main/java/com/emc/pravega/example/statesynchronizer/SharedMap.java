@@ -191,7 +191,7 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
         }
     }
     
-    //+++++++++++++++++++++++++++++++++ SynchronizedMap Behavior +++++++++++++++++++++++++++++++++
+    //+++++++++++++++++++++++++++++++++++ SharedMap Behavior +++++++++++++++++++++++++++++++++++
     
     private static final int REMOVALS_BEFORE_COMPACTION = 5;
     
@@ -469,7 +469,7 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
     }
 
     /**
-     * Close the SynchronizedMap.
+     * Close the SharedMap.
      */
     public void close() {
         if( stateSynchronizer != null) {
