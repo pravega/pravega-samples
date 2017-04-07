@@ -87,6 +87,13 @@ task startConsoleReader(type: JavaExec) {
     }
 }
 
+task scriptSharedConfigCli(type: CreateStartScripts) {
+  outputDir = file('build/scripts')
+  mainClassName = 'com.emc.pravega.example.statesynchronizer.SharedConfigCli'
+  applicationName = 'sharedConfigCli'
+  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -97,6 +104,7 @@ distributions {
                 from project.scriptTurbineSensor
                 from project.scriptConsoleWriter
                 from project.scriptConsoleReader
+                from project.scriptSharedConfigCli
             }
             into('lib') {
                 from(jar)
