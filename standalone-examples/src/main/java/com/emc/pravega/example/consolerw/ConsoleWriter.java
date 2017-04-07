@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -138,7 +140,7 @@ public class ConsoleWriter implements AutoCloseable {
                 doWriteEventRK(restOfLine);
                 break;
             case "BEGIN":
-                doBeginTxn(restOfLine);
+                doBeginTxn(parms);
                 break;
             case "GET_TXN_ID":
                 doGetTxnId(parms);
@@ -163,7 +165,7 @@ public class ConsoleWriter implements AutoCloseable {
                 break;
             case "QUIT" :
                 ret = true;
-                output("Exiting...");
+                output("Exiting...%n");
                 break;
             default :
                 doWriteEvent(rawString);
@@ -195,33 +197,62 @@ public class ConsoleWriter implements AutoCloseable {
     }
     
     private void doWriteEventRK(String restOfLine) {
-        //TODO
-        warn("Coming soon%n");
+        final String routingKey;
+        final String message;
+        try(final Scanner sc = new Scanner(restOfLine.trim()).useDelimiter("(?<=[()])|(?=[()])")){
+            if (sc.next().equals("(")) {
+                routingKey = sc.next().trim();
+                if (sc.next().equals(")")) {
+                    message = sc.next().trim();
+                    writeEventRK(routingKey, message);
+                    return;
+                }
+            }
+        } catch (Exception e ) {
+            //ignore, it is a syntax error, the end of this method will emit the warning message
+        }
+        warn("Expecting '('routingkey')' message%n");
     }
     
-    private void doBeginTxn(String restOfLine) {
+    private void writeEventRK(String routingKey, String message) {
+        if (txn == null) {
+            AckFuture future = writer.writeEvent(routingKey, message);
+            try {
+                future.get();
+                output("Wrote using routing key '%s' message '%s'%n", routingKey, message);
+            } catch (Exception e) {
+                warn("Write event failed.%n");
+                output(e);
+            }
+        } else {
+            try {
+                txn.writeEvent(routingKey, message);
+                output("Wrote using routing key '%s' message '%s'%n", routingKey, message);
+            } catch (TxnFailedException e) {
+                warn("Write event to transaction failed.%n");
+                output(e);
+            }
+        }
+    }
+    
+    private void doBeginTxn(List<String> parms) {
         String ignoredParms = null;
         long transactionTimeout = DEFAULT_TXN_TIMEOUT_MS;
         long maxExecutionTime = DEFAULT_TXN_MAX_EXECUTION_TIME_MS;
         long scaleGracePeriod = DEFAULT_TXN_SCALE_GRACE_PERIOD_MS;
         
-        //TODO something fishy with specifying parms on the begin_txn
-        if (restOfLine != null) {
-            try (final Scanner sc = new Scanner(restOfLine.trim()).useDelimiter(",")){
-                if (sc.hasNextLong()) {
-                    transactionTimeout = sc.nextLong();
-                    if (sc.hasNextLong()) {
-                        maxExecutionTime = sc.nextLong();
-                        if (sc.hasNextLong()) {
-                            scaleGracePeriod = sc.nextLong();
-                        }
-                    }
-                }
-                
-                if (sc.hasNextLine()) {
-                    ignoredParms = sc.nextLine();
-                }
+        try {
+            if (parms.size() > 0) {
+                transactionTimeout = Long.parseLong(parms.get(0));
             }
+            if (parms.size() > 1) {
+                maxExecutionTime = Long.parseLong(parms.get(1));
+            }
+            if (parms.size() > 2) {
+                scaleGracePeriod = Long.parseLong(parms.get(2));
+            }
+        } catch (Exception e ) {
+            warn("Expecting numeric values as parameters.%n");
         }
         
         if (txn == null) {
@@ -235,14 +266,14 @@ public class ConsoleWriter implements AutoCloseable {
             warn("Cannot begin a new transaction -- commit or abort the current transaction.%n");
         }
         
-        if (ignoredParms != null) {
-            warn("Ignoring parameters: '%s'%n", ignoredParms);
+        if (parms.size() > 3) {
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(3).collect(Collectors.toList())));
         }
     }
     
     private void doGetTxnId(List<String> parms) {
         if (txn == null) {
-            warn("There is no transaction.%n");
+            warn("Cannot get transaction id -- begin a transaction first.%n");
         } else {
             final UUID txn_id = txn.getTxnId();
             output("Transaction id: %s%n", txn_id);
@@ -255,7 +286,7 @@ public class ConsoleWriter implements AutoCloseable {
     
     private void doFlushTxn(List<String> parms) {
         if (txn == null) {
-            warn("There is no transaction.%n");
+            warn("Cannot flush transaction -- begin a transaction first.%n");
         } else {
             try {
                 txn.flush();
@@ -291,8 +322,9 @@ public class ConsoleWriter implements AutoCloseable {
             warn("Cannot ping transaction -- begin a transaction first.%n");
         } else {
             try {
+                System.out.format("trying ping with lease value %d%n", lease);
                 txn.ping(lease);
-                output("Transaction ping completed.");
+                output("Transaction ping completed.%n");
             } catch (Exception e) {
                 warn("Failed to ping transaction.%n");
                 output(e);
@@ -330,12 +362,12 @@ public class ConsoleWriter implements AutoCloseable {
         } else {
             try {
                 txn.abort();
+                output("Transaction abort completed.%n");
+                txn = null;
             } catch (Exception e) {
                 warn("Transaction abort failed.%n");
                 output(e);
             }
-            output("Transaction abort completed.%n");
-            txn = null;
         }
         
         if (parms.size() > 0) {

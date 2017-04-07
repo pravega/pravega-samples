@@ -79,14 +79,6 @@ task scriptConsoleReader(type: CreateStartScripts) {
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
-task startConsoleWriter(type: JavaExec) {
-    main = "com.emc.pravega.example.consolerw.ConsoleWriter"
-    classpath = sourceSets.main.runtimeClasspath
-    if(System.getProperty("exec.args") != null) {
-      args System.getProperty("exec.args").split()
-    }
-}
-
 task startConsoleReader(type: JavaExec) {
     main = "com.emc.pravega.example.consolerw.ConsoleReader"
     classpath = sourceSets.main.runtimeClasspath
