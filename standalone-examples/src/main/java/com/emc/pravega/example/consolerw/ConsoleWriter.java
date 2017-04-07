@@ -36,10 +36,6 @@ import com.emc.pravega.stream.impl.JavaSerializer;
  */
 
 public class ConsoleWriter implements AutoCloseable {
-    private static final String DEFAULT_SCOPE = "some_scope";
-    private static final String DEFAULT_STREAM_NAME = "some_stream";
-    private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
-    
     private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
     private static final long DEFAULT_TXN_MAX_EXECUTION_TIME_MS = 30000L;
     private static final long DEFAULT_TXN_SCALE_GRACE_PERIOD_MS = 30000L;
@@ -451,9 +447,9 @@ public class ConsoleWriter implements AutoCloseable {
             formatter.printHelp("ConsoleWriter", options);
         }
 
-        final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
-        final String streamName = cmd.getOptionValue("name") == null ? DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
-        final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         
         final URI controllerURI = URI.create(uriString);
         

@@ -143,7 +143,7 @@ $ ./bin/consoleReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:90
 
 All args are optional, if not included, the defaults are:
 
- * scope - "some_scope"
+ * scope - "examples"
  * name - "some_stream" 
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
@@ -163,7 +163,7 @@ $ ./bin/consoleWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:90
 
 All args are optional, if not included, the defaults are:
 
- * scope - "some_scope"
+ * scope - "examples"
  * name - "some_stream" 
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 

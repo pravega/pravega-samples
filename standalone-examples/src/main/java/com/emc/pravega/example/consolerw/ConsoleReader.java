@@ -29,9 +29,6 @@ import com.emc.pravega.stream.impl.JavaSerializer;
  * Reads from a Stream until interrupted.
  */
 public class ConsoleReader {
-    private static final String DEFAULT_SCOPE = "some_scope";
-    private static final String DEFAULT_STREAM_NAME = "some_stream";
-    private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
     
     private static final int READER_TIMEOUT_MS = 200000;
     
@@ -95,9 +92,9 @@ public class ConsoleReader {
             formatter.printHelp("ConsoleReader", options);
         }
         
-        final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
-        final String streamName = cmd.getOptionValue("name") == null ? DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
-        final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
         
         ConsoleReader reader = new ConsoleReader(scope, streamName, controllerURI);
