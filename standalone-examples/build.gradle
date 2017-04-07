@@ -72,14 +72,6 @@ task scriptSharedConfigCli(type: CreateStartScripts) {
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
-task startSharedConfigCli(type: JavaExec) {
-    main = "com.emc.pravega.example.statesynchronizer.SharedConfigCli"
-    classpath = sourceSets.main.runtimeClasspath
-    if(System.getProperty("exec.args") != null) {
-      args System.getProperty("exec.args").split()
-    }
-}
-
 distributions {
     main {
         baseName = archivesBaseName
@@ -88,6 +80,7 @@ distributions {
                 from project.scriptHelloWorldWriter
                 from project.scriptHelloWorldReader
                 from project.scriptTurbineSensor
+                from project.scriptSharedConfigCli
             }
             into('lib') {
                 from(jar)

@@ -68,9 +68,15 @@ public class SharedConfigCli implements AutoCloseable{
         outputHelp();
         
         while(!done){
-            String commandLine = readLine("%s >", configName);
-            done = processCommand(commandLine);
+            String commandLine = readLine("%s >", getPrompt()).trim();
+            if (! commandLine.equals("")) {
+                done = processCommand(commandLine);
+            }
         }
+    }
+    
+    private String getPrompt() {
+        return configName;
     }
     
     /*
@@ -133,6 +139,7 @@ public class SharedConfigCli implements AutoCloseable{
                 break;
             case "QUIT" :
                 ret = true;
+                output("Exiting...%n");
                 break;
             default :
                 unknownCommand(command);
@@ -148,7 +155,7 @@ public class SharedConfigCli implements AutoCloseable{
         properties.forEach((k,v) -> output("    '%s' -> '%s'%n", k, v));
         
         if (parms.size() > 0) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
     
@@ -157,16 +164,16 @@ public class SharedConfigCli implements AutoCloseable{
             final String key = parms.get(0);
             final String value = config.getProperty(key);
             if (value == null ) {
-                output("Property '%s' is undefined%n", key);
+                warn("Property '%s' is undefined%n", key);
             } else {
                 output("The value of property '%s' is '%s'%n", key, value);
             }
         } catch (IndexOutOfBoundsException e) {
-            output("Please enter a key to retrieve%n");
+            warn("Please enter a key to retrieve%n");
         }
         
         if (parms.size() > 1) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(1).collect(Collectors.toList())));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(1).collect(Collectors.toList())));
         }
     }
     
@@ -182,11 +189,11 @@ public class SharedConfigCli implements AutoCloseable{
                 output("Property '%s' updated from: '%s' to: '%s'%n", key, oldValue, value);
             }
         } catch (IndexOutOfBoundsException e) {
-            output("Expecting parameters: key , value %n");
+            warn("Expecting parameters: key , value %n");
         }
         
         if (parms.size() > 2) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
         }
     }
     
@@ -201,11 +208,11 @@ public class SharedConfigCli implements AutoCloseable{
                 output("Property '%s' exists with value '%s'%n", key, oldValue);
             }
         } catch (IndexOutOfBoundsException e) {
-            output("Expecting parameters: key , value %n");
+            warn("Expecting parameters: key , value %n");
         }
         
         if (parms.size() > 2) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
         }
     }
     
@@ -218,7 +225,7 @@ public class SharedConfigCli implements AutoCloseable{
                 if (removed) {
                     output("Property '%s' is removed -- old value was '%s'%n", key, currValue);
                 } else {
-                    output("Property '%s' was NOT removed -- current value did not match given value '%s'%n", key, currValue);
+                    warn("Property '%s' was NOT removed -- current value did not match given value '%s'%n", key, currValue);
                 }
             } else {
                 final String currValue = config.removeProperty(key);
@@ -229,11 +236,11 @@ public class SharedConfigCli implements AutoCloseable{
                 }
             }
         } catch (IndexOutOfBoundsException e) {
-            output("Expecting parameters: key [, currentValue]%n");
+            warn("Expecting parameters: key [, currentValue]%n");
         }
         
         if (parms.size() > 2) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(2).collect(Collectors.toList())));
         }
     }
     
@@ -247,7 +254,7 @@ public class SharedConfigCli implements AutoCloseable{
                 if (replacmentMade) {
                     output("Property '%s' had value '%s', now replaced with new value '%s'%n", key, currValue, newValue);
                 } else {
-                    output("Property '%s' was NOT replaced -- current value did not match given value '%s'%n", key, currValue);
+                    warn("Property '%s' was NOT replaced -- current value did not match given value '%s'%n", key, currValue);
                 }
             } else {
                 final String oldValue = config.replaceProperty(key, newValue);
@@ -258,11 +265,11 @@ public class SharedConfigCli implements AutoCloseable{
                 }
             }
         } catch (IndexOutOfBoundsException e) {
-            output("Expecting parameters: key , newValue [, currentValue]%n");
+            warn("Expecting parameters: key , newValue [, currentValue]%n");
         }
             
         if (parms.size() > 3) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(3).collect(Collectors.toList())));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(3).collect(Collectors.toList())));
         }
     }
     
@@ -271,7 +278,7 @@ public class SharedConfigCli implements AutoCloseable{
         output("All properties removed%n");
         
         if (parms.size() > 0) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
     
@@ -280,7 +287,7 @@ public class SharedConfigCli implements AutoCloseable{
         output("Properties refreshed%n");
         
         if (parms.size() > 0) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
     
@@ -288,7 +295,7 @@ public class SharedConfigCli implements AutoCloseable{
         outputHelp();
         
         if (parms.size() > 0) {
-            output("Ignoring parameters: '%s'%n", String.join(",", parms));
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
     
@@ -305,6 +312,16 @@ public class SharedConfigCli implements AutoCloseable{
     private void output(String format, Object... args){
         System.out.format("**** ");
         System.out.format(format, args);
+    }
+    
+    private void warn(String format, Object... args){
+        System.out.format("!!!! ");
+        System.out.format(format, args);
+    }
+    
+    private void output(Exception e) {
+        e.printStackTrace();
+        output("%n");
     }
     
     @Override

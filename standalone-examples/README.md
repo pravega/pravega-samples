@@ -40,6 +40,19 @@ standalone-examples/build/install/pravega-standalone-examples/bin
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
 
+Alternatively, you can run: 
+
+```
+$ gradle distZip
+```
+ 
+to package the main distribution as a ZIP, or:
+
+```
+ “gradle distTar” 
+ ```
+ to create a TAR file. To build both types of archives just run gradle assembleDist. The files will be created at “$buildDir/distributions/$project.name-$project.version.«ext»”.
+
 ## HelloPravega Example
 This example consists of two applications, a HelloWorldReader that reads from a stream and a HelloWorldWriter, that writes to a stream.
 
@@ -61,7 +74,7 @@ $ ./gradlew startHelloWorldReader -Dexec.args="-scope aScope -name aName -uri tc
 The example can also be executed by running the script (make sure you have followed the "Generate the Scripts..." step above).
 ```
 $ cd standalone-examples/build/install/pravega-standalone-examples
-$ ./bin/helloWorldReader \[-scope myScope\] \[-name myStream\] \[-uri tcp://127.0.0.1:9090\]
+$ ./bin/helloWorldReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
 ```
 
 All args are optional, if not included, the defaults are:
@@ -90,7 +103,7 @@ $ ./gradlew startHelloWorldWriter -Dexec.args="-scope aScope -name aName -uri tc
 The example can also be executed by running the script (make sure you have followed the "Generate the Scripts..." step above).
 ```
 $ cd standalone-examples/build/install/pravega-standalone-examples
-$ ./bin/helloWorldWriter \[-scope myScope\] \[-name myStream\] \[-uri tcp://127.0.0.1:9090\] \[-routingkey myRK\] \[-message 'hello world']
+$ ./bin/helloWorldWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090] [-routingkey myRK] [-message 'hello world']
 ```
 
 All args are optional, if not included, the defaults are:
@@ -106,8 +119,8 @@ The program writes the given message with the given routing key to the stream wi
 ## State Synchronizer
 This example illustrates the use of the Pravega StateSynchronizer.
 
-The application implements a SynchronizedMap object using StateSynchronizer.  We implement a SharedConfig object using
-the SynchronizedMap.  The SharedConfig simulates the idea of a properties configuration that needs to be kept in sync
+The application implements a SharedMap object using StateSynchronizer.  We implement a SharedConfig object using
+the SharedMap.  The SharedConfig simulates the idea of a properties configuration that needs to be kept in sync
 across multiple processes.
 
 To demonstrate manipulating the properties of the SharedConfig object, we provide a CLI.
@@ -116,7 +129,7 @@ The CLI MUST be run using the scripts.  Gradle interferes with console I/O.  Mak
 
 ```
 $ cd standalone-examples/build/install/pravega-standalone-examples
-$ ./bin/sharedConfigCli \[-scope myScope\] \[-name myStream\] \[-uri tcp://127.0.0.1:9090\] 
+$ ./bin/sharedConfigCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090] 
 ```
 
 Use the simple DSL to GET, PUT, REMOVE keys from the SharedConfig object identified by scope and name.

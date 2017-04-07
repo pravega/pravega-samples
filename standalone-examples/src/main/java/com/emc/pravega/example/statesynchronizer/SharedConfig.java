@@ -12,10 +12,10 @@ import com.emc.pravega.StreamManager;
  * @param <V> - Value of the properties map.
  */
 public class SharedConfig<K extends Serializable, V extends Serializable> {
-    private final SynchronizedMap<K,V> properties; //This is the shared state
+    private final SharedMap<K,V> properties; //This is the shared state
     
     public SharedConfig(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
-        this.properties = new SynchronizedMap<K, V>(clientFactory, streamManager, scope, name);
+        this.properties = new SharedMap<K, V>(clientFactory, streamManager, scope, name);
     }
 
     public void synchronize() {

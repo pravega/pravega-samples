@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.commons.lang.mutable.MutableBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.emc.pravega.ClientFactory;
 import com.emc.pravega.StreamManager;
@@ -31,10 +31,13 @@ import com.emc.pravega.stream.impl.JavaSerializer;
  * @param <V> - the value type used in the map.
  *
  */
-public class SynchronizedMap<K extends Serializable, V extends Serializable> {
+public class SharedMap<K extends Serializable, V extends Serializable> {
 
-    /*
+    /**
      * The internal Map representation that gets synchronized.  This is the "shared state" object.
+     * 
+     * @param K - type of the Map's keys.
+     * @param V - type of the Map's values.
      */
     private static class SharedStateMap<K, V> implements Revisioned, Serializable {
         private static final long serialVersionUID = 1L;
@@ -189,16 +192,21 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
     }
     
     //+++++++++++++++++++++++++++++++++ SynchronizedMap Behavior +++++++++++++++++++++++++++++++++
+    
     private static final int REMOVALS_BEFORE_COMPACTION = 5;
     
-
     private final StateSynchronizer<SharedStateMap<K,V>> stateSynchronizer;
     private final AtomicInteger countdownToCompaction = new AtomicInteger(REMOVALS_BEFORE_COMPACTION);
     
-    /*
+    /**
      * Creates the shared state using a synchronizer based on the given stream name.
+     * 
+     * @param clientFactory - the Pravega ClientFactory to use to create the StateSynchronizer.
+     * @param streamManager - the Pravega StreamManager to use to create the Scope and the Stream used by the StateSynchronizer
+     * @param scope - the Scope to use to create the Stream used by the StateSynchronizer.
+     * @param name - the name of the Stream to be used by the StateSynchronizer.
      */
-    public SynchronizedMap(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
+    public SharedMap(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
         streamManager.createScope(scope);
         
         StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(name)
@@ -224,8 +232,8 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         stateSynchronizer.fetchUpdates();
     }
     
-    /*
-     * Use the StateSynchronizer to compact the shared state after some number of removals
+    /**
+     * Use the StateSynchronizer to compact the shared state after some number of removal operations.
      */
     private void compact() {
         countdownToCompaction.set(REMOVALS_BEFORE_COMPACTION);
@@ -234,7 +242,7 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
     
     //+++++++++++++++++++++++++++++++++++ Map-oriented API ++++++++++++++++++++++++++++++++++++
     
-    /*
+    /**
      * Removes all of the mappings from this map.
      * Use the StateSynchronizer to compact the shared state.
      */
@@ -249,54 +257,74 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         compact();
     }
     
-    /*
-     * Returns a copy of the map
+    /**
+     * Create a copy of the map.
+     * 
+     * @return - the copy of the shared state map.
      */
     public Map<K,V> clone() {
         return stateSynchronizer.getState().clone();
     }
     
-    /*
-     * Returns true if this map contains a mapping for the specified key.
+    /**
+     * Determine if the given key appears in the map.
+     * 
+     * @param key - the key to search for.
+     * @return - true if this map contains a mapping for the specified key.
      */
     public boolean containsKey(K key){
         return stateSynchronizer.getState().containsKey(key);
     }
     
-    /*
-     * Returns true if this map maps one or more keys to the specified value.
+    /**
+     * Determine if the given value appears in the map.
+     * 
+     * @param value - the value to search for.
+     * @returns - true if this map maps one or more keys to the specified value.
      */
     public boolean containsValue(V value){
         return stateSynchronizer.getState().containsValue(value);
     }
 
-    /*
-     * Returns a Set view of the mappings contained in this map.
+    /**
+     * Render the map as a Set of entries.
+     * 
+     * @return - a Set view of the mappings contained in this map.
      */
     public Set<Map.Entry<K,V>> entrySet(){
         return stateSynchronizer.getState().entrySet();
     }
     
-    /*
-     * Returns the value to which the specified key is mapped, or null if this map contains no mapping for the key.
+    /**
+     * Return the value for the given key.
+     * 
+     * @param key - the key to search for.
+     * @returns the value to which the specified key is mapped, or null if this map contains no mapping for the key.
      */
     public V get(K key){
         return stateSynchronizer.getState().get(key);
     }
     
-    /*
+    /**
      * Associates the specified value with the specified key in this map.
+     * 
+     * @param key - the key at which the value should be found.
+     * @param value - the value to be entered into the map.
+     * @return - the previous value (if it existed) for the given key or null if the key did not exist before this operation.
      */
     public V put(K key, V value){
-        final V oldValue = get(key);
+        final AtomicReference<V> oldValue = new AtomicReference<V>(null);
         stateSynchronizer.updateState(state -> {
+            oldValue.set(state.get(key));
             return Collections.singletonList(new Put<K,V>(key,value));
         });
-        return oldValue;
+        return oldValue.get();
     }
     
-    /*
+    /**
      * Copies all of the mappings from the specified map to this map.
+     * 
+     * @param map - the map to copy.
      */
     public void putAll(Map<K,V> map){
         stateSynchronizer.updateState(state -> {
@@ -304,37 +332,45 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         });
     }
     
-    /*
+    /**
      * If the specified key is not already associated with a value (or is mapped to null) associates it with the given 
      * value and returns null, else returns the current value.
+     * 
+     * @param key - the key at which the value should be found.
+     * @param value - the value to be entered into the map.
+     * @return - the previous value (if it existed) for the given key or null if the key did not exist before this operation.
      */
     public V putIfAbsent(K key, V value){
-        @SuppressWarnings("unchecked")
-        final V[] ret = (V[]) new Serializable[1];
+        final AtomicReference<V> ret = new AtomicReference<V>();
         
         refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
         stateSynchronizer.updateState(state -> {
             if (state.containsKey(key) && state.get(key) != null) {
-                ret[0] = state.get(key);
+                ret.set(state.get(key));
                 return Collections.emptyList();
             } else {
-                ret[0] = null;
+                ret.set(null);
                 return Collections.singletonList(new Put<K,V>(key,value));
             }
         });
-        return ret[0];
+        return ret.get();
     }
     
-    /*
+    /**
      * Removes the mapping for the specified key from this map if present.
-     * Uses the countDown to determine if it is also time to compact the SharedState after removal
+     * Uses the countDown to determine if it is also time to compact the SharedState after removal.
+     * 
+     * @param key - the key to be removed.
+     * @return - the previous value (if it existed) for the key to be removed or null if that key does not exist in the map.
      */
     public V remove(K key) {
-        final V oldValue = get(key);
+        final AtomicReference<V> oldValue = new AtomicReference<V>(null);
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key)) {
+                oldValue.set(state.get(key));
                 return Collections.singletonList(new Remove<K,V>(key));
             } else {
+                oldValue.set(null);
                 return Collections.emptyList();
             }
         });
@@ -342,21 +378,25 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         if (countdownToCompaction.decrementAndGet() <= 0) {
             compact();
         }
-        return oldValue;
+        return oldValue.get();
     }
     
-    /*
+    /**
      * Removes the entry for the specified key only if it is currently mapped to the specified value.
+     * Uses the countDown to determine if it is also time to compact the SharedState after removal
+     * 
+     * @param - the key to be removed.
+     * @param - the expected value of the key to be removed.
+     * @return - true if the key was removed, false otherwise.
      */
     public boolean remove(K key, V value){
-        MutableBoolean ret = new MutableBoolean(false);
-        
-        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
+        AtomicBoolean ret = new AtomicBoolean(false);
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
-                ret.setValue(true);
+                ret.set(true);
                 return Collections.singletonList(new Remove<K,V>(key));
             } else {
+                ret.set(false);
                 return Collections.emptyList();
             }
         });
@@ -364,57 +404,73 @@ public class SynchronizedMap<K extends Serializable, V extends Serializable> {
         if (countdownToCompaction.decrementAndGet() <= 0) {
             compact();
         }
-        return ret.isTrue();
+        return ret.get();
     }
     
-    /*
+    /**
      * Replaces the entry for the specified key only if it is currently mapped to some value.
+     * 
+     * @param key - the key whose value is to be replaced.
+     * @param value - the value to assign to the key.
+     * @return - the previous value associated with the key, or null if the key does not exist in the map.
      */
     public V replace(K key, V value){
-        final V oldValue = get(key);
-        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
+        final AtomicReference<V> oldValue = new AtomicReference<V>(null);
         stateSynchronizer.updateState(state -> {
             if (state.impl.containsKey(key)) {
+                oldValue.set(state.get(key));
                 return Collections.singletonList(new Put<K,V>(key,value));
             } else {
+                oldValue.set(null);
                 return Collections.emptyList();
             }
         });
-        return oldValue;
+        return oldValue.get();
     }
     
-    /*
+    /**
      * Replaces the entry for the specified key only if currently mapped to the specified value.
+     * 
+     * @param key - the key whose value is to be replaced.
+     * @param oldValue - the expected value of the key prior to replacement.
+     * @param newValue - the value to be assigned to the key.
+     * @return - true if the current value of the key matches oldvalue and therefore the key is updated with newValue.  False otherwise.
      */
-    public boolean replace(K key, V value, V newValue){
-        MutableBoolean ret = new MutableBoolean(false);
-        
-        refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
+    public boolean replace(K key, V oldValue, V newValue){
+        AtomicBoolean ret = new AtomicBoolean(false);
         stateSynchronizer.updateState(state -> {
-            if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
-                ret.setValue(true);
+            if (state.impl.containsKey(key) && state.impl.get(key).equals(oldValue)) {
+                ret.set(true);
                 return Collections.singletonList(new Put<K,V>(key, newValue));
             } else {
+                ret.set(false);
                 return Collections.emptyList();
             }
         });
-        return ret.isTrue();
+        return ret.get();
     }
     
-    /*
-     * Returns the number of key-value mappings in this map.
+    /**
+     * Determine the number of key-value mappings in the map.
+     * 
+     * @return - the number of key-value mappings in the map.
      */
     public int size(){
         return stateSynchronizer.getState().size();
     }
     
-    /*
-     * Returns a Collection view of the values contained in this map.
+    /**
+     * Render the set of values as a Collection.
+     * 
+     * @return - a Collection view of the values contained in this map.
      */
     public Collection<V> values(){
         return stateSynchronizer.getState().values();
     }
 
+    /**
+     * Close the SynchronizedMap.
+     */
     public void close() {
         if( stateSynchronizer != null) {
             //TODO how do you close a state synchronizer?
