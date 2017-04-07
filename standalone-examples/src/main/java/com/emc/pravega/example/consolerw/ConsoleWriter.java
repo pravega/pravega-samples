@@ -322,7 +322,6 @@ public class ConsoleWriter implements AutoCloseable {
             warn("Cannot ping transaction -- begin a transaction first.%n");
         } else {
             try {
-                System.out.format("trying ping with lease value %d%n", lease);
                 txn.ping(lease);
                 output("Transaction ping completed.%n");
             } catch (Exception e) {
