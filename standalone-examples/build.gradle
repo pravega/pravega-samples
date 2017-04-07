@@ -65,6 +65,28 @@ task startTurbineSensor(type: JavaExec) {
     }
 }
 
+task scriptConsoleWriter(type: CreateStartScripts) {
+  outputDir = file('build/scripts')
+  mainClassName = 'com.emc.pravega.example.consolerw.ConsoleWriter'
+  applicationName = 'consoleWriter'
+  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptConsoleReader(type: CreateStartScripts) {
+  outputDir = file('build/scripts')
+  mainClassName = 'com.emc.pravega.example.consolerw.ConsoleReader'
+  applicationName = 'consoleReader'
+  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startConsoleReader(type: JavaExec) {
+    main = "com.emc.pravega.example.consolerw.ConsoleReader"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+      args System.getProperty("exec.args").split()
+    }
+}
+
 task scriptSharedConfigCli(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'com.emc.pravega.example.statesynchronizer.SharedConfigCli'
@@ -80,6 +102,8 @@ distributions {
                 from project.scriptHelloWorldWriter
                 from project.scriptHelloWorldReader
                 from project.scriptTurbineSensor
+                from project.scriptConsoleWriter
+                from project.scriptConsoleReader
                 from project.scriptSharedConfigCli
             }
             into('lib') {

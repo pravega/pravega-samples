@@ -34,6 +34,7 @@ $ ./gradlew installDist
 ```
 
 The scripts can be found under the pravega-samples directory in:
+
 ```
 standalone-examples/build/install/pravega-standalone-examples/bin
 ```
@@ -115,6 +116,56 @@ All args are optional, if not included, the defaults are:
  * message - "hello world"
 
 The program writes the given message with the given routing key to the stream with given scope/stream name.
+
+## Console Reader and Writer Example
+This example includes two applications, a ConsoleReader and a ConsoleWriter.
+
+### ConsoleReader
+Use this application to launch an application that reads from a stream and emits all of the Events onto the console.
+
+Run using gradle wrapper:
+
+```
+$ ./gradlew startConsoleReader
+```
+
+or if you want don't want to take the defaults, use:
+
+```
+$ ./gradlew startConsoleReader -Dexec.args="-scope aScope -name aName -uri tcp://localhost:9090"
+```
+
+The example can also be executed by running the script (make sure you have followed the "Generate the Scripts..." step above).
+```
+$ cd standalone-examples/build/install/pravega-standalone-examples
+$ ./bin/consoleReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
+```
+
+All args are optional, if not included, the defaults are:
+
+ * scope - "examples"
+ * name - "some_stream" 
+ * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
+
+### ConsoleWriter
+Use this application to write to streams or transactions, and manage transactions.
+
+The application uses the console to present an interactive DSL environment that presents operations to write events to
+a stream or into a transaction.  In addition, it presents operations to begin, commit, abort, ping, check status on and 
+retrieve the id of a transaction.
+
+ConsoleWriter MUST be run using the scripts.  Gradle interferes with console I/O.  Make sure you have followed the "Generate the Scripts..." step above.
+
+```
+$ cd standalone-examples/build/install/pravega-standalone-examples
+$ ./bin/consoleWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
+```
+
+All args are optional, if not included, the defaults are:
+
+ * scope - "examples"
+ * name - "some_stream" 
+ * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 ## State Synchronizer
 This example illustrates the use of the Pravega StateSynchronizer.
