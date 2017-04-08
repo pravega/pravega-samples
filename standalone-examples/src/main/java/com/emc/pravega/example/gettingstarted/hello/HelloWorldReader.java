@@ -28,8 +28,8 @@ import com.emc.pravega.stream.impl.JavaSerializer;
  * A simple example app that uses a Pravega Reader to read from a given scope and stream.
  */
 public class HelloWorldReader {
-    private static final String DEFAULT_SCOPE = "hello_scope";
-    private static final String DEFAULT_STREAM_NAME = "hello_stream";
+    private static final String DEFAULT_SCOPE = "helloScope";
+    private static final String DEFAULT_STREAM_NAME = "helloStream";
     private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
     
     private static final int READER_TIMEOUT_MS = 2000;
