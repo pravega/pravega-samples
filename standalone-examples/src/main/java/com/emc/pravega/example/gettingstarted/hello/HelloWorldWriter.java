@@ -18,8 +18,8 @@ import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
 public class HelloWorldWriter {
-    private static final String DEFAULT_SCOPE = "hello_scope";
-    private static final String DEFAULT_STREAM_NAME = "hello_stream";
+    private static final String DEFAULT_SCOPE = "helloScope";
+    private static final String DEFAULT_STREAM_NAME = "helloStream";
     private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
     private static final String DEFAULT_ROUTING_KEY = "hello_routingKey";
     private static final String DEFAULT_MESSAGE = "hello world";
