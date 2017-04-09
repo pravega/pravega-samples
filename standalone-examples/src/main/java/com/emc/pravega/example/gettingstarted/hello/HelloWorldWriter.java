@@ -1,3 +1,8 @@
+/**
+ *
+ *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ *
+ */
 package com.emc.pravega.example.gettingstarted.hello;
 
 import java.net.URI;
@@ -17,12 +22,10 @@ import com.emc.pravega.stream.ScalingPolicy;
 import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
+/**
+ * A simple example app that uses a Pravega Writer to write to a given scope and stream.
+ */
 public class HelloWorldWriter {
-    private static final String DEFAULT_SCOPE = "helloScope";
-    private static final String DEFAULT_STREAM_NAME = "helloStream";
-    private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
-    private static final String DEFAULT_ROUTING_KEY = "hello_routingKey";
-    private static final String DEFAULT_MESSAGE = "hello world";
 
     public final String scope;
     public final String streamName;
@@ -66,15 +69,15 @@ public class HelloWorldWriter {
             formatter.printHelp("HelloWorldWriter", options);
         }
 
-        final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
-        final String streamName = cmd.getOptionValue("name") == null ? DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
-        final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
         
         HelloWorldWriter hww = new HelloWorldWriter(scope, streamName, controllerURI);
         
-        final String routingKey = cmd.getOptionValue("routingKey") == null ? DEFAULT_ROUTING_KEY : cmd.getOptionValue("routingKey");
-        final String message = cmd.getOptionValue("message") == null ? DEFAULT_MESSAGE : cmd.getOptionValue("message");
+        final String routingKey = cmd.getOptionValue("routingKey") == null ? Constants.DEFAULT_ROUTING_KEY : cmd.getOptionValue("routingKey");
+        final String message = cmd.getOptionValue("message") == null ? Constants.DEFAULT_MESSAGE : cmd.getOptionValue("message");
         hww.run(routingKey, message);
     }
 

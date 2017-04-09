@@ -1,3 +1,8 @@
+/**
+ *
+ *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ *
+ */
 package com.emc.pravega.example.statesynchronizer;
 
 import java.io.BufferedReader;
@@ -25,8 +30,8 @@ import com.emc.pravega.StreamManager;
  * A simple console-based "interpreter" to invoke simple commands against a SharedConfig object.
  */
 public class SharedConfigCli implements AutoCloseable{
-    private static final String DEFAULT_SCOPE = "some_scope";
-    private static final String DEFAULT_CONFIG_NAME = "some_config";
+    private static final String DEFAULT_SCOPE = "example";
+    private static final String DEFAULT_CONFIG_NAME = "someConfig";
     private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
     
     private static final String[] HELP_TEXT = {

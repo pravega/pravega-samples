@@ -1,3 +1,8 @@
+/**
+ *
+ *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ *
+ */
 package com.emc.pravega.example.gettingstarted.hello;
 
 import java.net.URI;
@@ -24,14 +29,10 @@ import com.emc.pravega.stream.Sequence;
 import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
-/*
+/**
  * A simple example app that uses a Pravega Reader to read from a given scope and stream.
  */
 public class HelloWorldReader {
-    private static final String DEFAULT_SCOPE = "helloScope";
-    private static final String DEFAULT_STREAM_NAME = "helloStream";
-    private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
-    
     private static final int READER_TIMEOUT_MS = 2000;
 
     public final String scope;
@@ -92,9 +93,9 @@ public class HelloWorldReader {
             formatter.printHelp("HelloWorldReader", options);
         }
         
-        final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
-        final String streamName = cmd.getOptionValue("name") == null ? DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
-        final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
         
         HelloWorldReader hwr = new HelloWorldReader(scope, streamName, controllerURI);

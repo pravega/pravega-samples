@@ -80,8 +80,8 @@ $ ./bin/helloWorldReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1
 
 All args are optional, if not included, the defaults are:
 
- * scope - "hello_scope"
- * name - "hello_stream" 
+ * scope - "examples"
+ * name - "helloStream" 
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 The program reads all the events from the stream with given scope/stream name and prints each event to the console.
@@ -109,10 +109,10 @@ $ ./bin/helloWorldWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1
 
 All args are optional, if not included, the defaults are:
 
- * scope - "hello_scope"
- * name - "hello_stream" 
+ * scope - "examples"
+ * name - "helloStream" 
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
- * routingKey - "hello_routingKey"
+ * routingKey - "helloRoutingKey"
  * message - "hello world"
 
 The program writes the given message with the given routing key to the stream with given scope/stream name.
@@ -144,7 +144,7 @@ $ ./bin/consoleReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:90
 All args are optional, if not included, the defaults are:
 
  * scope - "examples"
- * name - "some_stream" 
+ * name - "someStream" 
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 ### ConsoleWriter
@@ -164,7 +164,7 @@ $ ./bin/consoleWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:90
 All args are optional, if not included, the defaults are:
 
  * scope - "examples"
- * name - "some_stream" 
+ * name - "someStream" 
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 ## State Synchronizer
