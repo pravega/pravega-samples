@@ -50,13 +50,13 @@ public class HelloWorldReader {
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
                 .build();
         StreamManager streamManager = StreamManager.create(controllerURI);
-        streamManager.createScope(scope);
+        final boolean scopeIsNew = streamManager.createScope(scope);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
-        streamManager.createStream(scope, streamName, streamConfig);
+        final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
@@ -67,18 +67,20 @@ public class HelloWorldReader {
                                                                            readerGroup,
                                                                            new JavaSerializer<String>(),
                                                                            ReaderConfig.builder().build())) {
-            System.out.format("******** Reading all the events from %s/%s%n", scope, streamName);
+            System.out.format("Reading all the events from %s/%s%n", scope, streamName);
             EventRead<String> event = null;
             do {
                 try {
                     event = reader.readNextEvent(READER_TIMEOUT_MS);
-                    System.out.format("******** Read event '%s'%n", event.getEvent());
+                    if (event.getEvent() != null) {
+                        System.out.format("Read event '%s'%n", event.getEvent());
+                    }
                 } catch (ReinitializationRequiredException e) {
                     //There are certain circumstances where the reader needs to be reinitialized
                     e.printStackTrace();
                 }
             } while (event.getEvent() != null);
-            System.out.format("******** No more events from %s/%s%n", scope, streamName);
+            System.out.format("No more events from %s/%s%n", scope, streamName);
         }
     }
 

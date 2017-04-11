@@ -39,20 +39,20 @@ public class HelloWorldWriter {
 
     public void run(String routingKey, String message) {
         StreamManager streamManager = StreamManager.create(controllerURI);
-        streamManager.createScope(scope);
+        final boolean scopeIsNew = streamManager.createScope(scope);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
-        streamManager.createStream(scope, streamName, streamConfig);
+        final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
              EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                                                                                  new JavaSerializer<String>(),
                                                                                  EventWriterConfig.builder().build())) {
             
-            System.out.format("******** Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
+            System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
             writer.writeEvent(routingKey, message);
         }
