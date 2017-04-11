@@ -16,6 +16,7 @@ import org.apache.commons.cli.ParseException;
 
 import com.emc.pravega.ClientFactory;
 import com.emc.pravega.StreamManager;
+import com.emc.pravega.stream.AckFuture;
 import com.emc.pravega.stream.EventStreamWriter;
 import com.emc.pravega.stream.EventWriterConfig;
 import com.emc.pravega.stream.ScalingPolicy;
@@ -44,7 +45,6 @@ public class HelloWorldWriter {
         StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
-
         final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
@@ -54,7 +54,7 @@ public class HelloWorldWriter {
             
             System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
-            writer.writeEvent(routingKey, message);
+            final AckFuture writeFuture = writer.writeEvent(routingKey, message);
         }
     }
 

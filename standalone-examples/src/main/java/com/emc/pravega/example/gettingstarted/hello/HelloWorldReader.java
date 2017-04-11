@@ -46,18 +46,17 @@ public class HelloWorldReader {
     }
 
     public void run() {
-        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
-        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
-                .build();
         StreamManager streamManager = StreamManager.create(controllerURI);
+        
         final boolean scopeIsNew = streamManager.createScope(scope);
-
         StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
-
         final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
+        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
+                .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
         }
