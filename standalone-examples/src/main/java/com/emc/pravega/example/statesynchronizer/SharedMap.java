@@ -214,7 +214,7 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
     public SharedMap(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
         streamManager.createScope(scope);
         
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(name)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
         
