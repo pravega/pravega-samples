@@ -1,3 +1,8 @@
+/**
+ *
+ *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ *
+ */
 package com.emc.pravega.example.gettingstarted.hello;
 
 import java.net.URI;
@@ -24,14 +29,10 @@ import com.emc.pravega.stream.Sequence;
 import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
-/*
+/**
  * A simple example app that uses a Pravega Reader to read from a given scope and stream.
  */
 public class HelloWorldReader {
-    private static final String DEFAULT_SCOPE = "helloScope";
-    private static final String DEFAULT_STREAM_NAME = "helloStream";
-    private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
-    
     private static final int READER_TIMEOUT_MS = 2000;
 
     public final String scope;
@@ -45,18 +46,17 @@ public class HelloWorldReader {
     }
 
     public void run() {
-        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
-        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
-                .build();
         StreamManager streamManager = StreamManager.create(controllerURI);
-        streamManager.createScope(scope);
-
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        
+        final boolean scopeIsNew = streamManager.createScope(scope);
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
+        final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
-        streamManager.createStream(scope, streamName, streamConfig);
-
+        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
+                .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
         }
@@ -66,18 +66,20 @@ public class HelloWorldReader {
                                                                            readerGroup,
                                                                            new JavaSerializer<String>(),
                                                                            ReaderConfig.builder().build())) {
-            System.out.format("******** Reading all the events from %s/%s%n", scope, streamName);
+            System.out.format("Reading all the events from %s/%s%n", scope, streamName);
             EventRead<String> event = null;
             do {
                 try {
                     event = reader.readNextEvent(READER_TIMEOUT_MS);
-                    System.out.format("******** Read event '%s'%n", event.getEvent());
+                    if (event.getEvent() != null) {
+                        System.out.format("Read event '%s'%n", event.getEvent());
+                    }
                 } catch (ReinitializationRequiredException e) {
                     //There are certain circumstances where the reader needs to be reinitialized
                     e.printStackTrace();
                 }
             } while (event.getEvent() != null);
-            System.out.format("******** No more events from %s/%s%n", scope, streamName);
+            System.out.format("No more events from %s/%s%n", scope, streamName);
         }
     }
 
@@ -92,9 +94,9 @@ public class HelloWorldReader {
             formatter.printHelp("HelloWorldReader", options);
         }
         
-        final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
-        final String streamName = cmd.getOptionValue("name") == null ? DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
-        final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
         
         HelloWorldReader hwr = new HelloWorldReader(scope, streamName, controllerURI);

@@ -1,6 +1,8 @@
 
 apply plugin: 'java'
 apply plugin: 'distribution'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 sourceCompatibility = 1.8
 archivesBaseName = 'pravega-standalone-examples'

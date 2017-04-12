@@ -1,3 +1,8 @@
+/**
+ *
+ *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ *
+ */
 package com.emc.pravega.example.gettingstarted.hello;
 
 import java.net.URI;
@@ -11,18 +16,17 @@ import org.apache.commons.cli.ParseException;
 
 import com.emc.pravega.ClientFactory;
 import com.emc.pravega.StreamManager;
+import com.emc.pravega.stream.AckFuture;
 import com.emc.pravega.stream.EventStreamWriter;
 import com.emc.pravega.stream.EventWriterConfig;
 import com.emc.pravega.stream.ScalingPolicy;
 import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
+/**
+ * A simple example app that uses a Pravega Writer to write to a given scope and stream.
+ */
 public class HelloWorldWriter {
-    private static final String DEFAULT_SCOPE = "helloScope";
-    private static final String DEFAULT_STREAM_NAME = "helloStream";
-    private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
-    private static final String DEFAULT_ROUTING_KEY = "hello_routingKey";
-    private static final String DEFAULT_MESSAGE = "hello world";
 
     public final String scope;
     public final String streamName;
@@ -36,22 +40,21 @@ public class HelloWorldWriter {
 
     public void run(String routingKey, String message) {
         StreamManager streamManager = StreamManager.create(controllerURI);
-        streamManager.createScope(scope);
+        final boolean scopeIsNew = streamManager.createScope(scope);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
-
-        streamManager.createStream(scope, streamName, streamConfig);
+        final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
              EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                                                                                  new JavaSerializer<String>(),
                                                                                  EventWriterConfig.builder().build())) {
             
-            System.out.format("******** Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
+            System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
-            writer.writeEvent(routingKey, message);
+            final AckFuture writeFuture = writer.writeEvent(routingKey, message);
         }
     }
 
@@ -66,15 +69,15 @@ public class HelloWorldWriter {
             formatter.printHelp("HelloWorldWriter", options);
         }
 
-        final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
-        final String streamName = cmd.getOptionValue("name") == null ? DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
-        final String uriString = cmd.getOptionValue("uri") == null ? DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
         
         HelloWorldWriter hww = new HelloWorldWriter(scope, streamName, controllerURI);
         
-        final String routingKey = cmd.getOptionValue("routingKey") == null ? DEFAULT_ROUTING_KEY : cmd.getOptionValue("routingKey");
-        final String message = cmd.getOptionValue("message") == null ? DEFAULT_MESSAGE : cmd.getOptionValue("message");
+        final String routingKey = cmd.getOptionValue("routingKey") == null ? Constants.DEFAULT_ROUTING_KEY : cmd.getOptionValue("routingKey");
+        final String message = cmd.getOptionValue("message") == null ? Constants.DEFAULT_MESSAGE : cmd.getOptionValue("message");
         hww.run(routingKey, message);
     }
 
