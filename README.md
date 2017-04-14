@@ -9,7 +9,7 @@ _Be sure to use the `r0.0-alpha` branch for compatibility with the Alpha release
 
 Install the Pravega client libraries to your local Maven repository:
 ```
-$./gradlew publishMavenPublicationToMavenLocal
+$./gradlew publishMavenPublicationToMavenLocal connectors:flink:publishShadowPublicationToMavenLocal
 ```
 
 ### Building the Samples
