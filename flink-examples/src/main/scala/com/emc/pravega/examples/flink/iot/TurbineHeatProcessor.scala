@@ -7,12 +7,12 @@ package com.emc.pravega.examples.flink.iot
 
 import java.net.URI
 
+import com.emc.pravega.StreamManager
 import com.emc.pravega.connectors.flink.FlinkPravegaReader
-import com.emc.pravega.examples.flink.util.Streams._
 import com.emc.pravega.examples.flink.util.serialization.PravegaDeserializationSchema
 import com.emc.pravega.examples.flink.util.PravegaParameters
-import com.emc.pravega.stream.impl.{ControllerImpl, JavaSerializer}
-import org.apache.flink.api.java.tuple.{Tuple => FlinkTuple}
+import com.emc.pravega.stream.{ScalingPolicy, StreamConfiguration}
+import com.emc.pravega.stream.impl.JavaSerializer
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -22,8 +22,6 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 
 import scala.collection.JavaConversions._
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.math._
 
 /**
@@ -116,9 +114,15 @@ object TurbineHeatProcessor {
     * Ensure that the configured Pravega stream exists.
     */
   private def ensureStream(params: Parameters) = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    implicit val controller = new ControllerImpl(params.controllerUri.getHost, params.controllerUri.getPort)
-    Await.result(createScope(params.scope).flatMap(createStream(_, params.stream)), 1 minute)
+    val streamManager = StreamManager.create(params.controllerUri)
+
+    // create the scope (if necessary)
+    streamManager.createScope(params.scope)
+
+    // create the stream (if necessary)
+    val streamConfig = StreamConfiguration.builder
+      .scope(params.scope).streamName(params.stream).scalingPolicy(ScalingPolicy.fixed(1)).build
+    streamManager.createStream(params.scope, params.stream, streamConfig)
   }
 
   /**
