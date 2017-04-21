@@ -1,0 +1,20 @@
+{
+  "name": "anomaly-detection",
+  "producer": {
+    "latencyInMilliSec": 1000,
+    "capacity": 100,
+    "errorProbFactor": 0.1
+  },
+  "pipeline": {
+    "parallelism": 1,
+    "checkpointIntervalInMilliSec": 1000
+  },
+  "pravega": {
+    "controllerUri": "tcp://127.0.0.1:9090",
+    "stream": "NetworkPacket",
+    "scope": "Network",
+    "writer": {
+      "routingKey": "NetworkEvent"
+    }
+  }
+}

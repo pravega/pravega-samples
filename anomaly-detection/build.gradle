@@ -1,0 +1,61 @@
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
+}
+
+apply plugin: "java"
+apply plugin: "distribution"
+apply plugin: 'application'
+
+sourceCompatibility = "1.8"
+
+mainClassName = 'com.emc.pravega.ApplicationMain'
+applicationDefaultJvmArgs = ["-Dlogging.config=file:conf/logback-cli.xml"]
+
+archivesBaseName = 'pravega-flink-anomaly-detection'
+
+dependencies {
+    compile "org.slf4j:slf4j-api:1.7.7"
+    compile "com.emc.pravega:pravega-connectors-flink-shaded_2.11:${pravegaVersion}:all"
+    compileOnly group: 'org.apache.flink', name: 'flink-streaming-java_2.11', version: '1.2.0'
+    compileOnly group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: '1.2.0'
+
+    compile "com.emc.pravega:pravega-clients:${pravegaVersion}",
+            "com.emc.pravega:pravega-common:${pravegaVersion}"
+}
+
+shadowJar {
+    dependencies {
+        include dependency("com.emc.pravega:pravega-connectors-flink-shaded_2.11")
+    }
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+            }
+            into('conf') {
+                from(project.file('src/main/resources/log4j.properties'))
+                from(project.file('src/main/resources/logback.xml'))
+                from(project.file('src/main/resources/app.json'))
+            }
+        }
+    }
+}
+
+run {
+    standardInput = System.in
+
+    if (project.hasProperty("argsList")) {
+        args(argsList.split(' '))
+    }
+
+    /*
+        Ths is how application can be executed using gradle run
+        ./gradlew anomaly-detection:run -PargsList="--configDir <CONFIG_PATH> --mode <RUN_MODE>"
+     */
+}

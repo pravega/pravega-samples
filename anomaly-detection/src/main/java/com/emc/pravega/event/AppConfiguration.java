@@ -1,0 +1,147 @@
+/**
+ *
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ *
+ */
+package com.emc.pravega.event;
+
+public class AppConfiguration {
+	private String name;
+	private Producer producer;
+	private Pipeline pipeline;
+	private Pravega pravega;
+
+	public static class Producer {
+		private long latencyInMilliSec;
+		private int capacity;
+		private double errorProbFactor;
+
+		public long getLatencyInMilliSec() {
+			return latencyInMilliSec;
+		}
+
+		public void setLatencyInMilliSec(long latencyInMilliSec) {
+			this.latencyInMilliSec = latencyInMilliSec;
+		}
+
+		public int getCapacity() {
+			return capacity;
+		}
+
+		public void setCapacity(int capacity) {
+			this.capacity = capacity;
+		}
+
+		public double getErrorProbFactor() {
+			return errorProbFactor;
+		}
+
+		public void setErrorProbFactor(double errorProbFactor) {
+			this.errorProbFactor = errorProbFactor;
+		}
+	}
+
+	public static class Pipeline {
+		private int parallelism;
+		private long checkpointIntervalInMilliSec;
+
+		public int getParallelism() {
+			return parallelism;
+		}
+
+		public void setParallelism(int parallelism) {
+			this.parallelism = parallelism;
+		}
+
+		public long getCheckpointIntervalInMilliSec() {
+			return checkpointIntervalInMilliSec;
+		}
+
+		public void setCheckpointIntervalInMilliSec(long checkpointIntervalInMilliSec) {
+			this.checkpointIntervalInMilliSec = checkpointIntervalInMilliSec;
+		}
+	}
+
+	public static class Pravega {
+		private String controllerUri;
+		private String stream;
+		private String scope;
+		private Writer writer;
+
+		public String getControllerUri() {
+			return controllerUri;
+		}
+
+		public void setControllerUri(String controllerUri) {
+			this.controllerUri = controllerUri;
+		}
+
+		public String getStream() {
+			return stream;
+		}
+
+		public void setStream(String stream) {
+			this.stream = stream;
+		}
+
+		public String getScope() {
+			return scope;
+		}
+
+		public void setScope(String scope) {
+			this.scope = scope;
+		}
+
+		public Writer getWriter() {
+			return writer;
+		}
+
+		public void setWriter(Writer writer) {
+			this.writer = writer;
+		}
+	}
+
+	public static class Writer {
+		private String routingKey;
+
+		public String getRoutingKey() {
+			return routingKey;
+		}
+
+		public void setRoutingKey(String routingKey) {
+			this.routingKey = routingKey;
+		}
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Producer getProducer() {
+		return producer;
+	}
+
+	public void setProducer(Producer producer) {
+		this.producer = producer;
+	}
+
+	public Pipeline getPipeline() {
+		return pipeline;
+	}
+
+	public void setPipeline(Pipeline pipeline) {
+		this.pipeline = pipeline;
+	}
+
+	public Pravega getPravega() {
+		return pravega;
+	}
+
+	public void setPravega(Pravega pravega) {
+		this.pravega = pravega;
+	}
+}

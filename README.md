@@ -7,6 +7,8 @@ Sample applications for Pravega.
 
 _Be sure to use the `r0.0-alpha` branch for compatibility with the Alpha release._
 
+_Note: Take this patch from https://github.com/pravega/pravega/issues/1046_
+
 Install the Pravega client libraries to your local Maven repository:
 ```
 $./gradlew publishMavenPublicationToMavenLocal connectors:flink:publishShadowPublicationToMavenLocal
