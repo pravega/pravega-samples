@@ -3,7 +3,7 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.consolerw;
+package io.pravega.example.consolerw;
 
 import java.io.BufferedReader;
 import java.io.IOException;
