@@ -3,7 +3,7 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.statesynchronizer;
+package io.pravega.example.statesynchronizer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -366,7 +366,7 @@ public class SharedConfigCli implements AutoCloseable{
         } catch (ParseException e) {
             e.printStackTrace();
             final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("HelloWorldWriter", options);
+            formatter.printHelp("Shared Config CLI", options);
         }
 
         final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");

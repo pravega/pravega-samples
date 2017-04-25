@@ -1,4 +1,4 @@
-package com.emc.pravega.example.iot;
+package io.pravega.example.iot;
 
 import com.emc.pravega.ClientFactory;
 import com.emc.pravega.ReaderGroupManager;

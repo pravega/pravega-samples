@@ -3,7 +3,7 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.statesynchronizer;
+package io.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
 import java.util.Map;

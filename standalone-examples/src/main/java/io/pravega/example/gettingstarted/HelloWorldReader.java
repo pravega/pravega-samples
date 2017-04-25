@@ -3,7 +3,7 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.consolerw;
+package io.pravega.example.gettingstarted;
 
 import java.net.URI;
 import java.util.Collections;
@@ -19,7 +19,6 @@ import org.apache.commons.cli.ParseException;
 import com.emc.pravega.ClientFactory;
 import com.emc.pravega.ReaderGroupManager;
 import com.emc.pravega.StreamManager;
-import com.emc.pravega.example.gettingstarted.hello.HelloWorldReader;
 import com.emc.pravega.stream.EventRead;
 import com.emc.pravega.stream.EventStreamReader;
 import com.emc.pravega.stream.ReaderConfig;
@@ -31,35 +30,33 @@ import com.emc.pravega.stream.StreamConfiguration;
 import com.emc.pravega.stream.impl.JavaSerializer;
 
 /**
- * Reads from a Stream until interrupted.
+ * A simple example app that uses a Pravega Reader to read from a given scope and stream.
  */
-public class ConsoleReader {
-    
-    private static final int READER_TIMEOUT_MS = 200000;
-    
+public class HelloWorldReader {
+    private static final int READER_TIMEOUT_MS = 2000;
+
     public final String scope;
     public final String streamName;
     public final URI controllerURI;
 
-    public ConsoleReader(String scope, String streamName, URI controllerURI) {
+    public HelloWorldReader(String scope, String streamName, URI controllerURI) {
         this.scope = scope;
         this.streamName = streamName;
         this.controllerURI = controllerURI;
     }
-    
-    public void run() {
-        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
-        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
-                .build();
-        StreamManager streamManager = StreamManager.create(controllerURI);
-        streamManager.createScope(scope);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+    public void run() {
+        StreamManager streamManager = StreamManager.create(controllerURI);
+        
+        final boolean scopeIsNew = streamManager.createScope(scope);
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
+        final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
-        streamManager.createStream(scope, streamName, streamConfig);
-
+        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
+                .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
         }
@@ -69,23 +66,23 @@ public class ConsoleReader {
                                                                            readerGroup,
                                                                            new JavaSerializer<String>(),
                                                                            ReaderConfig.builder().build())) {
-            System.out.format("******** Reading events from %s/%s%n", scope, streamName);
+            System.out.format("Reading all the events from %s/%s%n", scope, streamName);
             EventRead<String> event = null;
             do {
                 try {
                     event = reader.readNextEvent(READER_TIMEOUT_MS);
-                    if(event != null) {
-                        System.out.format("'%s'%n", event.getEvent());
+                    if (event.getEvent() != null) {
+                        System.out.format("Read event '%s'%n", event.getEvent());
                     }
                 } catch (ReinitializationRequiredException e) {
                     //There are certain circumstances where the reader needs to be reinitialized
                     e.printStackTrace();
                 }
-            }while(true);
+            } while (event.getEvent() != null);
+            System.out.format("No more events from %s/%s%n", scope, streamName);
         }
     }
 
-    
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLine cmd = null;
@@ -94,7 +91,7 @@ public class ConsoleReader {
         } catch (ParseException e) {
             e.printStackTrace();
             final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("ConsoleReader", options);
+            formatter.printHelp("HelloWorldReader", options);
         }
         
         final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
@@ -102,8 +99,8 @@ public class ConsoleReader {
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
         
-        ConsoleReader reader = new ConsoleReader(scope, streamName, controllerURI);
-        reader.run();
+        HelloWorldReader hwr = new HelloWorldReader(scope, streamName, controllerURI);
+        hwr.run();
     }
 
     private static Options getOptions() {
@@ -119,5 +116,4 @@ public class ConsoleReader {
         CommandLine cmd = parser.parse(options, args);
         return cmd;
     }
-
 }
