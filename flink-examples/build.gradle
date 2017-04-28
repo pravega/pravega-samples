@@ -20,7 +20,7 @@ dependencies {
 shadowJar {
     dependencies {
         include dependency("org.scala-lang.modules:scala-java8-compat_2.11")
-        include dependency("io.pravega:pravega-connectors-flink-shaded_2.11")
+        include dependency("io.pravega:pravega-connectors-flink_2.11")
     }
 }
 
