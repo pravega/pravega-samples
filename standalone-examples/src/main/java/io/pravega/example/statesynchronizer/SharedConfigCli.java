@@ -23,8 +23,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.emc.pravega.ClientFactory;
-import com.emc.pravega.StreamManager;
+import io.pravega.ClientFactory;
+import io.pravega.StreamManager;
 
 /*
  * A simple console-based "interpreter" to invoke simple commands against a SharedConfig object.

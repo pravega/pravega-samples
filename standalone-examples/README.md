@@ -4,6 +4,7 @@ These applications only need a running Pravega to execute against.
 ## Pre requisites
 1. download pravega from https://github.com/pravega/pravega
 2. start the singleNode version by running
+2. start the singleNode version by running
 
 ```
 $ ./gradlew startSingleNode

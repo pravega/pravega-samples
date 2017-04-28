@@ -5,8 +5,6 @@ Sample applications for Pravega.
 ## Getting Started
 ### Building Pravega
 
-_Be sure to use the `r0.0-alpha` branch for compatibility with the Alpha release._
-
 Install the Pravega client libraries to your local Maven repository:
 ```
 $./gradlew publishMavenPublicationToMavenLocal connectors:flink:publishShadowPublicationToMavenLocal
@@ -66,7 +64,7 @@ $ bin/run-example.sh [--controller <URI>] [--scope <name>] [--stream <name>]
 
 Alternately, run the sample from the Flink UI.
 - JAR: `pravega-flink-examples-0.0-PRERELEASE-all.jar`
-- Main class: `com.emc.pravega.examples.flink.iot.TurbineHeatProcessor`
+- Main class: `io.pravega.examples.flink.iot.TurbineHeatProcessor`
 
 #### Outputs
 The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day.   The data is

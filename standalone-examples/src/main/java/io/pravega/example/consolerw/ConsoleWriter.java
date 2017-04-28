@@ -23,17 +23,17 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.emc.pravega.ClientFactory;
-import com.emc.pravega.StreamManager;
-import com.emc.pravega.stream.AckFuture;
-import com.emc.pravega.stream.EventStreamWriter;
-import com.emc.pravega.stream.EventWriterConfig;
-import com.emc.pravega.stream.ScalingPolicy;
-import com.emc.pravega.stream.StreamConfiguration;
-import com.emc.pravega.stream.Transaction;
-import com.emc.pravega.stream.Transaction.Status;
-import com.emc.pravega.stream.TxnFailedException;
-import com.emc.pravega.stream.impl.JavaSerializer;
+import io.pravega.ClientFactory;
+import io.pravega.StreamManager;
+import io.pravega.stream.AckFuture;
+import io.pravega.stream.EventStreamWriter;
+import io.pravega.stream.EventWriterConfig;
+import io.pravega.stream.ScalingPolicy;
+import io.pravega.stream.StreamConfiguration;
+import io.pravega.stream.Transaction;
+import io.pravega.stream.Transaction.Status;
+import io.pravega.stream.TxnFailedException;
+import io.pravega.stream.impl.JavaSerializer;
 
 /**
  * Uses the Console to present a CLI to write events to a Stream or a Transaction.
