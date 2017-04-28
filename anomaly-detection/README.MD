@@ -30,14 +30,12 @@ Getting Started
 
 _Be sure to use the `r0.0-alpha` branch for compatibility with the Alpha release._
 
-_Note: Take this patch from https://github.com/pravega/pravega/issues/1046_
-
 Install the Pravega client libraries to your local Maven repository:
 ```
 $./gradlew publishMavenPublicationToMavenLocal connectors:flink:publishShadowPublicationToMavenLocal
 ```
 
-### Building Example 
+### Building and Running Example
 
 Clone the repository and run `mvn clean build` to build the repository.
 
@@ -90,13 +88,21 @@ Application Configuration
 {
   "name": "anomaly-detection",
   "producer": {
-    "latencyInMilliSec": 1000,
+    "latencyInMilliSec": 100,
     "capacity": 100,
-    "errorProbFactor": 0.1
+    "errorProbFactor": 0.4
   },
   "pipeline": {
     "parallelism": 1,
-    "checkpointIntervalInMilliSec": 1000
+    "checkpointIntervalInMilliSec": 1000,
+    "elasticSearch": {
+      "sinkResults": true,
+      "host": "127.0.0.1",
+      "port": 9300,
+      "cluster": "elasticsearch",
+      "index": "anomaly-index",
+      "type":"anomalies"
+    }
   },
   "pravega": {
     "controllerUri": "tcp://127.0.0.1:9090",
@@ -118,4 +124,50 @@ Application Configuration
 
 `parallelism` - Flink job parallelism
 
-`controllerUri` - change the value to `tcp://controller-pravega.marathon.mesos:9091` while testing in Nautilus cluster 
+`controllerUri` - change the value to `tcp://controller-pravega.marathon.mesos:9091` while testing in Nautilus cluster
+ 
+ `elasticSearch` - Final results will be sinked to elasticsearch if `sinkResults` is set to `true`
+ 
+ 
+ Standalone Deployment
+ ---------------------
+ 
+ Follow below steps to deploy and run both Pravega and the example (including elasticsearch/kibana). 
+ 
+ The steps are tested on Ubuntu 16.x OS/docker 1.13.1/JDK8
+ 
+**Run Pravega**
+
+Run `./gradlew startSinglenode` to start `Pravega` on stand-alone mode from the root of Pravega cloned repository
+ 
+**Install Elastic Search and Kibana**
+
+```
+Install Elastic Search
+sudo mkdir -p /elk-stack/esdata
+sudo chmod 777 -R /elk-stack/
+docker run -d --name elasticsearch  -p 9200:9200 -p 9300:9300 -v /elk-stack/esdata:/usr/share/elasticsearch/data elasticsearch:2.4
+
+Verify if ES is running by executing the command: 
+curl -X GET http://localhost:9200
+
+Install Kibana
+docker run --name kibana --link elasticsearch:elasticsearch -p 5601:5601 -d kibana
+
+Verfiy by going to the URL: http://localhost:5601
+
+```
+
+**Run Sample Application**
+
+```
+Running below command will create Pravega stream as provided in the app.json 
+./gradlew anomaly-detection:run -PargsList="--configDir /softlinks --mode 4"
+
+Running below command will start pumping sample data to Pravega
+./gradlew anomaly-detection:run -PargsList="--configDir /softlinks --mode 1"
+
+Running below command will start the anomaly detection application
+./gradlew anomaly-detection:run -PargsList="--configDir /softlinks --mode 2"
+
+```

@@ -5,21 +5,28 @@
  */
 package com.emc.pravega.event.pipeline;
 
-import com.emc.pravega.StreamManager;
 import com.emc.pravega.connectors.flink.FlinkPravegaReader;
 import com.emc.pravega.event.AppConfiguration;
 import com.emc.pravega.event.serialization.PravegaDeserializationSchema;
 import com.emc.pravega.event.state.Event;
+import com.emc.pravega.event.state.Result;
 import com.emc.pravega.shaded.com.google.common.collect.Sets;
+import com.emc.pravega.shaded.com.google.gson.Gson;
 import com.emc.pravega.stream.impl.JavaSerializer;
 import org.apache.flink.api.common.functions.FoldFunction;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-
+import org.apache.flink.streaming.connectors.elasticsearch2.ElasticsearchSink;
+import org.apache.flink.streaming.connectors.elasticsearch2.ElasticsearchSinkFunction;
+import org.apache.flink.streaming.connectors.elasticsearch2.RequestIndexer;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Requests;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.*;
 
@@ -59,15 +66,18 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 
 		detector.print().name("anomalies");
 
-		Map<String, List<Event.Alert>> resultsMap = new HashMap<>();
-
 		long windowIntervalInSeconds = 30;
-		DataStream<Map<String, List<Event.Alert>>> aggregate = detector.keyBy("networkId")
+		DataStream<Result> aggregate = detector.keyBy("networkId")
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
-				.fold(resultsMap, new FoldEvents())
+				.fold(new Result(), new FoldAlertsToResult())
 				.name("Aggregate");
-
 		aggregate.print().name("Aggregated Results");
+
+		if(appConfiguration.getPipeline().getElasticSearch().isSinkResults()) {
+			ElasticsearchSink<Result> elasticSink = sinkToElasticSearch(appConfiguration);
+			aggregate.addSink(elasticSink).name("Elastic Search");
+			aggregate.print().name("Final Results");
+		}
 
 		env.execute(appConfiguration.getName());
 	}
@@ -83,19 +93,79 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 		}
 	}
 
-	public static class FoldEvents implements FoldFunction<Event.Alert, Map<String, List<Event.Alert>>> {
+	public static class FoldAlertsToResult implements FoldFunction<Event.Alert, Result> {
+
 		@Override
-		public Map<String, List<Event.Alert>> fold(Map<String, List<Event.Alert>> accumulator, Event.Alert alert) throws Exception {
-			if(accumulator.containsKey(alert.getNetworkId())) {
-				accumulator.get(alert.getNetworkId()).add(alert);
+		public Result fold(Result accumulator, Event.Alert value) throws Exception {
+			accumulator.setCount(accumulator.getCount() + 1);
+			accumulator.setNetworkId(value.getNetworkId());
+			accumulator.getIpAddress().add(Event.EventType.formatAddress(value.getEvent().getSourceAddress()));
+			if(accumulator.getMinTimestamp() == 0) {
+				accumulator.setMinTimestamp(Date.from(value.getEvent().getEventTime()).getTime());
+				accumulator.setMaxTimestamp(Date.from(value.getEvent().getEventTime()).getTime());
 			} else {
-				List<Event.Alert> alerts = new ArrayList<>();
-				alerts.add(alert);
-				accumulator.put(alert.getNetworkId(),alerts);
+				long ts = Date.from( value.getEvent().getEventTime()).getTime();
+				Date d1 = new Date(accumulator.getMinTimestamp());
+				Date d2 = new Date(ts);
+				if(d1.before(d2)) {
+					accumulator.setMinTimestamp(d1.getTime());
+					accumulator.setMaxTimestamp(d2.getTime());
+				} else {
+					accumulator.setMinTimestamp(d2.getTime());
+					accumulator.setMaxTimestamp(d1.getTime());
+				}
 			}
 			return accumulator;
 		}
 	}
 
+	private ElasticsearchSink sinkToElasticSearch(AppConfiguration appConfiguration) throws Exception {
+
+		String host = appConfiguration.getPipeline().getElasticSearch().getHost();
+		int port = appConfiguration.getPipeline().getElasticSearch().getPort();
+		String cluster = appConfiguration.getPipeline().getElasticSearch().getCluster();
+
+		String index = appConfiguration.getPipeline().getElasticSearch().getIndex();
+		String type = appConfiguration.getPipeline().getElasticSearch().getType();
+
+		Map<String, String> config = new HashMap<>();
+		config.put("bulk.flush.max.actions", "1");
+		config.put("cluster.name", cluster);
+		config.put("client.transport.sniff", "false");
+
+		final InetSocketAddress socketAddress = new InetSocketAddress(host,port);
+
+		List<InetSocketAddress> transports = new ArrayList<>();
+		transports.add(socketAddress);
+
+
+		return new ElasticsearchSink (config, transports, new ResultSinkFunction(index, type));
+	}
+
+	public static class ResultSinkFunction implements ElasticsearchSinkFunction<Result> {
+
+		private final String index;
+		private final String type;
+
+		public ResultSinkFunction(String index, String type) {
+			this.index = index;
+			this.type = type;
+		}
+
+		@Override
+		public void process(Result element, RuntimeContext ctx, RequestIndexer indexer) {
+			indexer.add(createIndexRequest(element));
+		}
+
+		private IndexRequest createIndexRequest(Result element) {
+			Gson gson = new Gson();
+			String resultAsJson = gson.toJson(element);
+			return Requests.indexRequest()
+					.index(index)
+					.type(type)
+					.id(element.getNetworkId())
+					.source(resultAsJson);
+		}
+	}
 
 }

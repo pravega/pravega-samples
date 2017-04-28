@@ -22,6 +22,11 @@ dependencies {
 
     compile "com.emc.pravega:pravega-clients:${pravegaVersion}",
             "com.emc.pravega:pravega-common:${pravegaVersion}"
+
+    //compile "org.apache.flink:flink-connector-elasticsearch5_2.10:1.3.0"
+    //compile "org.apache.flink:flink-connector-elasticsearch_2.11:1.2.0"
+    compile "org.apache.flink:flink-connector-elasticsearch2_2.11:1.2.0"
+    //compile "org.elasticsearch.client:transport:5.1.2"
 }
 
 shadowJar {

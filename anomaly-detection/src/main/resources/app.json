@@ -1,13 +1,21 @@
 {
   "name": "anomaly-detection",
   "producer": {
-    "latencyInMilliSec": 1000,
+    "latencyInMilliSec": 100,
     "capacity": 100,
-    "errorProbFactor": 0.1
+    "errorProbFactor": 0.4
   },
   "pipeline": {
     "parallelism": 1,
-    "checkpointIntervalInMilliSec": 1000
+    "checkpointIntervalInMilliSec": 1000,
+    "elasticSearch": {
+      "sinkResults": true,
+      "host": "127.0.0.1",
+      "port": 9300,
+      "cluster": "elasticsearch",
+      "index": "anomaly-index",
+      "type":"anomalies"
+    }
   },
   "pravega": {
     "controllerUri": "tcp://127.0.0.1:9090",

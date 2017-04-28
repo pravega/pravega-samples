@@ -5,7 +5,9 @@
  */
 package com.emc.pravega.event;
 
-public class AppConfiguration {
+import java.io.Serializable;
+
+public class AppConfiguration implements Serializable{
 	private String name;
 	private Producer producer;
 	private Pipeline pipeline;
@@ -44,6 +46,7 @@ public class AppConfiguration {
 	public static class Pipeline {
 		private int parallelism;
 		private long checkpointIntervalInMilliSec;
+		private ElasticSearch elasticSearch;
 
 		public int getParallelism() {
 			return parallelism;
@@ -59,6 +62,71 @@ public class AppConfiguration {
 
 		public void setCheckpointIntervalInMilliSec(long checkpointIntervalInMilliSec) {
 			this.checkpointIntervalInMilliSec = checkpointIntervalInMilliSec;
+		}
+
+		public ElasticSearch getElasticSearch() {
+			return elasticSearch;
+		}
+
+		public void setElasticSearch(ElasticSearch elasticSearch) {
+			this.elasticSearch = elasticSearch;
+		}
+	}
+
+	public static class ElasticSearch {
+		private boolean sinkResults;
+		private String host;
+		private int port;
+		private String cluster;
+		private String index;
+		private String type;
+
+		public boolean isSinkResults() {
+			return sinkResults;
+		}
+
+		public void setSinkResults(boolean sinkResults) {
+			this.sinkResults = sinkResults;
+		}
+
+		public String getHost() {
+			return host;
+		}
+
+		public void setHost(String host) {
+			this.host = host;
+		}
+
+		public int getPort() {
+			return port;
+		}
+
+		public void setPort(int port) {
+			this.port = port;
+		}
+
+		public String getCluster() {
+			return cluster;
+		}
+
+		public void setCluster(String cluster) {
+			this.cluster = cluster;
+		}
+
+		public String getIndex() {
+			return index;
+		}
+
+		public void setIndex(String index) {
+			this.index = index;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
 		}
 	}
 
