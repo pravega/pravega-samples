@@ -46,6 +46,9 @@ public class AppConfiguration implements Serializable{
 	public static class Pipeline {
 		private int parallelism;
 		private long checkpointIntervalInMilliSec;
+		private int watermarkOffsetInSec;
+		private int windowIntervalInSeconds;
+		private boolean disableCheckpoint;
 		private ElasticSearch elasticSearch;
 
 		public int getParallelism() {
@@ -70,6 +73,30 @@ public class AppConfiguration implements Serializable{
 
 		public void setElasticSearch(ElasticSearch elasticSearch) {
 			this.elasticSearch = elasticSearch;
+		}
+
+		public boolean isDisableCheckpoint() {
+			return disableCheckpoint;
+		}
+
+		public void setDisableCheckpoint(boolean disableCheckpoint) {
+			this.disableCheckpoint = disableCheckpoint;
+		}
+
+		public int getWatermarkOffsetInSec() {
+			return watermarkOffsetInSec;
+		}
+
+		public void setWatermarkOffsetInSec(int watermarkOffsetInSec) {
+			this.watermarkOffsetInSec = watermarkOffsetInSec;
+		}
+
+		public int getWindowIntervalInSeconds() {
+			return windowIntervalInSeconds;
+		}
+
+		public void setWindowIntervalInSeconds(int windowIntervalInSeconds) {
+			this.windowIntervalInSeconds = windowIntervalInSeconds;
 		}
 	}
 

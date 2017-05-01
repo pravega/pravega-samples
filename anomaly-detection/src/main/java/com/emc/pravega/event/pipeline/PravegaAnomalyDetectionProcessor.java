@@ -51,12 +51,14 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setParallelism(parallelism);
-		env.enableCheckpointing(checkpointInterval);
+		if(!appConfiguration.getPipeline().isDisableCheckpoint()) {
+			env.enableCheckpointing(checkpointInterval);
+		}
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
 		DataStream<Event> source = env.addSource(flinkPravegaReader).name("Event Reader");
 
-		long watermarkOffset = 5;
+		long watermarkOffset = appConfiguration.getPipeline().getWatermarkOffsetInSec();
 		DataStream<Event> timeExtractor = source.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(watermarkOffset)))
 				.name("Time Extractor");
 
@@ -66,7 +68,7 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 
 		detector.print().name("anomalies");
 
-		long windowIntervalInSeconds = 30;
+		long windowIntervalInSeconds = appConfiguration.getPipeline().getWindowIntervalInSeconds();
 		DataStream<Result> aggregate = detector.keyBy("networkId")
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
 				.fold(new Result(), new FoldAlertsToResult())
@@ -114,6 +116,9 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 					accumulator.setMinTimestamp(d2.getTime());
 					accumulator.setMaxTimestamp(d1.getTime());
 				}
+			}
+			if(accumulator.getLocation() == null) {
+				accumulator.setLocation(value.getEvent().getLatlon().getLat() + "," + value.getEvent().getLatlon().getLon());
 			}
 			return accumulator;
 		}

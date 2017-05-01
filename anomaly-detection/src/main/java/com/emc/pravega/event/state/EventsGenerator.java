@@ -53,7 +53,8 @@ public class EventsGenerator {
 			if (!states.containsKey(nextIP)) {
 				Tuple2<Event.EventType, EventStateMachine.State> stateTransitionTuple = EventStateMachine.Transitions.initialState.randomTransition(rnd);
 				states.put(nextIP, stateTransitionTuple.f1);
-				returnEvent = new Event(nextIP, stateTransitionTuple.f0, getCurrentTime(), getNetworkId());
+				String networkId = getNetworkId();
+				returnEvent = new Event(nextIP, stateTransitionTuple.f0, getCurrentTime(), networkId,getLatLon(networkId));
 			}
 			else {
 				// collision on IP address, try again
@@ -81,7 +82,8 @@ public class EventsGenerator {
 
 			if (p < errorProb) {
 				Event.EventType event = currentState.randomInvalidTransition(rnd);
-				returnEvent = new Event(address, event, getCurrentTime(), getNetworkId());
+				String networkId = getNetworkId();
+				returnEvent = new Event(address, event, getCurrentTime(), networkId,getLatLon(networkId));
 				LOG.info("**** Emitting invalid event: [{}], ", event);
 			}
 			else {
@@ -90,7 +92,8 @@ public class EventsGenerator {
 					// reinsert
 					states.put(address, stateTransitionTuple.f1);
 				}
-				returnEvent = new Event(address, stateTransitionTuple.f0, getCurrentTime(), getNetworkId());
+				String networkId = getNetworkId();
+				returnEvent = new Event(address, stateTransitionTuple.f0, getCurrentTime(), networkId,getLatLon(networkId));
 			}
 		}
 
@@ -114,7 +117,8 @@ public class EventsGenerator {
 			iter.remove();
 
 			Event.EventType event = currentState.randomInvalidTransition(rnd);
-			Event e = new Event(address, event, getCurrentTime(), getNetworkId());
+			String networkId = getNetworkId();
+			Event e = new Event(address, event, getCurrentTime(), networkId,getLatLon(networkId));
 			return Optional.of(e);
 		}
 		return Optional.empty();
@@ -128,4 +132,39 @@ public class EventsGenerator {
 		int randomNum = ThreadLocalRandom.current().nextInt(1, 5);
 		return Integer.toString(randomNum);
 	}
+
+	private Event.LatLon getLatLon(String networkId) {
+
+		Event.LatLon latlon;
+
+		switch (networkId) {
+			case "1":
+				latlon = new Event.LatLon(37.3860517,  	-122.0838511);
+				break;
+			case "2":
+				latlon = new Event.LatLon(40.7127837,  	-74.0059413);
+				break;
+			case "3":
+				latlon = new Event.LatLon(51.5073509,  	-0.1277583);
+				break;
+			case "4":
+				latlon = new Event.LatLon(35.7090259,  	139.73199249999993);
+				break;
+			case "5":
+				latlon = new Event.LatLon(25.2048493,  	55.2707828);
+				break;
+			default:
+				latlon = new Event.LatLon( 	39.3209801,  	-111.09373110000001);
+				break;
+		}
+
+		/*
+		Random r = new Random();
+		return new Event.LatLon((r.nextDouble() * -180.0) + 90.0,
+				(r.nextDouble() * -360.0) + 180.0);
+				*/
+		return latlon;
+	}
+
+
 }

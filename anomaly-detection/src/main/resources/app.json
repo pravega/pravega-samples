@@ -2,12 +2,15 @@
   "name": "anomaly-detection",
   "producer": {
     "latencyInMilliSec": 100,
-    "capacity": 100,
-    "errorProbFactor": 0.4
+    "capacity": 1000,
+    "errorProbFactor": 0.007
   },
   "pipeline": {
     "parallelism": 1,
     "checkpointIntervalInMilliSec": 1000,
+    "disableCheckpoint": false,
+    "watermarkOffsetInSec": 5,
+    "windowIntervalInSeconds": 30,
     "elasticSearch": {
       "sinkResults": true,
       "host": "127.0.0.1",

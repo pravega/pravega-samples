@@ -6,6 +6,8 @@
 
 package com.emc.pravega.event.state;
 
+import com.emc.pravega.shaded.org.apache.commons.lang.time.DateFormatUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +20,10 @@ public class Result implements Serializable {
 	private int count;
 	private long minTimestamp;
 	private long maxTimestamp;
+	private String location;
+	private String minTimestampAsString;
+	private String maxTimestampAsString;
+
 
 	public String getNetworkId() {
 		return networkId;
@@ -49,6 +55,7 @@ public class Result implements Serializable {
 
 	public void setMinTimestamp(long minTimestamp) {
 		this.minTimestamp = minTimestamp;
+		this.minTimestampAsString = getDateTimeAsString(minTimestamp);
 	}
 
 	public long getMaxTimestamp() {
@@ -57,6 +64,31 @@ public class Result implements Serializable {
 
 	public void setMaxTimestamp(long maxTimestamp) {
 		this.maxTimestamp = maxTimestamp;
+		this.maxTimestampAsString = getDateTimeAsString(maxTimestamp);
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
+	public String getMinTimestampAsString() {
+		return minTimestampAsString;
+	}
+
+	public void setMinTimestampAsString(String minTimestampAsString) {
+		this.minTimestampAsString = minTimestampAsString;
+	}
+
+	public String getMaxTimestampAsString() {
+		return maxTimestampAsString;
+	}
+
+	public void setMaxTimestampAsString(String maxTimestampAsString) {
+		this.maxTimestampAsString = maxTimestampAsString;
 	}
 
 	@Override
@@ -67,6 +99,11 @@ public class Result implements Serializable {
 		builder.append("Total: ").append(count).append(" ");
 		builder.append("Start Time: [").append(new Date(minTimestamp)).append("] ");
 		builder.append("End Time: [").append(new Date(maxTimestamp)).append("] ");
+		builder.append("Location: [").append(location).append("] ");
 		return builder.toString();
+	}
+
+	private String getDateTimeAsString(long dateTime) {
+		return DateFormatUtils.format(new Date(dateTime), "yyyy-MM-dd HH:mm:ss z");
 	}
 }

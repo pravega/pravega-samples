@@ -89,12 +89,15 @@ Application Configuration
   "name": "anomaly-detection",
   "producer": {
     "latencyInMilliSec": 100,
-    "capacity": 100,
-    "errorProbFactor": 0.4
+    "capacity": 1000,
+    "errorProbFactor": 0.007
   },
   "pipeline": {
     "parallelism": 1,
     "checkpointIntervalInMilliSec": 1000,
+    "disableCheckpoint": false,
+    "watermarkOffsetInSec": 5,
+    "windowIntervalInSeconds": 30,
     "elasticSearch": {
       "sinkResults": true,
       "host": "127.0.0.1",
@@ -128,6 +131,10 @@ Application Configuration
  
  `elasticSearch` - Final results will be sinked to elasticsearch if `sinkResults` is set to `true`
  
+ `windowIntervalInSeconds` - Window frequency interval
+ 
+ `watermarkOffsetInSec` - Window watermark offset interval
+ 
  
  Standalone Deployment
  ---------------------
@@ -158,6 +165,27 @@ Verfiy by going to the URL: http://localhost:5601
 
 ```
 
+**Create Elastic Search Index and define schema**
+```
+
+curl -XDELETE "http://localhost:9200/anomaly-index"
+
+curl -XPUT "http://localhost:9200/anomaly-index"
+
+curl -XPUT "http://localhost:9200/anomaly-index/_mapping/anomalies" -d'
+{
+ "anomalies" : {
+   "properties" : {
+     "count": {"type": "integer"},
+     "location": {"type": "geo_point"},
+     "minTimestampAsString": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss z"},
+     "maxTimestampAsString": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss z"}
+   }
+ }
+}'
+
+```
+
 **Run Sample Application**
 
 ```
@@ -171,3 +199,16 @@ Running below command will start the anomaly detection application
 ./gradlew anomaly-detection:run -PargsList="--configDir /softlinks --mode 2"
 
 ```
+
+**Visualize results in Kibana**
+
+```
+- Create index pattern for "anomaly-index" and set it as default index
+- Visualize the metrics using "Tile Map" option and choose "sum" aggregation on the field "count"
+- Select Geo-Coordinates bucket for the field  "location"
+- You can now visualize the total anomalies per geo location for the simulated time window period
+
+```
+
+The following screenshot shows how Kibana visualizes the result:
+![Kibana Screenshot](./src/main/resources/Network-Anomaly.png?raw=true "Kibana Screenshot")

@@ -18,13 +18,16 @@ public class Event implements Serializable {
 
 	private String networkId;
 
+	private LatLon latlon;
+
 	public Event() {}
 
-	public Event(int address, EventType event, Instant eventTime, String networkId) {
+	public Event(int address, EventType event, Instant eventTime, String networkId, LatLon latlon) {
 		this.sourceAddress = address;
 		this.event = event;
 		this.eventTime = eventTime;
 		this.networkId = networkId;
+		this.latlon = latlon;
 	}
 
 	public int getSourceAddress() {
@@ -50,6 +53,12 @@ public class Event implements Serializable {
 	public String getNetworkId() {return networkId;}
 
 	public void setNetworkId(String networkId) {this.networkId = networkId;}
+
+	public LatLon getLatlon() {return latlon;}
+
+	public void setLatlon(LatLon latlon) {
+		this.latlon = latlon;
+	}
 
 	@Override
 	public String toString() {
@@ -148,6 +157,34 @@ public class Event implements Serializable {
 		@Override
 		public String toString() {
 			return "ALERT: " + networkId + ": " + alertTime + ": " + EventType.formatAddress(event.getSourceAddress()) + ": " + state.getName() + " -> " + EventType.eventTypeName(event.getEvent());
+		}
+	}
+
+	public static class LatLon implements Serializable {
+		private double lat;
+		private double lon;
+
+		public LatLon() {}
+
+		public LatLon(double lat, double lon) {
+			this.lat = lat;
+			this.lon = lon;
+		}
+
+		public double getLat() {
+			return lat;
+		}
+
+		public void setLat(double lat) {
+			this.lat = lat;
+		}
+
+		public double getLon() {
+			return lon;
+		}
+
+		public void setLon(double lon) {
+			this.lon = lon;
 		}
 	}
 
