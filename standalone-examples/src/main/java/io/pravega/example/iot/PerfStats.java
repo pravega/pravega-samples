@@ -1,4 +1,4 @@
-package com.emc.pravega.example.iot;
+package io.pravega.example.iot;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;

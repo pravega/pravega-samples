@@ -16,7 +16,7 @@ subprojects {
     }
     
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
-        group "com.emc.pravega"
+        group "io.pravega"
         version samplesVersion
     }
 

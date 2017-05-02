@@ -3,9 +3,9 @@
  * Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.examples.flink.util.serialization;
+package io.pravega.examples.flink.util.serialization;
 
-import com.emc.pravega.stream.Serializer;
+import io.pravega.stream.Serializer;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
 
 import java.io.Serializable;

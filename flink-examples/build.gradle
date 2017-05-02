@@ -12,7 +12,7 @@ archivesBaseName = 'pravega-flink-examples'
 
 dependencies {
     compile "org.scala-lang.modules:scala-java8-compat_2.11:0.3.0"
-    compile "com.emc.pravega:pravega-connectors-flink-shaded_2.11:${pravegaVersion}:all"
+    compile "io.pravega:pravega-connectors-flink_2.11:${pravegaVersion}"
     compileOnly group: 'org.apache.flink', name: 'flink-streaming-java_2.11', version: '1.2.0'
     compileOnly group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: '1.2.0'
 }
@@ -20,7 +20,7 @@ dependencies {
 shadowJar {
     dependencies {
         include dependency("org.scala-lang.modules:scala-java8-compat_2.11")
-        include dependency("com.emc.pravega:pravega-connectors-flink-shaded_2.11")
+        include dependency("io.pravega:pravega-connectors-flink_2.11")
     }
 }
 

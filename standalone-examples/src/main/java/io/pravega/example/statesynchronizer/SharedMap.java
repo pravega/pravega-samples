@@ -3,7 +3,7 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.statesynchronizer;
+package io.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -16,17 +16,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.emc.pravega.ClientFactory;
-import com.emc.pravega.StreamManager;
-import com.emc.pravega.state.InitialUpdate;
-import com.emc.pravega.state.Revision;
-import com.emc.pravega.state.Revisioned;
-import com.emc.pravega.state.StateSynchronizer;
-import com.emc.pravega.state.SynchronizerConfig;
-import com.emc.pravega.state.Update;
-import com.emc.pravega.stream.ScalingPolicy;
-import com.emc.pravega.stream.StreamConfiguration;
-import com.emc.pravega.stream.impl.JavaSerializer;
+import io.pravega.ClientFactory;
+import io.pravega.StreamManager;
+import io.pravega.state.InitialUpdate;
+import io.pravega.state.Revision;
+import io.pravega.state.Revisioned;
+import io.pravega.state.StateSynchronizer;
+import io.pravega.state.SynchronizerConfig;
+import io.pravega.state.Update;
+import io.pravega.stream.ScalingPolicy;
+import io.pravega.stream.StreamConfiguration;
+import io.pravega.stream.impl.JavaSerializer;
 
 /**
  * A Map<K, V> that uses Pravega StateSynchronizer to maintain a shared, consistent, optimistically locked, concurrently

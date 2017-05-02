@@ -3,7 +3,7 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.consolerw;
+package io.pravega.example.consolerw;
 
 import java.net.URI;
 import java.util.Collections;
@@ -16,19 +16,20 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.emc.pravega.ClientFactory;
-import com.emc.pravega.ReaderGroupManager;
-import com.emc.pravega.StreamManager;
-import com.emc.pravega.example.gettingstarted.hello.HelloWorldReader;
-import com.emc.pravega.stream.EventRead;
-import com.emc.pravega.stream.EventStreamReader;
-import com.emc.pravega.stream.ReaderConfig;
-import com.emc.pravega.stream.ReaderGroupConfig;
-import com.emc.pravega.stream.ReinitializationRequiredException;
-import com.emc.pravega.stream.ScalingPolicy;
-import com.emc.pravega.stream.Sequence;
-import com.emc.pravega.stream.StreamConfiguration;
-import com.emc.pravega.stream.impl.JavaSerializer;
+import io.pravega.ClientFactory;
+import io.pravega.ReaderGroupManager;
+import io.pravega.StreamManager;
+import io.pravega.stream.EventRead;
+import io.pravega.stream.EventStreamReader;
+import io.pravega.stream.ReaderConfig;
+import io.pravega.stream.ReaderGroupConfig;
+import io.pravega.stream.ReinitializationRequiredException;
+import io.pravega.stream.ScalingPolicy;
+import io.pravega.stream.Sequence;
+import io.pravega.stream.StreamConfiguration;
+import io.pravega.stream.impl.JavaSerializer;
+
+import io.pravega.example.gettingstarted.HelloWorldReader;
 
 /**
  * Reads from a Stream until interrupted.

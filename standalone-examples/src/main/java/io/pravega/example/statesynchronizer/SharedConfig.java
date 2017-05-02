@@ -3,12 +3,12 @@
  *  Copyright (c) 2017 Dell Inc., or its subsidiaries.
  *
  */
-package com.emc.pravega.example.statesynchronizer;
+package io.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
 import java.util.Map;
-import com.emc.pravega.ClientFactory;
-import com.emc.pravega.StreamManager;
+import io.pravega.ClientFactory;
+import io.pravega.StreamManager;
 
 /**
  * An example Configuration object that wrappers a properties map implemented by a SharedMap.

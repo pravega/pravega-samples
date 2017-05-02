@@ -15,8 +15,8 @@ ext {
 dependencies {
     testCompile "junit:junit:${junitVersion}"
     
-    compile "com.emc.pravega:pravega-clients:${pravegaVersion}",
-            "com.emc.pravega:pravega-common:${pravegaVersion}",
+    compile "io.pravega:pravega-clients:${pravegaVersion}",
+            "io.pravega:pravega-common:${pravegaVersion}",
             "commons-cli:commons-cli:${commonsCLIVersion}"
     
     runtime "org.slf4j:slf4j-simple:1.7.14"
@@ -24,20 +24,20 @@ dependencies {
 
 task scriptHelloWorldWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
-  mainClassName = 'com.emc.pravega.example.gettingstarted.hello.HelloWorldWriter'
+  mainClassName = 'io.pravega.example.gettingstarted.HelloWorldWriter'
   applicationName = 'helloWorldWriter'
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task scriptHelloWorldReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
-  mainClassName = 'com.emc.pravega.example.gettingstarted.hello.HelloWorldReader'
+  mainClassName = 'io.pravega.example.gettingstarted.HelloWorldReader'
   applicationName = 'helloWorldReader'
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task startHelloWorldWriter(type: JavaExec) {
-    main = "com.emc.pravega.example.gettingstarted.hello.HelloWorldWriter"
+    main = "io.pravega.example.gettingstarted.HelloWorldWriter"
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
       args System.getProperty("exec.args").split()
@@ -45,7 +45,7 @@ task startHelloWorldWriter(type: JavaExec) {
 }
 
 task startHelloWorldReader(type: JavaExec) {
-    main = "com.emc.pravega.example.gettingstarted.hello.HelloWorldReader"
+    main = "io.pravega.example.gettingstarted.HelloWorldReader"
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
       args System.getProperty("exec.args").split()
@@ -54,13 +54,13 @@ task startHelloWorldReader(type: JavaExec) {
 
 task scriptTurbineSensor(type: CreateStartScripts) {
   outputDir = file('build/scripts')
-  mainClassName = 'com.emc.pravega.example.iot.TurbineHeatSensor'
+  mainClassName = 'io.pravega.example.iot.TurbineHeatSensor'
   applicationName = 'turbineSensor'
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task startTurbineSensor(type: JavaExec) {
-    main = "com.emc.pravega.example.iot.TurbineHeatSensor"
+    main = "io.pravega.example.iot.TurbineHeatSensor"
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
         args System.getProperty("exec.args").split()
@@ -69,20 +69,20 @@ task startTurbineSensor(type: JavaExec) {
 
 task scriptConsoleWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
-  mainClassName = 'com.emc.pravega.example.consolerw.ConsoleWriter'
+  mainClassName = 'io.pravega.example.consolerw.ConsoleWriter'
   applicationName = 'consoleWriter'
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task scriptConsoleReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
-  mainClassName = 'com.emc.pravega.example.consolerw.ConsoleReader'
+  mainClassName = 'io.pravega.example.consolerw.ConsoleReader'
   applicationName = 'consoleReader'
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task startConsoleReader(type: JavaExec) {
-    main = "com.emc.pravega.example.consolerw.ConsoleReader"
+    main = "io.pravega.example.consolerw.ConsoleReader"
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
       args System.getProperty("exec.args").split()
@@ -91,7 +91,7 @@ task startConsoleReader(type: JavaExec) {
 
 task scriptSharedConfigCli(type: CreateStartScripts) {
   outputDir = file('build/scripts')
-  mainClassName = 'com.emc.pravega.example.statesynchronizer.SharedConfigCli'
+  mainClassName = 'io.pravega.example.statesynchronizer.SharedConfigCli'
   applicationName = 'sharedConfigCli'
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
