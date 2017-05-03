@@ -26,13 +26,16 @@ Getting Started
 ---------------
 
 
-### Building Pravega
-
-_Be sure to use the `r0.0-alpha` branch for compatibility with the Alpha release._
+### Building Pravega & Flink connectors
 
 Install the Pravega client libraries to your local Maven repository:
 ```
-$./gradlew publishMavenPublicationToMavenLocal connectors:flink:publishShadowPublicationToMavenLocal
+$git clone https://github.com/pravega/pravega.git
+$./gradlew publishMavenPublicationToMavenLocal
+
+$git clone https://github.com/pravega/flink-connectors.git
+$./gradlew publishShadowPublicationToMavenLocal
+
 ```
 
 ### Building and Running Example

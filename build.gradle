@@ -13,6 +13,9 @@ subprojects {
         mavenLocal()
         jcenter()
         mavenCentral()
+        maven {
+            url "https://repository.apache.org/content/repositories/snapshots/"
+        }
     }
     
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {

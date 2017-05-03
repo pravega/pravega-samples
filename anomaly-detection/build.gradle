@@ -9,27 +9,27 @@ apply plugin: 'application'
 
 sourceCompatibility = "1.8"
 
-mainClassName = 'com.emc.pravega.ApplicationMain'
+mainClassName = 'io.pravega.anomalydetection.ApplicationMain'
 applicationDefaultJvmArgs = ["-Dlogging.config=file:conf/logback-cli.xml"]
 
 archivesBaseName = 'pravega-flink-anomaly-detection'
 
 dependencies {
     compile "org.slf4j:slf4j-api:1.7.7"
-    compile "com.emc.pravega:pravega-connectors-flink-shaded_2.11:${pravegaVersion}:all"
-    compileOnly group: 'org.apache.flink', name: 'flink-streaming-java_2.11', version: '1.2.0'
-    compileOnly group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: '1.2.0'
+    compile ("io.pravega:pravega-connectors-flink_2.11:${pravegaVersion}:all")
+    compileOnly ("org.apache.flink:flink-streaming-java_2.11:${flinkVersion}")
+    compileOnly ("org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}")
 
-    compile "com.emc.pravega:pravega-clients:${pravegaVersion}",
-            "com.emc.pravega:pravega-common:${pravegaVersion}"
+    compile "io.pravega:pravega-clients:${pravegaVersion}",
+            "io.pravega:pravega-common:${pravegaVersion}"
 
-    compile "org.apache.flink:flink-connector-elasticsearch2_2.11:1.2.0"
+    compile "org.apache.flink:flink-connector-elasticsearch2_2.11:${flinkVersion}"
 }
 
 shadowJar {
     dependencies {
-        include dependency("com.emc.pravega:pravega-connectors-flink-shaded_2.11")
-        include dependency("org.apache.flink:flink-connector-elasticsearch2_2.11:1.2.0")
+        include dependency("io.pravega:pravega-connectors-flink_2.11:${pravegaVersion}:all")
+        include dependency("org.apache.flink:flink-connector-elasticsearch2_2.11:${flinkVersion}")
     }
 }
 

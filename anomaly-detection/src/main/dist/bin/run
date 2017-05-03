@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-flink run -c com.emc.pravega.ApplicationMain lib/pravega-flink-anomaly-detection-0.0-PRERELEASE-all.jar $*
+flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.0-PRERELEASE-all.jar $*
