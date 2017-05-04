@@ -16,6 +16,9 @@ subprojects {
         maven {
             url "https://repository.apache.org/snapshots"
         }
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }
     }
     
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
