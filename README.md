@@ -3,15 +3,22 @@
 Sample applications for Pravega.
 
 ## Getting Started
+
 ### Building Pravega
+
+Optional: This step is required only if you want to use a different version
+of Pravega than is published to maven central.
 
 Install the Pravega client libraries to your local Maven repository:
 ```
 $ git clone https://github.com/pravega/pravega.git
-$./gradlew publishMavenPublicationToMavenLocal
+$./gradlew install
 ```
 
 ### Building the Flink Connector
+
+Optional: This step is required only if you want to use a different version
+of Pravega than is published to maven central.
 
 Install the shaded Flink Connector library to your local Maven repository:
 ```
