@@ -7,12 +7,12 @@ package io.pravega.examples.flink.iot
 
 import java.net.URI
 
-import io.pravega.StreamManager
+import io.pravega.client.admin.StreamManager
 import io.pravega.connectors.flink.FlinkPravegaReader
 import io.pravega.examples.flink.util.serialization.PravegaDeserializationSchema
 import io.pravega.examples.flink.util.PravegaParameters
-import io.pravega.stream.{ScalingPolicy, StreamConfiguration}
-import io.pravega.stream.impl.JavaSerializer
+import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
+import io.pravega.client.stream.impl.JavaSerializer
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.streaming.api.TimeCharacteristic
