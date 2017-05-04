@@ -15,7 +15,7 @@ ext {
 dependencies {
     testCompile "junit:junit:${junitVersion}"
     
-    compile "io.pravega:pravega-clients:${pravegaVersion}",
+    compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
             "commons-cli:commons-cli:${commonsCLIVersion}"
     

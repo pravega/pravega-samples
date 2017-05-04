@@ -14,14 +14,14 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.ClientFactory;
-import io.pravega.StreamManager;
-import io.pravega.stream.AckFuture;
-import io.pravega.stream.EventStreamWriter;
-import io.pravega.stream.EventWriterConfig;
-import io.pravega.stream.ScalingPolicy;
-import io.pravega.stream.StreamConfiguration;
-import io.pravega.stream.impl.JavaSerializer;
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.AckFuture;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.impl.JavaSerializer;
 
 /**
  * A simple example app that uses a Pravega Writer to write to a given scope and stream.

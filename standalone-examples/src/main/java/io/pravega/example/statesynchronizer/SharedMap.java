@@ -16,17 +16,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.pravega.ClientFactory;
-import io.pravega.StreamManager;
-import io.pravega.state.InitialUpdate;
-import io.pravega.state.Revision;
-import io.pravega.state.Revisioned;
-import io.pravega.state.StateSynchronizer;
-import io.pravega.state.SynchronizerConfig;
-import io.pravega.state.Update;
-import io.pravega.stream.ScalingPolicy;
-import io.pravega.stream.StreamConfiguration;
-import io.pravega.stream.impl.JavaSerializer;
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.state.InitialUpdate;
+import io.pravega.client.state.Revision;
+import io.pravega.client.state.Revisioned;
+import io.pravega.client.state.StateSynchronizer;
+import io.pravega.client.state.SynchronizerConfig;
+import io.pravega.client.state.Update;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.impl.JavaSerializer;
 
 /**
  * A Map<K, V> that uses Pravega StateSynchronizer to maintain a shared, consistent, optimistically locked, concurrently

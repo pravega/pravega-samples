@@ -1,10 +1,10 @@
 package io.pravega.example.iot;
 
-import io.pravega.ClientFactory;
-import io.pravega.ReaderGroupManager;
-import io.pravega.StreamManager;
-import io.pravega.stream.*;
-import io.pravega.stream.impl.JavaSerializer;
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.*;
+import io.pravega.client.stream.impl.JavaSerializer;
 import org.apache.commons.cli.*;
 
 import java.net.URI;

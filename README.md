@@ -7,7 +7,16 @@ Sample applications for Pravega.
 
 Install the Pravega client libraries to your local Maven repository:
 ```
-$./gradlew publishMavenPublicationToMavenLocal connectors:flink:publishShadowPublicationToMavenLocal
+$ git clone https://github.com/pravega/pravega.git
+$./gradlew publishMavenPublicationToMavenLocal
+```
+
+### Building the Flink Connector
+
+Install the shaded Flink Connector library to your local Maven repository:
+```
+$ git clone https://github.com/pravega/flink-connectors.git
+$./gradlew publishShadowPublicationToMavenLocal
 ```
 
 ### Building the Samples

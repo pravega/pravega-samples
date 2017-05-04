@@ -5,7 +5,7 @@
  */
 package io.pravega.examples.flink.util.serialization;
 
-import io.pravega.stream.Serializer;
+import io.pravega.client.stream.Serializer;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
 
 import java.io.Serializable;
