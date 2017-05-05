@@ -5,9 +5,9 @@
  */
 package io.pravega.anomalydetection.event.pipeline;
 
-import io.pravega.ClientFactory;
-import io.pravega.StreamManager;
-import io.pravega.stream.*;
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.*;
 import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

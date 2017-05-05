@@ -7,8 +7,8 @@ package io.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
 import java.util.Map;
-import io.pravega.ClientFactory;
-import io.pravega.StreamManager;
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.StreamManager;
 
 /**
  * An example Configuration object that wrappers a properties map implemented by a SharedMap.

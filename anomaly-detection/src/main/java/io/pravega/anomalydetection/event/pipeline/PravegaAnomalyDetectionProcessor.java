@@ -10,11 +10,11 @@ import io.pravega.anomalydetection.event.serialization.PravegaDeserializationSch
 import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.anomalydetection.event.state.Result;
 import com.google.gson.Gson;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
-import io.pravega.shaded.com.google.common.collect.Sets;
-import io.pravega.stream.impl.JavaSerializer;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.shaded.org.apache.curator.shaded.com.google.common.collect.Sets;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

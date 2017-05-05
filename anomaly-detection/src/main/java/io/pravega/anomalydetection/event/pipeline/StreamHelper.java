@@ -6,9 +6,9 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
-import io.pravega.StreamManager;
-import io.pravega.stream.ScalingPolicy;
-import io.pravega.stream.StreamConfiguration;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.StreamConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

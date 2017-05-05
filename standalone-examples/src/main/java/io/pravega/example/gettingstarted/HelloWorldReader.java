@@ -16,18 +16,17 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.ClientFactory;
-import io.pravega.ReaderGroupManager;
-import io.pravega.StreamManager;
-import io.pravega.stream.EventRead;
-import io.pravega.stream.EventStreamReader;
-import io.pravega.stream.ReaderConfig;
-import io.pravega.stream.ReaderGroupConfig;
-import io.pravega.stream.ReinitializationRequiredException;
-import io.pravega.stream.ScalingPolicy;
-import io.pravega.stream.Sequence;
-import io.pravega.stream.StreamConfiguration;
-import io.pravega.stream.impl.JavaSerializer;
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.EventRead;
+import io.pravega.client.stream.EventStreamReader;
+import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.ReinitializationRequiredException;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.impl.JavaSerializer;
 
 /**
  * A simple example app that uses a Pravega Reader to read from a given scope and stream.

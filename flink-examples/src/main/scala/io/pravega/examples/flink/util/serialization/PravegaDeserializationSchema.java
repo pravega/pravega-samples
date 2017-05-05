@@ -4,8 +4,7 @@
  *
  */
 package io.pravega.examples.flink.util.serialization;
-
-import io.pravega.stream.Serializer;
+import io.pravega.client.stream.Serializer;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.util.serialization.AbstractDeserializationSchema;
 
