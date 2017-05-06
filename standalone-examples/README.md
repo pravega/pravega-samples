@@ -4,10 +4,9 @@ These applications only need a running Pravega to execute against.
 ## Pre requisites
 1. download pravega from https://github.com/pravega/pravega
 2. start the singleNode version by running
-2. start the singleNode version by running
 
 ```
-$ ./gradlew startSingleNode
+$ ./gradlew startStandalone
 ```
 
 ## Publish Pravega jars to local Maven (optional)
@@ -19,13 +18,11 @@ Note: maven 2 needs to be installed and running on your machine
 In the root of Pravega (where Pravega's build.gradle file can be found), run:
 
 ```
-$ ./gradlew publishMavenPublicationToMavenLocal
+$ ./gradlew install
 ```
 
 The above command should generate the required jar files into your local maven repo.
-```
-$ ./gradlew installDist
-```
+
 ## Generate the scripts to make it easier to run examples
 Most examples can be run either using gradle wrapper (gradlew) or scripts.
 To run the examples using scripts, the scripts need to be generated.  Run the following once, and all the scripts are generated
@@ -42,18 +39,19 @@ standalone-examples/build/install/pravega-standalone-examples/bin
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
 
-Alternatively, you can run: 
+Alternatively, you can run:
 
 ```
 $ gradle distZip
 ```
- 
+
 to package the main distribution as a ZIP, or:
 
 ```
- “gradle distTar” 
- ```
- to create a TAR file. To build both types of archives just run gradle assembleDist. The files will be created at “$buildDir/distributions/$project.name-$project.version.«ext»”.
+$ gradle distTar
+```
+
+to create a TAR file. To build both types of archives just run gradle assembleDist. The files will be created at `$buildDir/distributions/$project.name-$project.version.«ext»`.
 
 ## HelloPravega Example
 This example consists of two applications, a HelloWorldReader that reads from a stream and a HelloWorldWriter, that writes to a stream.
@@ -82,7 +80,7 @@ $ ./bin/helloWorldReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1
 All args are optional, if not included, the defaults are:
 
  * scope - "examples"
- * name - "helloStream" 
+ * name - "helloStream"
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 The program reads all the events from the stream with given scope/stream name and prints each event to the console.
@@ -111,7 +109,7 @@ $ ./bin/helloWorldWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1
 All args are optional, if not included, the defaults are:
 
  * scope - "examples"
- * name - "helloStream" 
+ * name - "helloStream"
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
  * routingKey - "helloRoutingKey"
  * message - "hello world"
@@ -145,14 +143,14 @@ $ ./bin/consoleReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:90
 All args are optional, if not included, the defaults are:
 
  * scope - "examples"
- * name - "someStream" 
+ * name - "someStream"
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 ### ConsoleWriter
 Use this application to write to streams or transactions, and manage transactions.
 
 The application uses the console to present an interactive DSL environment that presents operations to write events to
-a stream or into a transaction.  In addition, it presents operations to begin, commit, abort, ping, check status on and 
+a stream or into a transaction.  In addition, it presents operations to begin, commit, abort, ping, check status on and
 retrieve the id of a transaction.
 
 ConsoleWriter MUST be run using the scripts.  Gradle interferes with console I/O.  Make sure you have followed the "Generate the Scripts..." step above.
@@ -165,7 +163,7 @@ $ ./bin/consoleWriter [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:90
 All args are optional, if not included, the defaults are:
 
  * scope - "examples"
- * name - "someStream" 
+ * name - "someStream"
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
 ## State Synchronizer
@@ -181,13 +179,13 @@ The CLI MUST be run using the scripts.  Gradle interferes with console I/O.  Mak
 
 ```
 $ cd standalone-examples/build/install/pravega-standalone-examples
-$ ./bin/sharedConfigCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090] 
+$ ./bin/sharedConfigCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
 ```
 
 Use the simple DSL to GET, PUT, REMOVE keys from the SharedConfig object identified by scope and name.
 
 It is worthwhile to launch two or more separate CLIs in several terminal windows using the same settings and observe how changes in one
-CLI process is not visible in another CLI process until that other CLI process invokes REFRESH.  
+CLI process is not visible in another CLI process until that other CLI process invokes REFRESH.
 
 ## TurbineHeatSensor
 

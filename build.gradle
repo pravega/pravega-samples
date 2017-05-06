@@ -8,6 +8,11 @@ plugins {
     id 'org.hidetake.ssh' version '2.8.0'
 }
 
+allprojects {
+    apply plugin: "idea"
+    apply plugin: "eclipse"
+}
+
 subprojects {
     repositories {
         mavenLocal()
