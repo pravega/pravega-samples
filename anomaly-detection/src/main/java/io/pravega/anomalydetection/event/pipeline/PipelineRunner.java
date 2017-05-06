@@ -6,7 +6,7 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
-import com.google.gson.Gson;
+import io.pravega.shaded.com.google.gson.Gson;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
