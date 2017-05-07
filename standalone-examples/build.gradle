@@ -7,6 +7,8 @@ apply plugin: 'eclipse'
 sourceCompatibility = 1.8
 archivesBaseName = 'pravega-standalone-examples'
 
+resources
+
 ext {
   junitVersion = '4.11'
   commonsCLIVersion = '1.4'
@@ -26,6 +28,7 @@ task scriptHelloWorldWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldWriter'
   applicationName = 'helloWorldWriter'
+  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -33,6 +36,7 @@ task scriptHelloWorldReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldReader'
   applicationName = 'helloWorldReader'
+  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -56,6 +60,7 @@ task scriptTurbineSensor(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.iot.TurbineHeatSensor'
   applicationName = 'turbineSensor'
+  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -71,6 +76,7 @@ task scriptConsoleWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.consolerw.ConsoleWriter'
   applicationName = 'consoleWriter'
+  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -78,6 +84,7 @@ task scriptConsoleReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.consolerw.ConsoleReader'
   applicationName = 'consoleReader'
+  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -93,6 +100,7 @@ task scriptSharedConfigCli(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.statesynchronizer.SharedConfigCli'
   applicationName = 'sharedConfigCli'
+  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -111,6 +119,9 @@ distributions {
             into('lib') {
                 from(jar)
                 from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/resources/logback.xml'))
             }
         }
     }
