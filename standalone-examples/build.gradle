@@ -22,13 +22,14 @@ dependencies {
             "commons-cli:commons-cli:${commonsCLIVersion}"
     
     runtime "org.slf4j:slf4j-simple:1.7.14"
+    compile "ch.qos.logback:logback-classic:1.1.7"
 }
 
 task scriptHelloWorldWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldWriter'
   applicationName = 'helloWorldWriter'
-  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -36,7 +37,7 @@ task scriptHelloWorldReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldReader'
   applicationName = 'helloWorldReader'
-  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -60,7 +61,7 @@ task scriptTurbineSensor(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.iot.TurbineHeatSensor'
   applicationName = 'turbineSensor'
-  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -76,7 +77,7 @@ task scriptConsoleWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.consolerw.ConsoleWriter'
   applicationName = 'consoleWriter'
-  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -84,7 +85,7 @@ task scriptConsoleReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.consolerw.ConsoleReader'
   applicationName = 'consoleReader'
-  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -100,7 +101,7 @@ task scriptSharedConfigCli(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.statesynchronizer.SharedConfigCli'
   applicationName = 'sharedConfigCli'
-  defaultJvmOpts = ["-Dlogging.config=file:conf/logback.xml"]
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
