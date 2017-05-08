@@ -447,9 +447,10 @@ public class ConsoleWriter implements AutoCloseable {
         try {
             cmd = parseCommandLineArgs(options, args);
         } catch (ParseException e) {
-            e.printStackTrace();
+            System.out.format("%s.%n", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("ConsoleWriter", options);
+            System.exit(1);
         }
 
         final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
