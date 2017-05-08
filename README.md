@@ -23,7 +23,7 @@ of Pravega than is published to maven central.
 Install the shaded Flink Connector library to your local Maven repository:
 ```
 $ git clone https://github.com/pravega/flink-connectors.git
-$./gradlew publishShadowPublicationToMavenLocal
+$./gradlew install
 ```
 
 ### Building the Samples
@@ -36,7 +36,7 @@ BUILD SUCCESSFUL
 
 ### Distributing (Flink Samples)
 #### Assemble
-Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy uber-jar called `pravega-flink-examples-0.0-PRERELEASE-all.jar`.   
+Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy uber-jar called `pravega-flink-examples-0.0-PRERELEASE-all.jar`.
 ```
 $ ./gradlew installDist
 ...
@@ -55,7 +55,7 @@ The `upload` task makes it easy to upload the sample binaries to your cluster.  
 with the address of a node in your cluster.   Edit `~/.gradle/gradle.properties` to specify a value for `dcosAddress`.
 
 ```
-$ cat ~/.gradle/gradle.properties 
+$ cat ~/.gradle/gradle.properties
 dcosAddress=10.240.124.164
 ```
 
