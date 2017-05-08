@@ -7,6 +7,8 @@ apply plugin: 'eclipse'
 sourceCompatibility = 1.8
 archivesBaseName = 'pravega-standalone-examples'
 
+resources
+
 ext {
   junitVersion = '4.11'
   commonsCLIVersion = '1.4'
@@ -18,14 +20,16 @@ dependencies {
     compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
             "commons-cli:commons-cli:${commonsCLIVersion}"
-    
-    runtime "org.slf4j:slf4j-simple:1.7.14"
+
+    compile "org.slf4j:slf4j-api:1.7.14"
+    compile "ch.qos.logback:logback-classic:1.1.7"
 }
 
 task scriptHelloWorldWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldWriter'
   applicationName = 'helloWorldWriter'
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -33,6 +37,7 @@ task scriptHelloWorldReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldReader'
   applicationName = 'helloWorldReader'
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -56,6 +61,7 @@ task scriptTurbineSensor(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.iot.TurbineHeatSensor'
   applicationName = 'turbineSensor'
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -71,6 +77,7 @@ task scriptConsoleWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.consolerw.ConsoleWriter'
   applicationName = 'consoleWriter'
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -78,6 +85,7 @@ task scriptConsoleReader(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.consolerw.ConsoleReader'
   applicationName = 'consoleReader'
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -93,6 +101,7 @@ task scriptSharedConfigCli(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.statesynchronizer.SharedConfigCli'
   applicationName = 'sharedConfigCli'
+  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -111,6 +120,9 @@ distributions {
             into('lib') {
                 from(jar)
                 from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/resources/logback.xml'))
             }
         }
     }
