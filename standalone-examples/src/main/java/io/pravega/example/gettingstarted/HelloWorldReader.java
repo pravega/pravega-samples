@@ -88,9 +88,10 @@ public class HelloWorldReader {
         try {
             cmd = parseCommandLineArgs(options, args);
         } catch (ParseException e) {
-            e.printStackTrace();
+            System.out.format("%s.%n", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("HelloWorldReader", options);
+            System.exit(1);
         }
         
         final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");

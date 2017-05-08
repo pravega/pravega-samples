@@ -364,9 +364,10 @@ public class SharedConfigCli implements AutoCloseable{
         try {
             cmd = parseCommandLineArgs(options, args);
         } catch (ParseException e) {
-            e.printStackTrace();
+            System.out.format("%s.%n", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("Shared Config CLI", options);
+            formatter.printHelp("SharedConfigCLi", options);
+            System.exit(1);
         }
 
         final String scope = cmd.getOptionValue("scope") == null ? DEFAULT_SCOPE : cmd.getOptionValue("scope");
