@@ -30,6 +30,8 @@ public class PravegaStandardStreamWriter<T> {
 
 	private final Serializer<T> serializer;
 
+	private final int fixedStreamCount = 3;
+
 	public PravegaStandardStreamWriter(final String controllerUri,
 									   final String streamName,
 									   final String scope,
@@ -59,7 +61,7 @@ public class PravegaStandardStreamWriter<T> {
 
 		//define scaling policy
 		StreamConfiguration streamConfig = StreamConfiguration.builder()
-				.scalingPolicy(ScalingPolicy.fixed(1))
+				.scalingPolicy(ScalingPolicy.fixed(fixedStreamCount))
 				.build();
 
 		//create stream

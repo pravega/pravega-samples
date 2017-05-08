@@ -98,8 +98,9 @@ Application Configuration
   "pipeline": {
     "parallelism": 1,
     "checkpointIntervalInMilliSec": 1000,
-    "disableCheckpoint": false,
-    "watermarkOffsetInSec": 5,
+    "stateCheckpointDir": "hdfs://vijay-devbox:8020/checkpoint",
+    "disableCheckpoint": true,
+    "watermarkOffsetInSec": 0,
     "windowIntervalInSeconds": 30,
     "elasticSearch": {
       "sinkResults": true,
@@ -138,13 +139,15 @@ Application Configuration
  
  `watermarkOffsetInSec` - Window watermark offset interval
  
+ `stateCheckpointDir` - HDFS FS URI along with the checkpoint directory name
+ 
  
  Standalone Deployment
  ---------------------
  
  Follow below steps to deploy and run both Pravega and the example (including elasticsearch/kibana). 
  
- The steps are tested on Ubuntu 16.x OS/docker 1.13.1/JDK8
+ The steps are tested on Ubuntu 16.x OS/docker 1.13.1/JDK8/ElasticSearch5/Kibana5.3.0
  
 **Run Pravega**
 
@@ -156,13 +159,15 @@ Run `./gradlew startSinglenode` to start `Pravega` on stand-alone mode from the 
 Install Elastic Search
 sudo mkdir -p /elk-stack/esdata
 sudo chmod 777 -R /elk-stack/
-docker run -d --name elasticsearch  -p 9200:9200 -p 9300:9300 -v /elk-stack/esdata:/usr/share/elasticsearch/data elasticsearch:2.4
+docker run -d --name elasticsearch  --net="host" -v /elk-stack/esdata:/usr/share/elasticsearch/data elasticsearch
 
 Verify if ES is running by executing the command: 
 curl -X GET http://localhost:9200
 
+update /etc/hosts with 127.0.0.1 elasticsearch (this is for Kibana to lookup ES)
+
 Install Kibana
-docker run --name kibana --link elasticsearch:elasticsearch -p 5601:5601 -d kibana
+docker run -d --name kibana --net="host" kibana
 
 Verfiy by going to the URL: http://localhost:5601
 
@@ -181,8 +186,8 @@ curl -XPUT "http://localhost:9200/anomaly-index/_mapping/anomalies" -d'
    "properties" : {
      "count": {"type": "integer"},
      "location": {"type": "geo_point"},
-     "minTimestampAsString": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss z"},
-     "maxTimestampAsString": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss z"}
+     "minTimestampAsString": {"type": "date"},
+     "maxTimestampAsString": {"type": "date"}
    }
  }
 }'

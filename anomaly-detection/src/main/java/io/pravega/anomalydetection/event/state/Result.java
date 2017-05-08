@@ -6,9 +6,8 @@
 
 package io.pravega.anomalydetection.event.state;
 
-import org.apache.commons.lang.time.DateFormatUtils;
-
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -104,6 +103,6 @@ public class Result implements Serializable {
 	}
 
 	private String getDateTimeAsString(long dateTime) {
-		return DateFormatUtils.format(new Date(dateTime), "yyyy-MM-dd HH:mm:ss z");
+		return Instant.ofEpochMilli(dateTime).toString();
 	}
 }

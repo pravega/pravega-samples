@@ -14,7 +14,9 @@ import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.shaded.com.google.gson.Gson;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.shaded.org.apache.curator.shaded.com.google.common.collect.Sets;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -23,11 +25,12 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
-import org.apache.flink.streaming.connectors.elasticsearch2.ElasticsearchSink;
+import org.apache.flink.streaming.connectors.elasticsearch5.ElasticsearchSink;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.time.Instant;
 import java.util.*;
 
 public class PravegaAnomalyDetectionProcessor implements IPipeline {
@@ -41,35 +44,42 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 		long startTime = 0;
 		PravegaDeserializationSchema<Event> pravegaDeserializationSchema = new PravegaDeserializationSchema<>(Event.class, new JavaSerializer<Event>());
 
+		final String readerName = stream + "-reader";
 		FlinkPravegaReader<Event> flinkPravegaReader = new FlinkPravegaReader<>(URI.create(controllerUri), scope,
 				Sets.newHashSet(stream),
 				startTime,
-				pravegaDeserializationSchema);
+				pravegaDeserializationSchema,
+				readerName);
 
 		int parallelism = appConfiguration.getPipeline().getParallelism();
+
 		long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
+		String stateCheckpointDir = appConfiguration.getPipeline().getStateCheckpointDir();
 
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setParallelism(parallelism);
+
 		if(!appConfiguration.getPipeline().isDisableCheckpoint()) {
-			env.enableCheckpointing(checkpointInterval);
+			env.enableCheckpointing(checkpointInterval, CheckpointingMode.EXACTLY_ONCE);
+			env.setStateBackend(new FsStateBackend(stateCheckpointDir));
 		}
+
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
 		DataStream<Event> source = env.addSource(flinkPravegaReader).name("Event Reader");
 
-		long watermarkOffset = appConfiguration.getPipeline().getWatermarkOffsetInSec();
-		DataStream<Event> timeExtractor = source.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(watermarkOffset)))
-				.name("Time Extractor");
-
-		DataStream<Event.Alert> detector = timeExtractor.keyBy("networkId")
+		DataStream<Event.Alert> detector = source.keyBy("networkId")
 				.flatMap(new EventStateMachineMapper())
 				.name("Anomaly Detector");
 
 		detector.print().name("anomalies");
 
+		long watermarkOffset = appConfiguration.getPipeline().getWatermarkOffsetInSec();
+		DataStream<Event.Alert> timeExtractor = detector.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(watermarkOffset)))
+				.name("Time Extractor");
+
 		long windowIntervalInSeconds = appConfiguration.getPipeline().getWindowIntervalInSeconds();
-		DataStream<Result> aggregate = detector.keyBy("networkId")
+		DataStream<Result> aggregate = timeExtractor.keyBy("networkId")
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
 				.fold(new Result(), new FoldAlertsToResult())
 				.name("Aggregate");
@@ -78,19 +88,18 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 		if(appConfiguration.getPipeline().getElasticSearch().isSinkResults()) {
 			ElasticsearchSink<Result> elasticSink = sinkToElasticSearch(appConfiguration);
 			aggregate.addSink(elasticSink).name("Elastic Search");
-			aggregate.print().name("Final Results");
 		}
 
 		env.execute(appConfiguration.getName());
 	}
 
-	public static class EventTimeExtractor extends BoundedOutOfOrdernessTimestampExtractor<Event> {
+	public static class EventTimeExtractor extends BoundedOutOfOrdernessTimestampExtractor<Event.Alert> {
 
 		public EventTimeExtractor(Time time) { super(time); }
 
 		@Override
-		public long extractTimestamp(Event element) {
-			long timestamp = Date.from( element.getEventTime()).getTime();
+		public long extractTimestamp(Event.Alert element) {
+			long timestamp = element.getEvent().getEventTime().toEpochMilli();
 			return timestamp;
 		}
 	}
@@ -103,18 +112,17 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 			accumulator.setNetworkId(value.getNetworkId());
 			accumulator.getIpAddress().add(Event.EventType.formatAddress(value.getEvent().getSourceAddress()));
 			if(accumulator.getMinTimestamp() == 0) {
-				accumulator.setMinTimestamp(Date.from(value.getEvent().getEventTime()).getTime());
-				accumulator.setMaxTimestamp(Date.from(value.getEvent().getEventTime()).getTime());
+				accumulator.setMinTimestamp(value.getEvent().getEventTime().toEpochMilli());
+				accumulator.setMaxTimestamp(value.getEvent().getEventTime().toEpochMilli());
 			} else {
-				long ts = Date.from( value.getEvent().getEventTime()).getTime();
-				Date d1 = new Date(accumulator.getMinTimestamp());
-				Date d2 = new Date(ts);
-				if(d1.before(d2)) {
-					accumulator.setMinTimestamp(d1.getTime());
-					accumulator.setMaxTimestamp(d2.getTime());
+				Instant d1 = Instant.ofEpochMilli(accumulator.getMinTimestamp());
+				Instant d2 = value.getEvent().getEventTime();
+				if(d1.isBefore(d2)) {
+					accumulator.setMinTimestamp(d1.toEpochMilli());
+					accumulator.setMaxTimestamp(d2.toEpochMilli());
 				} else {
-					accumulator.setMinTimestamp(d2.getTime());
-					accumulator.setMaxTimestamp(d1.getTime());
+					accumulator.setMinTimestamp(d2.toEpochMilli());
+					accumulator.setMaxTimestamp(d1.toEpochMilli());
 				}
 			}
 			if(accumulator.getLocation() == null) {
@@ -172,5 +180,4 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 					.source(resultAsJson);
 		}
 	}
-
 }

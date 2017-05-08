@@ -46,6 +46,7 @@ public class AppConfiguration implements Serializable{
 	public static class Pipeline {
 		private int parallelism;
 		private long checkpointIntervalInMilliSec;
+		private String stateCheckpointDir;
 		private int watermarkOffsetInSec;
 		private int windowIntervalInSeconds;
 		private boolean disableCheckpoint;
@@ -97,6 +98,14 @@ public class AppConfiguration implements Serializable{
 
 		public void setWindowIntervalInSeconds(int windowIntervalInSeconds) {
 			this.windowIntervalInSeconds = windowIntervalInSeconds;
+		}
+
+		public String getStateCheckpointDir() {
+			return stateCheckpointDir;
+		}
+
+		public void setStateCheckpointDir(String stateCheckpointDir) {
+			this.stateCheckpointDir = stateCheckpointDir;
 		}
 	}
 

@@ -156,7 +156,13 @@ public class Event implements Serializable {
 
 		@Override
 		public String toString() {
-			return "ALERT: " + networkId + ": " + alertTime + ": " + EventType.formatAddress(event.getSourceAddress()) + ": " + state.getName() + " -> " + EventType.eventTypeName(event.getEvent());
+			StringBuilder builder = new StringBuilder();
+			builder.append("ALERT: ").append(networkId);
+			builder.append(": ").append(alertTime).append(": ").append(EventType.formatAddress(event.getSourceAddress()));
+			builder.append(": ").append(state.getName()).append(" -> ").append(EventType.eventTypeName(event.getEvent()));
+			builder.append(" EVENT = {").append(event.toString()).append("}");
+			return builder.toString();
+			//return "ALERT: " + networkId + ": " + alertTime + ": " + EventType.formatAddress(event.getSourceAddress()) + ": " + state.getName() + " -> " + EventType.eventTypeName(event.getEvent());
 		}
 	}
 

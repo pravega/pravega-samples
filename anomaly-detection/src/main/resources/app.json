@@ -8,8 +8,9 @@
   "pipeline": {
     "parallelism": 1,
     "checkpointIntervalInMilliSec": 1000,
-    "disableCheckpoint": false,
-    "watermarkOffsetInSec": 5,
+    "stateCheckpointDir": "hdfs://vijay-devbox:8020/checkpoint",
+    "disableCheckpoint": true,
+    "watermarkOffsetInSec": 0,
     "windowIntervalInSeconds": 30,
     "elasticSearch": {
       "sinkResults": true,

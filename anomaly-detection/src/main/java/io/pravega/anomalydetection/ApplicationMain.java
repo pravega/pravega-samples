@@ -14,7 +14,9 @@ public class ApplicationMain {
 	private static final Logger LOG = LoggerFactory.getLogger(ApplicationMain.class);
 
 	public static void main(String[] args) {
+		LOG.info("Starting Application Main...");
 		PipelineRunner runner = new PipelineRunner();
 		runner.run(args);
+		LOG.info("Ending Application Main...");
 	}
 }
