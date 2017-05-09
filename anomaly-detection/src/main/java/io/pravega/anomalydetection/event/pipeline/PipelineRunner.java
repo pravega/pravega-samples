@@ -59,10 +59,9 @@ public class PipelineRunner {
 		StringBuilder message = new StringBuilder();
 		message.append("\n############################################################################################################\n");
 		message.append("Usage: com.emc.pravega.ApplicationMain --configDir <app.json file location> --mode <1 or 2 or 3>").append("\n");
-		message.append("Mode 1 == Publish streaming events to Pravega").append("\n");
-		message.append("Mode 2 == Run Anomaly Detection by reading from Pravega stream").append("\n");
-		message.append("Mode 3 == Run Anomaly Detection by publishing and reading from in-memory stream").append("\n");
-		message.append("Mode 4 == Create pravega stream as defined in the configuration file").append("\n");
+		message.append("Mode 1 == Create pravega stream as defined in the configuration file").append("\n");
+		message.append("Mode 2 == Publish streaming events to Pravega").append("\n");
+		message.append("Mode 3 == Run Anomaly Detection by reading from Pravega stream").append("\n");
 		message.append("############################################################################################################");
 		LOG.error("{}", message.toString());
 	}
@@ -77,23 +76,18 @@ public class PipelineRunner {
 			IPipeline pipeline;
 			switch (runMode) {
 				case 1:
+					LOG.info("Going to create Pravega stream");
+					StreamHelper.createStream(appConfiguration);
+					break;
+				case 2:
 					LOG.info("Running event publisher to publish events to Pravega stream");
 					pipeline = new PravegaEventPublisher();
 					pipeline.run(appConfiguration);
 					break;
-				case 2:
+				case 3:
 					LOG.info("Running anomaly detection by reading from Pravega stream");
 					pipeline = new PravegaAnomalyDetectionProcessor();
 					pipeline.run(appConfiguration);
-					break;
-				case 3:
-					LOG.info("Running anomaly detection from in-memory stream");
-					pipeline = new InMemoryAnomalyDetectionProcessor();
-					pipeline.run(appConfiguration);
-					break;
-				case 4:
-					LOG.info("Going to create Pravega stream");
-					StreamHelper.createStream(appConfiguration);
 					break;
 				default:
 					LOG.error("Incorrect run mode [{}] specified", runMode);

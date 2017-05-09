@@ -6,6 +6,7 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
+import io.pravega.anomalydetection.event.producer.ControlledSourceContextProducer;
 import io.pravega.anomalydetection.event.producer.SourceContextProducer;
 import io.pravega.anomalydetection.event.serialization.PravegaSerializationSchema;
 import io.pravega.anomalydetection.event.state.Event;
@@ -25,7 +26,6 @@ public class PravegaEventPublisher implements IPipeline {
 
 	@Override
 	public void run(AppConfiguration appConfiguration) throws Exception {
-		//publishUsingStandardWriter(appConfiguration);
 		publishUsingFlinkConnector(appConfiguration);
 	}
 
@@ -44,34 +44,20 @@ public class PravegaEventPublisher implements IPipeline {
 
 		int parallelism = 1;
 
-		SourceContextProducer eventsGeneratorSource = new SourceContextProducer(appConfiguration);
-
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setParallelism(parallelism);
 
-		env.addSource(eventsGeneratorSource).addSink(writer);
+		if(appConfiguration.getProducer().isControlledEnv()) {
+			long latency = appConfiguration.getProducer().getLatencyInMilliSec();
+			int capacity = appConfiguration.getProducer().getCapacity();
+			ControlledSourceContextProducer controlledSourceContextProducer = new ControlledSourceContextProducer(capacity, latency);
+			env.addSource(controlledSourceContextProducer).addSink(writer);
+		} else {
+			SourceContextProducer sourceContextProducer = new SourceContextProducer(appConfiguration);
+			env.addSource(sourceContextProducer).addSink(writer);
+		}
 
 		env.execute();
-
-	}
-
-	private void publishUsingStandardWriter(AppConfiguration appConfiguration) throws Exception {
-		String controllerUri = appConfiguration.getPravega().getControllerUri();
-		String scope = appConfiguration.getPravega().getScope();
-		String stream = appConfiguration.getPravega().getStream();
-		String routingKey = appConfiguration.getPravega().getWriter().getRoutingKey();
-		JavaSerializer<Event> serializer = new JavaSerializer<>();
-		PravegaStandardStreamWriter<Event> writer = new PravegaStandardStreamWriter<>(controllerUri, stream, scope, routingKey, serializer);
-
-		SourceContextProducer eventsGeneratorSource = new SourceContextProducer(appConfiguration);
-
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		env.setParallelism(1);
-
-		env.addSource(eventsGeneratorSource).addSink((Event event) -> {
-			writer.writeToStream(event);
-		});
-		env.execute("Pravega Event Publisher");
 
 	}
 

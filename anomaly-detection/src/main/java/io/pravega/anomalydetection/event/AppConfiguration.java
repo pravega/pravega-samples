@@ -17,6 +17,7 @@ public class AppConfiguration implements Serializable{
 		private long latencyInMilliSec;
 		private int capacity;
 		private double errorProbFactor;
+		private boolean controlledEnv;
 
 		public long getLatencyInMilliSec() {
 			return latencyInMilliSec;
@@ -40,6 +41,14 @@ public class AppConfiguration implements Serializable{
 
 		public void setErrorProbFactor(double errorProbFactor) {
 			this.errorProbFactor = errorProbFactor;
+		}
+
+		public boolean isControlledEnv() {
+			return controlledEnv;
+		}
+
+		public void setControlledEnv(boolean controlledEnv) {
+			this.controlledEnv = controlledEnv;
 		}
 	}
 

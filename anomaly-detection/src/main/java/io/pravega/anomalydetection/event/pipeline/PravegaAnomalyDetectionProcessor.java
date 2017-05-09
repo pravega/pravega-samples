@@ -66,28 +66,28 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-		DataStream<Event> source = env.addSource(flinkPravegaReader).name("Event Reader");
+		DataStream<Event> source = env.addSource(flinkPravegaReader).name("AnomalyEventReader");
 
 		DataStream<Event.Alert> detector = source.keyBy("networkId")
 				.flatMap(new EventStateMachineMapper())
-				.name("Anomaly Detector");
+				.name("AnomalyDetector");
 
-		detector.print().name("anomalies");
+		detector.print().name("Anomalies");
 
 		long watermarkOffset = appConfiguration.getPipeline().getWatermarkOffsetInSec();
 		DataStream<Event.Alert> timeExtractor = detector.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(watermarkOffset)))
-				.name("Time Extractor");
+				.name("TimeExtractor");
 
 		long windowIntervalInSeconds = appConfiguration.getPipeline().getWindowIntervalInSeconds();
 		DataStream<Result> aggregate = timeExtractor.keyBy("networkId")
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
 				.fold(new Result(), new FoldAlertsToResult())
 				.name("Aggregate");
-		aggregate.print().name("Aggregated Results");
+		aggregate.print().name("AggregatedResults");
 
 		if(appConfiguration.getPipeline().getElasticSearch().isSinkResults()) {
 			ElasticsearchSink<Result> elasticSink = sinkToElasticSearch(appConfiguration);
-			aggregate.addSink(elasticSink).name("Elastic Search");
+			aggregate.addSink(elasticSink).name("ElasticSearchSink");
 		}
 
 		env.execute(appConfiguration.getName());

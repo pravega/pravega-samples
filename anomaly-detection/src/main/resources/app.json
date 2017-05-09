@@ -1,15 +1,16 @@
 {
   "name": "anomaly-detection",
   "producer": {
-    "latencyInMilliSec": 100,
-    "capacity": 1000,
-    "errorProbFactor": 0.007
+    "latencyInMilliSec": 2000,
+    "capacity": 100,
+    "errorProbFactor": 0.3,
+    "controlledEnv": true
   },
   "pipeline": {
     "parallelism": 1,
     "checkpointIntervalInMilliSec": 1000,
     "stateCheckpointDir": "hdfs://vijay-devbox:8020/checkpoint",
-    "disableCheckpoint": true,
+    "disableCheckpoint": false,
     "watermarkOffsetInSec": 0,
     "windowIntervalInSeconds": 30,
     "elasticSearch": {

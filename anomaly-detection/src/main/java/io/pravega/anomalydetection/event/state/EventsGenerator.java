@@ -108,7 +108,7 @@ public class EventsGenerator {
 	 *
 	 * @return An event for a illegal state transition, or [[None]], if not possible.
 	 */
-	protected Optional<Event> nextInvalid() {
+	public Optional<Event> nextInvalid() {
 		Iterator<Map.Entry<Integer,EventStateMachine.State>>  iter = states.entrySet().iterator();
 		if (iter.hasNext()) {
 			Map.Entry<Integer,EventStateMachine.State> entry = iter.next();

@@ -18,5 +18,6 @@ public class ApplicationMain {
 		PipelineRunner runner = new PipelineRunner();
 		runner.run(args);
 		LOG.info("Ending Application Main...");
+		System.exit(0);
 	}
 }

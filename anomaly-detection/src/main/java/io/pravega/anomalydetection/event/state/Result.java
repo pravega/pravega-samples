@@ -96,8 +96,8 @@ public class Result implements Serializable {
 		builder.append("Network ID: ").append(networkId).append(" ");
 		builder.append("Hosts: ").append(ipAddress).append(" ");
 		builder.append("Total: ").append(count).append(" ");
-		builder.append("Start Time: [").append(new Date(minTimestamp)).append("] ");
-		builder.append("End Time: [").append(new Date(maxTimestamp)).append("] ");
+		builder.append("Start Time: [").append(Instant.ofEpochMilli(minTimestamp).toString()).append("] ");
+		builder.append("End Time: [").append(Instant.ofEpochMilli(maxTimestamp).toString()).append("] ");
 		builder.append("Location: [").append(location).append("] ");
 		return builder.toString();
 	}
