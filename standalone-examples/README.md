@@ -22,7 +22,7 @@ The above command should generate the required jar files into your local maven r
 
 ## Generate the scripts to make it easier to run the examples
 Most examples can be run either using the gradle wrapper (gradlew) or scripts.
-To run the examples using scripts, the scripts need to be generated.  In the directory containing this readme, run the following once, and all the scripts will be generated.
+To run the examples using scripts, the scripts need to be generated.  In the directory where you downloaded the pravega samples, run the following once, and all the scripts will be generated.
 
 ```
 $ ./gradlew install
@@ -76,7 +76,7 @@ The program reads all the events from the stream with given scope/stream name an
 This example includes two applications, a ConsoleReader and a ConsoleWriter.  You might want to run ConsoleReader in one window and ConsoleWriter in another window.
 
 ### ConsoleReader
-Use this application to launch an application that reads from a stream and emits all of the Events onto the console.
+Use this application to launch an application that reads from a stream and emits all of the Events onto the console.  This application runs until you terminate it.
 
 ```
 $ bin/consoleReader [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
