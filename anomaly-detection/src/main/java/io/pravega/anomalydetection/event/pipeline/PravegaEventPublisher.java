@@ -36,10 +36,7 @@ public class PravegaEventPublisher implements IPipeline {
 		String stream = appConfiguration.getPravega().getStream();
 		PravegaSerializationSchema<Event> pravegaSerializationSchema = new PravegaSerializationSchema<>(new JavaSerializer<Event>());
 
-		String routingKey = appConfiguration.getPravega().getWriter().getRoutingKey();
-		PravegaEventRouter router = new EventRouter(routingKey);
-
-		FlinkPravegaWriter writer = new FlinkPravegaWriter(URI.create(controllerUri), scope, stream, pravegaSerializationSchema, router);
+		FlinkPravegaWriter writer = new FlinkPravegaWriter(URI.create(controllerUri), scope, stream, pravegaSerializationSchema, new EventRouter());
 		writer.setPravegaWriterMode(PravegaWriterMode.ATLEAST_ONCE);
 
 		int parallelism = 1;
@@ -62,15 +59,9 @@ public class PravegaEventPublisher implements IPipeline {
 	}
 
 	public static class EventRouter implements PravegaEventRouter<Event> {
-
-		private String routingKey;
-		public EventRouter(String routingKey) {
-			this.routingKey = routingKey;
-		}
-
 		@Override
 		public String getRoutingKey(Event event) {
-			return routingKey;
+			return event.getNetworkId();
 		}
 	}
 }

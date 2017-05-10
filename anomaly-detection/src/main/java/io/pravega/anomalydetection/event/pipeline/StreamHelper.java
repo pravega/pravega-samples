@@ -18,18 +18,17 @@ public class StreamHelper {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StreamHelper.class);
 
-	private static final int fixedStreamCount = 3;
-
 	public static void createStream(AppConfiguration appConfiguration) {
 
 		String controllerUri = appConfiguration.getPravega().getControllerUri();
 		String scope = appConfiguration.getPravega().getScope();
 		String stream = appConfiguration.getPravega().getStream();
+		int streamCount = appConfiguration.getPipeline().getParallelism();
 
 		StreamManager streamManager = StreamManager.create(URI.create(controllerUri));
 		streamManager.createScope(scope);
 		StreamConfiguration streamConfig = StreamConfiguration.builder()
-				.scalingPolicy(ScalingPolicy.fixed(fixedStreamCount))
+				.scalingPolicy(ScalingPolicy.fixed(streamCount))
 				.build();
 		streamManager.createStream(scope, stream, streamConfig);
 

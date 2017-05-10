@@ -35,21 +35,19 @@ Follow below steps to build and publish artifacts from source to local Maven rep
 
 ```
 $git clone https://github.com/pravega/pravega.git
-$./gradlew clean build
-$./gradlew install
+$./gradlew clean install
 
 $git clone https://github.com/pravega/flink-connectors.git
-$./gradlew clean build
-$./gradlew install
+$./gradlew clean install
 
 ```
 Alternatively, follow the instructions from [here](http://pravega.io/docs/getting-started/) to pull from release repository.
 
 ### Building and Running Example
 
-- Clone the repository 
-- Build samples `mvn clean build`
-- Create local distribution `mvn clean installDist`
+- Clone the repository (git clone https://github.com/pravega/pravega-samples.git)
+- Build samples `./gradlew clean build`
+- Create local distribution `./gradlew clean installDist`
 
 <b>To run the application using script (Embedded Flink App)</b>
 
@@ -82,10 +80,10 @@ Navigate to `$PRAVEGA_SAMPLES_HOME/anomaly-detection/build/install/pravega-flink
 Update `conf/app.json` (see "Application Configuration" section) as appropriate and run below commands to create stream and publish/consume records.
 
 ```
-`bin/anomaly-detection --configDir <APP_CONFIG_DIR>--mode 1`
+`bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode 1`
 
-`bin/run --configDir <APP_CONFIG_DIR> --mode 2` or `bin/anomaly-detection --configDir <APP_CONFIG_DIR>--mode 2`
-(The former will run the producer as Flink app and the later will run as consoler app. Use console app option if you want to simulate error record manually by setting **controlledEnv** flag to true)
+`bin/run --configDir <APP_CONFIG_DIR> --mode 2` or `bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode 2`
+(The former will run the producer as Flink app and the later will run as a console application. Use console app option if you want to simulate error record manually by setting **controlledEnv** flag to true)
 
 `bin/run --configDir /home/centos/pravega-flink-anomaly-detection/conf --mode 3`
 
@@ -93,8 +91,26 @@ Ensure $FLINK_HOME/bin is in the PATH to use bin/run command option.
 
 ```
 
-## Application Configuration
+## Testing State Recovery
+Perform below steps to test the job state recovery. This works only when checkpoint is enabled and a reliable state backend is configured to store checkpoint/savepoint snapshot (flink-conf.yaml).
 
+1) Cancel the current running job using `-s` option which will create a savepoint in the default configured savepoint location as defined in flink-config.yaml
+
+```
+bin/flink cancel -s <JOB_ID>
+```
+
+With the above command, the job will be cancelled and the applications current state will be saved in backed filesystem.
+
+2) To resume from a savepoint run the below command
+
+```
+bin/flink run -s <SAVEPOINT_LOCATION> -c io.pravega.anomalydetection.ApplicationMain <PATH_TO_pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar> --configDir <APP_CONFIG_DIR> --mode 3
+```
+The job should nicely recover from the last checkpointed state. In otherwords, you should not see any alerts (duplicate) that are already processed before taking the snapshot. The alerts can be either visualized from Kibana or from Taskmanager log file.  
+
+
+## Application Configuration
 
 ```
 {
@@ -109,7 +125,7 @@ Ensure $FLINK_HOME/bin is in the PATH to use bin/run command option.
     "parallelism": 1,
     "checkpointIntervalInMilliSec": 1000,
     "stateCheckpointDir": "hdfs://127.0.0.1:8020/checkpoint",
-    "disableCheckpoint": true,
+    "disableCheckpoint": false,
     "watermarkOffsetInSec": 0,
     "windowIntervalInSeconds": 30,
     "elasticSearch": {
@@ -124,10 +140,7 @@ Ensure $FLINK_HOME/bin is in the PATH to use bin/run command option.
   "pravega": {
     "controllerUri": "tcp://127.0.0.1:9090",
     "stream": "NetworkPacket",
-    "scope": "Network",
-    "writer": {
-      "routingKey": "NetworkEvent"
-    }
+    "scope": "Network"
   }
 }
 
@@ -141,7 +154,7 @@ Ensure $FLINK_HOME/bin is in the PATH to use bin/run command option.
 
 `controlledEnv` - When this is true, the `errorProbFactor` value will be ignored and the error record will be generated only when user sends request (Possible Options: `S` to simulate error record, `Q` to quit ingestion)
 
-`parallelism` - Flink job parallelism
+`parallelism` - This value will be used to define pravega segment count/fixed scaling policy and Flink job parallelism
 
 `controllerUri` - Pravega controller endpoint
  

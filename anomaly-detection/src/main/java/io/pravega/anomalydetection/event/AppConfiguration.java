@@ -179,7 +179,6 @@ public class AppConfiguration implements Serializable{
 		private String controllerUri;
 		private String stream;
 		private String scope;
-		private Writer writer;
 
 		public String getControllerUri() {
 			return controllerUri;
@@ -203,26 +202,6 @@ public class AppConfiguration implements Serializable{
 
 		public void setScope(String scope) {
 			this.scope = scope;
-		}
-
-		public Writer getWriter() {
-			return writer;
-		}
-
-		public void setWriter(Writer writer) {
-			this.writer = writer;
-		}
-	}
-
-	public static class Writer {
-		private String routingKey;
-
-		public String getRoutingKey() {
-			return routingKey;
-		}
-
-		public void setRoutingKey(String routingKey) {
-			this.routingKey = routingKey;
 		}
 	}
 
