@@ -51,13 +51,13 @@ public class PravegaEventPublisher implements IPipeline {
 			long latency = appConfiguration.getProducer().getLatencyInMilliSec();
 			int capacity = appConfiguration.getProducer().getCapacity();
 			ControlledSourceContextProducer controlledSourceContextProducer = new ControlledSourceContextProducer(capacity, latency);
-			env.addSource(controlledSourceContextProducer).addSink(writer);
+			env.addSource(controlledSourceContextProducer).name("EventSource").addSink(writer).name("Pravega-" + stream);
 		} else {
 			SourceContextProducer sourceContextProducer = new SourceContextProducer(appConfiguration);
-			env.addSource(sourceContextProducer).addSink(writer);
+			env.addSource(sourceContextProducer).name("EventSource").addSink(writer).name("Pravega-" + stream);
 		}
 
-		env.execute();
+		env.execute(appConfiguration.getName()+"-producer");
 
 	}
 
