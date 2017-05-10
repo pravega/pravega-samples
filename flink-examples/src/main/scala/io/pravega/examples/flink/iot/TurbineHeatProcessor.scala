@@ -32,8 +32,6 @@ import scala.math._
 /**
   * Sample Flink Streaming program to process temperature data produced by the
   * accompanying TurbineHeatSensor app.
-  *
-  * See https://asdstash.isus.emc.com/projects/NAUT/repos/platform/browse/pravega-sanity/src/main/java/com/emc/nautilus/demo/TurbineHeatSensor.java
   */
 object TurbineHeatProcessor {
 
