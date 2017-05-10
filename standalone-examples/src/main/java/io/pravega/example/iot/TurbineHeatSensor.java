@@ -27,11 +27,6 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 
-/**
- * This code was written by the Pravega team and taken as is, please
- * do not copy code style or format with the platform.
- *
- */
 public class TurbineHeatSensor {
 
     private static final String DEFAULT_SCOPE_NAME = "turbine";

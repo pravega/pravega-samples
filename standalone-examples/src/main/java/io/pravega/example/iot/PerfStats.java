@@ -14,11 +14,6 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-/**
- * This code was written by the Pravega team and taken as is, please
- * do not copy code style or format with the platform.
- *
- */
 class PerfStats {
     private final int messageSize;
     private long windowStartTime;
