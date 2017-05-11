@@ -11,6 +11,6 @@
 package io.pravega.examples.flink.util
 
 object PravegaParameters {
-  val DEFAULT_CONTROLLER_URI = "tcp://controller-pravega.marathon.mesos:9091"
+  val DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090"
 }
 
