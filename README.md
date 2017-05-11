@@ -47,7 +47,7 @@ flink-examples/build/install/pravega-flink-examples/bin:
 run-example.sh
 
 flink-examples/build/install/pravega-flink-examples/lib:
-pravega-flink-examples-0.0-PRERELEASE-all.jar
+pravega-flink-examples-0.1.0-SNAPSHOT-all.jar
 ```
 
 #### Upload
@@ -79,7 +79,7 @@ $ bin/run-example.sh [--controller <URI>] [--scope <name>] [--stream <name>]
 ```
 
 Alternately, run the sample from the Flink UI.
-- JAR: `pravega-flink-examples-0.0-PRERELEASE-all.jar`
+- JAR: `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`
 - Main class: `io.pravega.examples.flink.iot.TurbineHeatProcessor`
 
 #### Outputs
