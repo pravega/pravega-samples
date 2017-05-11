@@ -36,7 +36,7 @@ BUILD SUCCESSFUL
 
 ### Distributing (Flink Samples)
 #### Assemble
-Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy uber-jar called `pravega-flink-examples-0.0-PRERELEASE-all.jar`.
+Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy uber-jar called `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`.
 ```
 $ ./gradlew installDist
 ...
