@@ -1,6 +1,11 @@
-/**
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
  *
- * Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
 package io.pravega.anomalydetection.event.pipeline;
@@ -54,14 +59,12 @@ public class PravegaAnomalyDetectionProcessor implements IPipeline {
 		int parallelism = appConfiguration.getPipeline().getParallelism();
 
 		long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
-		String stateCheckpointDir = appConfiguration.getPipeline().getStateCheckpointDir();
 
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setParallelism(parallelism);
 
 		if(!appConfiguration.getPipeline().isDisableCheckpoint()) {
 			env.enableCheckpointing(checkpointInterval, CheckpointingMode.EXACTLY_ONCE);
-			env.setStateBackend(new FsStateBackend(stateCheckpointDir));
 		}
 
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);

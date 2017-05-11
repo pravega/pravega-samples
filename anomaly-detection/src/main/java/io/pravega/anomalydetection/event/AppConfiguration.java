@@ -1,6 +1,11 @@
-/**
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
  *
- * Copyright (c) 2017 Dell Inc., or its subsidiaries.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
 package io.pravega.anomalydetection.event;
@@ -55,7 +60,6 @@ public class AppConfiguration implements Serializable{
 	public static class Pipeline {
 		private int parallelism;
 		private long checkpointIntervalInMilliSec;
-		private String stateCheckpointDir;
 		private int watermarkOffsetInSec;
 		private int windowIntervalInSeconds;
 		private boolean disableCheckpoint;
@@ -107,14 +111,6 @@ public class AppConfiguration implements Serializable{
 
 		public void setWindowIntervalInSeconds(int windowIntervalInSeconds) {
 			this.windowIntervalInSeconds = windowIntervalInSeconds;
-		}
-
-		public String getStateCheckpointDir() {
-			return stateCheckpointDir;
-		}
-
-		public void setStateCheckpointDir(String stateCheckpointDir) {
-			this.stateCheckpointDir = stateCheckpointDir;
 		}
 	}
 

@@ -13,8 +13,8 @@ archivesBaseName = 'pravega-flink-examples'
 dependencies {
     compile "org.scala-lang.modules:scala-java8-compat_2.11:0.3.0"
     compile "io.pravega:pravega-connectors-flink_2.11:${pravegaVersion}"
-    compileOnly ("org.apache.flink:flink-streaming-java_2.11:${flinkVersion}")
-    compileOnly ("org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}")
+    compileOnly "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
+    compileOnly "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
 }
 
 shadowJar {

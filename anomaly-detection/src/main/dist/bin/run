@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar $*
