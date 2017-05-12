@@ -129,7 +129,7 @@ The job should nicely recover from the last checkpointed state. In otherwords, y
     "watermarkOffsetInSec": 0,
     "windowIntervalInSeconds": 30,
     "elasticSearch": {
-      "sinkResults": true,
+      "sinkResults": false,
       "host": "127.0.0.1",
       "port": 9300,
       "cluster": "elasticsearch",
