@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
+{
+  "name": "anomaly-detection",
+  "producer": {
+    "latencyInMilliSec": 2000,
+    "capacity": 100,
+    "errorProbFactor": 0.3,
+    "controlledEnv": true
+  },
+  "pipeline": {
+    "parallelism": 1,
+    "checkpointIntervalInMilliSec": 1000,
+    "disableCheckpoint": false,
+    "watermarkOffsetInSec": 0,
+    "windowIntervalInSeconds": 30,
+    "elasticSearch": {
+      "sinkResults": false,
+      "host": "127.0.0.1",
+      "port": 9300,
+      "cluster": "elasticsearch",
+      "index": "anomaly-index",
+      "type":"anomalies"
+    }
+  },
+  "pravega": {
+    "controllerUri": "tcp://127.0.0.1:9090",
+    "stream": "NetworkPacket",
+    "scope": "Network"
+  }
+}
