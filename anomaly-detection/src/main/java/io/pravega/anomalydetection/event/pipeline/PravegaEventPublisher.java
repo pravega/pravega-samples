@@ -18,6 +18,7 @@ import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.PravegaEventRouter;
+import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,9 @@ public class PravegaEventPublisher implements IPipeline {
 		int parallelism = appConfiguration.getPipeline().getParallelism();
 
 		if(appConfiguration.getProducer().isControlledEnv()) {
+			if(!(env instanceof LocalStreamEnvironment)) {
+				throw new Exception("Use a local Flink environment or set controlledEnv to false in app.json.");
+			}
 			//setting this to single instance since the controlled run allows user inout to trigger error events
 			env.setParallelism(1);
 			long latency = appConfiguration.getProducer().getLatencyInMilliSec();

@@ -19,6 +19,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 import java.util.Scanner;
 
+/**
+ * An interactive event producer that produces valid and invalid events based on user input.
+ */
 public class ControlledSourceContextProducer extends RichParallelSourceFunction<Event> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ControlledSourceContextProducer.class);
@@ -50,7 +53,8 @@ public class ControlledSourceContextProducer extends RichParallelSourceFunction<
 				if(event.isPresent()) {
 					ctx.collect(event.get());
 					invalidCount += 1;
-					LOG.info("*** Emitting invalid event: [{}], total count so far: [{}] ", event, invalidCount);
+					System.out.println(String.format(
+							"*** Emitting invalid event: [%s], total count so far: [%d] ", event.get(), invalidCount));
 				}
 				injectErrorRecord = false;
 			} else {
@@ -58,7 +62,7 @@ public class ControlledSourceContextProducer extends RichParallelSourceFunction<
 				if(event != null) {
 					ctx.collect(event);
 					count += 1;
-					LOG.info("Emitting event: [{}], total count so far: [{}] ", event, count);
+					System.out.println(String.format("Emitting event: [%s], total count so far: [%d] ", event, count));
 				}
 			}
 			Thread.sleep(latency);
@@ -93,25 +97,19 @@ public class ControlledSourceContextProducer extends RichParallelSourceFunction<
 			this.publisher = publisher;
 		}
 
-		Scanner sc = new Scanner(System.in);
-
 		@Override
 		public void run() {
+			Scanner sc = new Scanner(System.in);
+			sc.useDelimiter("");
+
+			System.out.println("#############################################################################");
+			System.out.println("Usage: Press ENTER to publish an invalid event, or CTRL-C to exit.");
+			System.out.println("#############################################################################");
+
 			while(true) {
-				String command = sc.next();
-				LOG.info("Command Received: {}", command);
-				if(command.equals("S")) {
-					LOG.info("going to publish invalid event");
-					publisher.setInjectErrorRecord(true);
-				} else if(command.equals("Q")) {
-					LOG.info("Exiting UserInputListener thread...");
-					publisher.setRunning(false);
-					break;
-				} else {
-					LOG.info("#############################################################################");
-					LOG.info("Usage: Input 'S' to publish an invalid event or 'Q' to quit the application");
-					LOG.info("#############################################################################");
-				}
+				sc.next();
+				LOG.info("scheduled an invalid event");
+				publisher.setInjectErrorRecord(true);
 			}
 		}
 	}

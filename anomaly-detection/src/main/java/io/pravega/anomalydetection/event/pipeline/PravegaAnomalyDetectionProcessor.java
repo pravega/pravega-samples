@@ -38,61 +38,70 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Processes network events to detect anomalous sequences.
+ */
 public class PravegaAnomalyDetectionProcessor implements IPipeline {
 
 	@Override
 	public void run(AppConfiguration appConfiguration) throws Exception {
 
+		// Configure the Pravega event reader
 		String controllerUri = appConfiguration.getPravega().getControllerUri();
 		String scope = appConfiguration.getPravega().getScope();
 		String stream = appConfiguration.getPravega().getStream();
 		long startTime = 0;
-		PravegaDeserializationSchema<Event> pravegaDeserializationSchema = new PravegaDeserializationSchema<>(Event.class, new JavaSerializer<Event>());
 
 		final String readerName = stream + "-reader";
 		FlinkPravegaReader<Event> flinkPravegaReader = new FlinkPravegaReader<>(URI.create(controllerUri), scope,
 				Sets.newHashSet(stream),
 				startTime,
-				pravegaDeserializationSchema,
+				new PravegaDeserializationSchema<>(Event.class, new JavaSerializer<Event>()),
 				readerName);
 
-		int parallelism = appConfiguration.getPipeline().getParallelism();
-
-		long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
-
+		// Configure the Flink job environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		env.setParallelism(parallelism);
-
+		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+		env.setParallelism(appConfiguration.getPipeline().getParallelism());
 		if(!appConfiguration.getPipeline().isDisableCheckpoint()) {
+			long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
 			env.enableCheckpointing(checkpointInterval, CheckpointingMode.EXACTLY_ONCE);
 		}
 
-		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+		// Construct a dataflow program:
 
-		DataStream<Event> source = env.addSource(flinkPravegaReader).name("AnomalyEventReader");
+		// 1. read network events
+		DataStream<Event> events = env.addSource(flinkPravegaReader).name("AnomalyEventReader");
+		events.print();
 
-		DataStream<Event.Alert> detector = source.keyBy("networkId")
+		// 2. detect anomalies in event sequences
+		DataStream<Event.Alert> anomalies = events
+				.keyBy("sourceAddress")
 				.flatMap(new EventStateMachineMapper())
 				.name("AnomalyDetector");
+		anomalies.print();
 
-		detector.print().name("Anomalies");
-
-		long watermarkOffset = appConfiguration.getPipeline().getWatermarkOffsetInSec();
-		DataStream<Event.Alert> timeExtractor = detector.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(watermarkOffset)))
+		// 3. aggregate the alerts by network over time
+		long maxOutOfOrderness = appConfiguration.getPipeline().getWatermarkOffsetInSec();
+		DataStream<Event.Alert> timestampedAnomalies = anomalies
+				.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(maxOutOfOrderness)))
 				.name("TimeExtractor");
 
 		long windowIntervalInSeconds = appConfiguration.getPipeline().getWindowIntervalInSeconds();
-		DataStream<Result> aggregate = timeExtractor.keyBy("networkId")
+		DataStream<Result> aggregate = timestampedAnomalies
+				.keyBy("networkId")
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
 				.fold(new Result(), new FoldAlertsToResult())
 				.name("Aggregate");
-		aggregate.print().name("AggregatedResults");
+		aggregate.print();
 
+		// 4. emit the alerts to Elasticsearch (optional)
 		if(appConfiguration.getPipeline().getElasticSearch().isSinkResults()) {
 			ElasticsearchSink<Result> elasticSink = sinkToElasticSearch(appConfiguration);
 			aggregate.addSink(elasticSink).name("ElasticSearchSink");
 		}
 
+		// Execute the program in the Flink environment
 		env.execute(appConfiguration.getName());
 	}
 
