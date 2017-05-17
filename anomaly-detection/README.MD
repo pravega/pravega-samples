@@ -193,7 +193,7 @@ The alerts may be visualized using Kibana or by examining the TaskManager's 'std
 
 `errorProbFactor` - how frequently error records needs to be simulated. Provide a value between 0.0 and 1.0
 
-`controlledEnv` - When this is true, the `errorProbFactor` value will be ignored and the error record will be generated only when user sends request (Possible Options: `S` to simulate error record, `Q` to quit ingestion)
+`controlledEnv` - When this is true, the `errorProbFactor` value will be ignored and the error record will be generated only when user presses ENTER on the console
 
 `parallelism` - This value will be used to define pravega segment count/fixed scaling policy and Flink job parallelism
 
