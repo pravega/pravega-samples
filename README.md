@@ -69,7 +69,7 @@ $ ./gradlew upload
 ### Turbine Heat Processor
 A Flink streaming application for processing temperature data from a Pravega stream.   Complements the Turbine Heat Sensor app (external).   The application computes a daily summary of the temperature range observed on that day by each sensor.
 
-Automatically creates a scope (`turbine`) and stream (`turbineHeatTest`) as necessary.
+Automatically creates a scope (default: `examples`) and stream (default: `turbineHeatTest`) as necessary.
 
 #### Running
 Run the sample from the command-line:

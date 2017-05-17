@@ -12,46 +12,43 @@ package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.anomalydetection.event.state.EventStateMachine;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.streaming.api.checkpoint.ListCheckpointed;
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 
-public class EventStateMachineMapper implements FlatMapFunction<Event, Event.Alert>, ListCheckpointed<HashMap<Integer,EventStateMachine.State>> {
+public class EventStateMachineMapper extends RichFlatMapFunction<Event, Event.Alert> {
 
-	HashMap<Integer, EventStateMachine.State> states = new HashMap<>();
+	private transient ValueState<EventStateMachine.State> state;
+
+	@Override
+	public void open(Configuration parameters) throws Exception {
+		ValueStateDescriptor<EventStateMachine.State> descriptor = new ValueStateDescriptor<>(
+				"state", // the state name
+				TypeInformation.of(EventStateMachine.State.class)); // type information
+		state = getRuntimeContext().getState(descriptor);
+	}
 
 	@Override
 	public void flatMap(Event event, Collector<Event.Alert> collector) throws Exception {
-		EventStateMachine.State state;
-		if(states.containsKey(event.getSourceAddress())) {
-			state = states.remove(event.getSourceAddress());
-		} else {
-			state = EventStateMachine.Transitions.initialState;
+		EventStateMachine.State value = state.value();
+		if(value == null) {
+			value = EventStateMachine.Transitions.initialState;
 		}
 
-		EventStateMachine.State nextState = state.transition(event.getEvent());
-		if(nextState instanceof EventStateMachine.InvalidTransition) {
-			Event.Alert alert = new Event.Alert(Instant.now(),event, state);
+		EventStateMachine.State nextValue = value.transition(event.getEvent());
+		if(nextValue instanceof EventStateMachine.InvalidTransition) {
+			Event.Alert alert = new Event.Alert(Instant.now(), event, value);
 			collector.collect(alert);
-		} else if (!nextState.terminal()){
-			states.put(event.getSourceAddress(), nextState);
-		}
-	}
-
-	@Override
-	public List<HashMap<Integer, EventStateMachine.State>> snapshotState(long checkpointId, long timestamp) throws Exception {
-		return Collections.singletonList(states);
-	}
-
-	@Override
-	public void restoreState(List<HashMap<Integer, EventStateMachine.State>> statesList) throws Exception {
-		for(HashMap<Integer, EventStateMachine.State> state: statesList) {
-			states.putAll(state);
+			state.update(null);
+		} else if (!nextValue.terminal()){
+			state.update(nextValue);
+		} else {
+			state.update(null);
 		}
 	}
 }

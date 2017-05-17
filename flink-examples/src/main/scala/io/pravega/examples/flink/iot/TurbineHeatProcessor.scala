@@ -132,7 +132,7 @@ object TurbineHeatProcessor {
     * Configuration parameters for the Flink program.
     */
   case class Parameters(p: ParameterTool) {
-    val DEFAULT_SCOPE_NAME = "turbine"
+    val DEFAULT_SCOPE_NAME = "examples"
     val DEFAULT_STREAM_NAME = "turbineHeatTest"
     val DEFAULT_START_TIME = 0
 

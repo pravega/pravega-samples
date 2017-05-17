@@ -92,7 +92,7 @@ public class Result implements Serializable {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		StringBuilder builder = new StringBuilder("Summary: ");
 		builder.append("Network ID: ").append(networkId).append(" ");
 		builder.append("Hosts: ").append(ipAddress).append(" ");
 		builder.append("Total: ").append(count).append(" ");

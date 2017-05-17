@@ -29,11 +29,11 @@ import java.util.function.BiFunction;
 
 public class TurbineHeatSensor {
 
-    private static final String DEFAULT_SCOPE_NAME = "turbine";
+    private static final String DEFAULT_SCOPE_NAME = "examples";
     private static final String DEFAULT_STREAM_NAME = "turbineHeatTest";
 
     private static PerfStats produceStats, consumeStats;
-    private static String controllerUri = "tcp://controller-pravega.marathon.mesos:9091";
+    private static String controllerUri = "tcp://127.0.0.1:9090";
     private static int messageSize = 100;
     private static String streamName = DEFAULT_STREAM_NAME;
     private static String scopeName = DEFAULT_SCOPE_NAME;

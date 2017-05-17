@@ -12,7 +12,7 @@ The event patterns are tracked per interacting party (here simplified per source
  
 The final aggregated results are grouped under network id which acts as a network domain abstraction hosting multiple server machines.
 
-The aggregated results are sinked to Elastic Search for visualizing from Kibana user interface.
+The aggregated results are (optionally) sinked to Elastic Search for visualizing from the Kibana user interface.
 
 The following diagram depicts the state machine used in this example.
 
@@ -28,32 +28,41 @@ The following diagram depicts the state machine used in this example.
 
 ## Getting Started
 
+### Build Pravega & Flink Connectors
 
-### Building Pravega & Flink connectors
-
-Follow below steps to build and publish artifacts from source to local Maven repository:
+Follow the below steps to build and publish artifacts from source to local Maven repository:
 
 ```
-$git clone https://github.com/pravega/pravega.git
-$./gradlew clean install
+$ git clone https://github.com/pravega/pravega.git
+$ ./gradlew clean install
 
-$git clone https://github.com/pravega/flink-connectors.git
-$./gradlew clean install
+$ git clone https://github.com/pravega/flink-connectors.git
+$ ./gradlew clean install
 
 ```
 Alternatively, follow the instructions from [here](http://pravega.io/docs/getting-started/) to pull from release repository.
 
-### Building and Running Example
+### Build the Sample Code
 
-- Clone the repository (git clone https://github.com/pravega/pravega-samples.git)
-- Build samples `./gradlew clean build`
-- Create local distribution `./gradlew clean installDist`
+Follow the below steps to build the sample code:
+```
+$ git clone https://github.com/pravega/pravega-samples.git
+$ cd pravega-samples
+$ ./gradlew clean installDist
+```
 
-<b>To run the application using script (Embedded Flink App)</b>
+## Running the Anomaly Detection Example
 
-Navigate to `$PRAVEGA_SAMPLES_HOME/anomaly-detection/build/install/pravega-flink-anomaly-detection/`
+_The example program is copied to a distribution folder when built as shown above.  Navigate to `anomaly-detection/build/install/pravega-flink-anomaly-detection/` for the below steps._
 
-Update `conf/app.json` (see "Application Configuration" section) as appropriate and run below commands to create stream and publish/consume records.
+The example is split into three separate programs: 
+1. A utility program to create a Pravega stream for use by the example code.
+2. An event generator producing simulated network events.
+3. An anomaly detector consuming events.
+
+All programs share a configuration file (`conf/app.json`) and a startup script (`bin/anomaly-detection`).
+Usage:
+
 
 ```
 bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode <RUN_MODE>
@@ -61,54 +70,86 @@ bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode <RUN_MODE>
 where, 
 
 - `APP_CONFIG_DIR` is the directory that contains the `app.json` configuration file
-- `RUN_MODE` can take any of the 3 options (1, 2 or 3),
-  - 1 = Create pravega stream and Scope using info from configuration file
-  - 2 = Publish events to Pravega, 
-  - 3 = Run Anomaly detection, 
+- `RUN_MODE` can take any of the 3 options (1, 2 or 3):
+  - 1 = Create the configured Pravega stream and scope
+  - 2 = Publish events to Pravega 
+  - 3 = Run Anomaly detection
 ```
 
-<b>To run the application using script (On top of existing Flink cluster)</b>
+### Update the Configuration
+Update `conf/app.json` as appropriate to point to your Pravega installation (see "Application Configuration" section).
 
-Navigate to `$PRAVEGA_SAMPLES_HOME/anomaly-detection/build/install/pravega-flink-anomaly-detection/`
-
-Update `conf/app.json` (see "Application Configuration" section) as appropriate and run below commands to create stream and publish/consume records.
-
+### Create the Event Stream
+Run the following command to create the Pravega-based event stream:
 ```
-1) Create Pravega stream
-`bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode 1`
-
-2) Publish events to Pravega
-
-`flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar --configDir conf --mode 2` 
- (or) 
-`bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode 2`
-
-(The former will run the producer as Flink app and the later will run as a console application. Use console app option if you want to simulate error record manually by setting **controlledEnv** flag to true)
-
-3) Run stream job
-`flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar --configDir conf --mode 3`
-
-Ensure $FLINK_HOME/bin is in the PATH to use bin/run command option.
-
+$ bin/anomaly-detection --configDir conf/ --mode 1
 ```
+
+### Run the Event Generator
+The event generator is a Flink program to be run in either the local Flink environment or on a remote Flink cluster.
+
+- To run in the local environment:
+```
+$ bin/anomaly-detection --configDir conf/ --mode 2
+```
+
+- To run on a cluster (given a pre-configured Flink client):
+```
+$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar --configDir conf/ --mode 2
+```
+
+Leave the program running for a while, to generate a few events per second for a number 
+of simulated network clients.  Type CTRL-C to exit the generator (local environment only).
+
+The generator is able to produce both valid and invalid state transitions.  Invalid transitions occur in one of two ways,
+depending on the configuration:
+1. Automatically, with some probability (as configured by `errorProbFactor`)
+2. Manually, by pressing ENTER on the console (if  `controlledEnv` is `true`)
+
+### Run the Anomaly Detector
+The anomaly detector is another Flink program.   The program groups events by 
+source IP address, and maintains a state machine for each address as described above.
+
+Alerts are aggregated using a tumbling window.  Note that the Flink program uses _event time_ to aggregate alerts.
+
+- To run in the local environment:
+```
+$ bin/anomaly-detection --configDir conf/ --mode 3
+```
+
+- To run on a cluster:
+```
+$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar --configDir conf/ --mode 3
+```
+
+_Ensure that `$FLINK_HOME/bin` is on your path to use the `flink` command shown above._
+
+When an anomalous event sequence is detected (due to an invalid event generated by whatever means),
+an alert is generated to STDOUT and to Elasticsearch (if configured).
+
 
 ## Testing State Recovery
-Perform below steps to test the job state recovery. This works only when checkpoint is enabled and a reliable state backend is configured to store checkpoint/savepoint snapshot (flink-conf.yaml).
+The state machine associated with each source IP address is reliably stored in Flink's checkpoint state.  In a failure
+ scenario, Flink will automatically recover the job state, ensuring exactly-once processing
+ of input events and their corresponding state transitions.   Assuming that the event stream
+ contains only valid events, no spurious alerts should be produced following the recovery.
+ 
+Perform the below steps to test job state recovery. This works only when checkpoint is enabled and a reliable state backend is configured to store checkpoint/savepoint snapshot (flink-conf.yaml).
 
-1) Cancel the current running job using `-s` option which will create a savepoint in the default configured savepoint location as defined in flink-config.yaml
+1) Cancel the current running job using `-s` option which will create a savepoint in the configured savepoint location (as defined in `flink-conf.yaml`):
 
 ```
 bin/flink cancel -s <JOB_ID>
 ```
 
-With the above command, the job will be cancelled and the application's current state will be saved in backed filesystem.
-
-2) To resume from a savepoint run the below command
+2) To resume from a savepoint, run the below command:
 
 ```
 bin/flink run -s <SAVEPOINT_LOCATION> -c io.pravega.anomalydetection.ApplicationMain <PATH_TO_pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar> --configDir <APP_CONFIG_DIR> --mode 3
 ```
-The job should nicely recover from the last checkpointed state. In otherwords, you should not see any alerts (duplicate) that are already processed before taking the snapshot. The alerts can be either visualized from Kibana or from Taskmanager log file.  
+The job should nicely recover from the last checkpointed state. As mentioned, you should not see any spurious alerts.
+
+The alerts may be visualized using Kibana or by examining the TaskManager's 'stdout' (as shown in the Flink Web UI).  
 
 
 ## Application Configuration
@@ -140,7 +181,7 @@ The job should nicely recover from the last checkpointed state. In otherwords, y
   "pravega": {
     "controllerUri": "tcp://127.0.0.1:9090",
     "stream": "NetworkPacket",
-    "scope": "Network"
+    "scope": "examples"
   }
 }
 
@@ -150,9 +191,9 @@ The job should nicely recover from the last checkpointed state. In otherwords, y
 
 `capacity` - initial capacity till which the error records will not be generated
 
-`errorProbFactor` - how frequently error records needs to be simulated. Provide a value between 0.1 to 1
+`errorProbFactor` - how frequently error records needs to be simulated. Provide a value between 0.0 and 1.0
 
-`controlledEnv` - When this is true, the `errorProbFactor` value will be ignored and the error record will be generated only when user sends request (Possible Options: `S` to simulate error record, `Q` to quit ingestion)
+`controlledEnv` - When this is true, the `errorProbFactor` value will be ignored and the error record will be generated only when user presses ENTER on the console
 
 `parallelism` - This value will be used to define pravega segment count/fixed scaling policy and Flink job parallelism
 

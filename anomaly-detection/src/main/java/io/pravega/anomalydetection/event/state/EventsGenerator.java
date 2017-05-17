@@ -84,7 +84,7 @@ public class EventsGenerator {
 				Event.EventType event = currentState.randomInvalidTransition(rnd);
 				String networkId = getNetworkId();
 				returnEvent = new Event(address, event, getCurrentTime(), networkId,getLatLon(networkId));
-				LOG.info("**** Emitting invalid event: [{}], ", event);
+				LOG.info("**** Emitting invalid event: [{}], ", returnEvent);
 			}
 			else {
 				Tuple2<Event.EventType, EventStateMachine.State> stateTransitionTuple = currentState.randomTransition(rnd);
