@@ -86,7 +86,7 @@ object TurbineHeatProcessor {
       params.scope,
       Set(params.stream),
       params.startTime,
-      new PravegaDeserializationSchema(classOf[String], new JavaSerializer[String]()))).map { line =>
+      new PravegaDeserializationSchema(classOf[String], new JavaSerializer[String]()))).name("stream").map { line =>
       val l = line.trim.split(", ")
       SensorEvent(l(0).toLong, l(1).toInt, l(2), l(3).toFloat)
     }.name("events")
@@ -110,7 +110,7 @@ object TurbineHeatProcessor {
       summaries.writeAsCsv(path, FileSystem.WriteMode.OVERWRITE)
     }
 
-    env.execute(s"Turbine Heat Processor (${params.scope}, ${params.stream})")
+    env.execute(s"TurbineHeatProcessor_${params.scope}_${params.stream}")
   }
 
   /**
