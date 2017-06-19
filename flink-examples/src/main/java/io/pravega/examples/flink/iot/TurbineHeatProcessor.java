@@ -2,7 +2,7 @@ package io.pravega.examples.flink.iot;
 
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamInfo;
+import io.pravega.connectors.flink.util.StreamId;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -19,7 +19,7 @@ public class TurbineHeatProcessor {
     public static void main(String[] args) throws Exception {
         ParameterTool params = ParameterTool.fromArgs(args);
         FlinkPravegaParams helper = new FlinkPravegaParams(params);
-        StreamInfo stream = helper.createStreamFromParam("stream", "examples/turbineHeatTest");
+        StreamId stream = helper.createStreamFromParam("input", "examples/turbineHeatTest");
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
@@ -27,7 +27,7 @@ public class TurbineHeatProcessor {
         // 1. read and decode the sensor events from a Pravega stream
         long startTime = params.getLong("start", 0L);
         FlinkPravegaReader<String> reader = helper.newReader(stream, startTime, String.class);
-        DataStream<SensorEvent> events = env.addSource(reader, "stream").map(new SensorMapper()).name("events");
+        DataStream<SensorEvent> events = env.addSource(reader, "input").map(new SensorMapper()).name("events");
 
         // 2. extract timestamp information to support 'event-time' processing
         SingleOutputStreamOperator<SensorEvent> timestamped = events.assignTimestampsAndWatermarks(

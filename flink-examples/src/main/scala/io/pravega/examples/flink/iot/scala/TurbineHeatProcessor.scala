@@ -67,7 +67,7 @@ object TurbineHeatProcessor {
     val helper = new FlinkPravegaParams(params)
 
     // ensure that the scope and stream exist
-    val stream = helper.createStreamFromParam("stream", "examples/turbineHeatTest")
+    val stream = helper.createStreamFromParam("input", "examples/turbineHeatTest")
 
     // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
@@ -77,7 +77,7 @@ object TurbineHeatProcessor {
     val events: DataStream[SensorEvent] = env.addSource(helper.newReader(
       stream,
       params.getLong("start", 0),
-      classOf[String])).name("stream").map { line =>
+      classOf[String])).name("input").map { line =>
       val l = line.trim.split(", ")
       SensorEvent(l(0).toLong, l(1).toInt, l(2), l(3).toFloat)
     }.name("events")
