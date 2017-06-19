@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.examples.flink.iot.scala
+package io.pravega.examples.flink.iot
 
 import io.pravega.connectors.flink.util.FlinkPravegaParams
 import org.apache.flink.api.java.utils.ParameterTool
@@ -24,7 +24,7 @@ import scala.math._
   * Sample Flink Streaming program to process temperature data produced by the
   * accompanying TurbineHeatSensor app.
   */
-object TurbineHeatProcessor {
+object TurbineHeatProcessorScala {
 
   /**
     * A raw sensor event.

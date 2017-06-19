@@ -44,7 +44,7 @@ $ ls -R flink-examples/build/install/pravega-flink-examples
 bin	lib
 
 flink-examples/build/install/pravega-flink-examples/bin:
-run-example.sh
+run-example
 
 flink-examples/build/install/pravega-flink-examples/lib:
 pravega-flink-examples-0.1.0-SNAPSHOT-all.jar
@@ -74,13 +74,12 @@ Automatically creates a scope (default: `examples`) and stream (default: `turbin
 #### Running
 Run the sample from the command-line:
 ```
-$ bin/run-example.sh [--controller <URI>] [--scope <name>] [--stream <name>]
-                     [--startTime <long>] [--output <path>]
+$ bin/run-example [--controller <URI>] [--input <name>] [--startTime <long>] [--output <path>]
 ```
 
 Alternately, run the sample from the Flink UI.
 - JAR: `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`
-- Main class: `io.pravega.examples.flink.iot.TurbineHeatProcessor`
+- Main class: `io.pravega.examples.flink.iot.TurbineHeatProcessor` or `io.pravega.examples.flink.iot.TurbineHeatProcessorScala`
 
 #### Outputs
 The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day.   The data is
