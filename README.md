@@ -74,7 +74,7 @@ Automatically creates a scope (default: `examples`) and stream (default: `turbin
 #### Running
 Run the sample from the command-line:
 ```
-$ bin/run-example [--controller <URI>] [--input <name>] [--startTime <long>] [--output <path>]
+$ bin/run-example [--controller <URI>] [--input <scope>/<stream>] [--startTime <long>] [--output <path>]
 ```
 
 Alternately, run the sample from the Flink UI.
