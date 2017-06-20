@@ -11,16 +11,14 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
-import io.pravega.anomalydetection.event.serialization.PravegaDeserializationSchema;
 import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.anomalydetection.event.state.Result;
-import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
+import io.pravega.connectors.flink.util.FlinkPravegaParams;
+import io.pravega.connectors.flink.util.StreamId;
 import io.pravega.shaded.com.google.gson.Gson;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.runtime.state.filesystem.FsStateBackend;
-import org.apache.flink.shaded.org.apache.curator.shaded.com.google.common.collect.Sets;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -34,30 +32,24 @@ import org.apache.flink.streaming.connectors.elasticsearch5.ElasticsearchSink;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.time.Instant;
 import java.util.*;
 
 /**
  * Processes network events to detect anomalous sequences.
  */
-public class PravegaAnomalyDetectionProcessor implements IPipeline {
+public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
+
+	public PravegaAnomalyDetectionProcessor(AppConfiguration appConfiguration, FlinkPravegaParams pravega) {
+		super(appConfiguration, pravega);
+	}
 
 	@Override
-	public void run(AppConfiguration appConfiguration) throws Exception {
+	public void run() throws Exception {
 
 		// Configure the Pravega event reader
-		String controllerUri = appConfiguration.getPravega().getControllerUri();
-		String scope = appConfiguration.getPravega().getScope();
-		String stream = appConfiguration.getPravega().getStream();
 		long startTime = 0;
-
-		final String readerName = stream + "-reader";
-		FlinkPravegaReader<Event> flinkPravegaReader = new FlinkPravegaReader<>(URI.create(controllerUri), scope,
-				Sets.newHashSet(stream),
-				startTime,
-				new PravegaDeserializationSchema<>(Event.class, new JavaSerializer<Event>()),
-				readerName);
+		FlinkPravegaReader<Event> flinkPravegaReader = pravega.newReader(getStreamId(), startTime, Event.class);
 
 		// Configure the Flink job environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
