@@ -1,23 +1,16 @@
 /*
  * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *   
+ *
  */
 package io.pravega.examples.flink.iot
 
-import java.net.URI
-
-import io.pravega.client.admin.StreamManager
-import io.pravega.connectors.flink.FlinkPravegaReader
-import io.pravega.examples.flink.util.PravegaParameters
-import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
-import io.pravega.client.stream.impl.JavaSerializer
-import io.pravega.examples.flink.util.serialization.PravegaDeserializationSchema
+import io.pravega.connectors.flink.util.FlinkPravegaParams
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -25,15 +18,13 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
-
-import scala.collection.JavaConversions._
 import scala.math._
 
 /**
   * Sample Flink Streaming program to process temperature data produced by the
   * accompanying TurbineHeatSensor app.
   */
-object TurbineHeatProcessor {
+object TurbineHeatProcessorScala {
 
   /**
     * A raw sensor event.
@@ -71,22 +62,22 @@ object TurbineHeatProcessor {
   }
 
   def main(args: Array[String]) {
-    val params = Parameters(ParameterTool.fromArgs(args))
+
+    val params = ParameterTool.fromArgs(args)
+    val helper = new FlinkPravegaParams(params)
 
     // ensure that the scope and stream exist
-    ensureStream(params)
+    val stream = helper.createStreamFromParam("input", "examples/turbineHeatTest")
 
     // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     // 1. read and decode the sensor events from a Pravega stream
-    val events: DataStream[SensorEvent] = env.addSource(new FlinkPravegaReader(
-      params.controllerUri,
-      params.scope,
-      Set(params.stream),
-      params.startTime,
-      new PravegaDeserializationSchema(classOf[String], new JavaSerializer[String]()))).name("stream").map { line =>
+    val events: DataStream[SensorEvent] = env.addSource(helper.newReader(
+      stream,
+      params.getLong("start", 0),
+      classOf[String])).name("input").map { line =>
       val l = line.trim.split(", ")
       SensorEvent(l(0).toLong, l(1).toInt, l(2), l(3).toFloat)
     }.name("events")
@@ -106,40 +97,10 @@ object TurbineHeatProcessor {
 
     // 4. save to HDFS and print to stdout.  Refer to the TaskManager's 'Stdout' view in the Flink UI.
     summaries.print().name("stdout")
-    for(path <- params.outputPath) {
-      summaries.writeAsCsv(path, FileSystem.WriteMode.OVERWRITE)
+    if (params.has("output")) {
+      summaries.writeAsCsv(params.getRequired("output"), FileSystem.WriteMode.OVERWRITE)
     }
 
-    env.execute(s"TurbineHeatProcessor_${params.scope}_${params.stream}")
-  }
-
-  /**
-    * Ensure that the configured Pravega stream exists.
-    */
-  private def ensureStream(params: Parameters) = {
-    val streamManager = StreamManager.create(params.controllerUri)
-
-    // create the scope (if necessary)
-    streamManager.createScope(params.scope)
-
-    // create the stream (if necessary)
-    val streamConfig = StreamConfiguration.builder
-      .scope(params.scope).streamName(params.stream).scalingPolicy(ScalingPolicy.fixed(1)).build
-    streamManager.createStream(params.scope, params.stream, streamConfig)
-  }
-
-  /**
-    * Configuration parameters for the Flink program.
-    */
-  case class Parameters(p: ParameterTool) {
-    val DEFAULT_SCOPE_NAME = "examples"
-    val DEFAULT_STREAM_NAME = "turbineHeatTest"
-    val DEFAULT_START_TIME = 0
-
-    lazy val controllerUri = new URI(p.get("controller", PravegaParameters.DEFAULT_CONTROLLER_URI))
-    lazy val scope = p.get("scope", DEFAULT_SCOPE_NAME)
-    lazy val stream = p.get("stream", DEFAULT_STREAM_NAME)
-    lazy val startTime = p.getLong("start", DEFAULT_START_TIME)
-    lazy val outputPath = Option(p.get("output"))
+    env.execute(s"TurbineHeatProcessor_" + stream)
   }
 }

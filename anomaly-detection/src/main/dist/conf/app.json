@@ -30,10 +30,5 @@
       "index": "anomaly-index",
       "type":"anomalies"
     }
-  },
-  "pravega": {
-    "controllerUri": "tcp://127.0.0.1:9090",
-    "stream": "NetworkPacket",
-    "scope": "examples"
   }
 }

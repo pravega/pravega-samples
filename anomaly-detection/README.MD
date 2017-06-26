@@ -65,7 +65,7 @@ Usage:
 
 
 ```
-bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode <RUN_MODE>
+bin/anomaly-detection --configDir <APP_CONFIG_DIR> --mode <RUN_MODE> [--stream <SCOPE/NAME>] [--controller <CONTROLLER_URI>]
 
 where, 
 
@@ -74,10 +74,12 @@ where,
   - 1 = Create the configured Pravega stream and scope
   - 2 = Publish events to Pravega 
   - 3 = Run Anomaly detection
+- `SCOPE/NAME` Optionally you can change the name of the pravega scope and stream name. Defaults to 'examples/NetworkPacket'
+- `CONTROLLER_URI` is the URI to the pravega controller. Defaults to 'tcp://127.0.0.1:9090'
 ```
 
 ### Update the Configuration
-Update `conf/app.json` as appropriate to point to your Pravega installation (see "Application Configuration" section).
+Update `conf/app.json` as appropriate (see "Application Configuration" section).
 
 ### Create the Event Stream
 Run the following command to create the Pravega-based event stream:
@@ -177,11 +179,6 @@ The alerts may be visualized using Kibana or by examining the TaskManager's 'std
       "index": "anomaly-index",
       "type":"anomalies"
     }
-  },
-  "pravega": {
-    "controllerUri": "tcp://127.0.0.1:9090",
-    "stream": "NetworkPacket",
-    "scope": "examples"
   }
 }
 

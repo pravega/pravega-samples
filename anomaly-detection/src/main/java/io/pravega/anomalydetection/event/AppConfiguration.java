@@ -12,11 +12,10 @@ package io.pravega.anomalydetection.event;
 
 import java.io.Serializable;
 
-public class AppConfiguration implements Serializable{
+public class AppConfiguration implements Serializable {
 	private String name;
 	private Producer producer;
 	private Pipeline pipeline;
-	private Pravega pravega;
 
 	public static class Producer {
 		private long latencyInMilliSec;
@@ -171,36 +170,6 @@ public class AppConfiguration implements Serializable{
 		}
 	}
 
-	public static class Pravega {
-		private String controllerUri;
-		private String stream;
-		private String scope;
-
-		public String getControllerUri() {
-			return controllerUri;
-		}
-
-		public void setControllerUri(String controllerUri) {
-			this.controllerUri = controllerUri;
-		}
-
-		public String getStream() {
-			return stream;
-		}
-
-		public void setStream(String stream) {
-			this.stream = stream;
-		}
-
-		public String getScope() {
-			return scope;
-		}
-
-		public void setScope(String scope) {
-			this.scope = scope;
-		}
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -223,13 +192,5 @@ public class AppConfiguration implements Serializable{
 
 	public void setPipeline(Pipeline pipeline) {
 		this.pipeline = pipeline;
-	}
-
-	public Pravega getPravega() {
-		return pravega;
-	}
-
-	public void setPravega(Pravega pravega) {
-		this.pravega = pravega;
 	}
 }

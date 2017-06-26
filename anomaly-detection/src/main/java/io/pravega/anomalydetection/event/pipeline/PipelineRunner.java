@@ -11,6 +11,7 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
+import io.pravega.connectors.flink.util.FlinkPravegaParams;
 import io.pravega.shaded.com.google.gson.Gson;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ public class PipelineRunner {
 	private static final String configFile = "app.json";
 
 	private AppConfiguration appConfiguration;
-
+	private FlinkPravegaParams pravega;
 	private int runMode;
 
 	private void parseConfigurations(String[] args) {
@@ -58,6 +59,7 @@ public class PipelineRunner {
 
 		runMode = parameterTool.getInt("mode");
 
+		pravega = new FlinkPravegaParams(ParameterTool.fromArgs(args));
 	}
 
 	private void printUsage() {
@@ -77,27 +79,26 @@ public class PipelineRunner {
 		parseConfigurations(args);
 
 		try {
-
-			IPipeline pipeline;
+			AbstractPipeline pipeline = null;
 			switch (runMode) {
 				case 1:
 					LOG.info("Going to create Pravega stream");
-					StreamHelper.createStream(appConfiguration);
+					pipeline = new StreamCreator(appConfiguration, pravega);
 					break;
 				case 2:
 					LOG.info("Running event publisher to publish events to Pravega stream");
-					pipeline = new PravegaEventPublisher();
-					pipeline.run(appConfiguration);
+					pipeline = new PravegaEventPublisher(appConfiguration, pravega);
 					break;
 				case 3:
 					LOG.info("Running anomaly detection by reading from Pravega stream");
-					pipeline = new PravegaAnomalyDetectionProcessor();
-					pipeline.run(appConfiguration);
+					pipeline = new PravegaAnomalyDetectionProcessor(appConfiguration, pravega);
 					break;
 				default:
 					LOG.error("Incorrect run mode [{}] specified", runMode);
 					printUsage();
+					System.exit(-1);
 			}
+			pipeline.run();
 		} catch (Exception e) {
 			LOG.error("Failed to run the pipeline.", e);
 		}
