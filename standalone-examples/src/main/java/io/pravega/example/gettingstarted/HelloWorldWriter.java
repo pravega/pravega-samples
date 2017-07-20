@@ -11,6 +11,7 @@
 package io.pravega.example.gettingstarted;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -21,7 +22,6 @@ import org.apache.commons.cli.ParseException;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.AckFuture;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ScalingPolicy;
@@ -59,7 +59,7 @@ public class HelloWorldWriter {
             
             System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
-            final AckFuture writeFuture = writer.writeEvent(routingKey, message);
+            final CompletableFuture writeFuture = writer.writeEvent(routingKey, message);
         }
     }
 

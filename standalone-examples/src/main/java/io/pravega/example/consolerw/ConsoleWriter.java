@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.cli.CommandLine;
@@ -30,7 +31,6 @@ import org.apache.commons.cli.ParseException;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.AckFuture;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ScalingPolicy;
@@ -183,7 +183,7 @@ public class ConsoleWriter implements AutoCloseable {
     
     private void doWriteEvent(String event) {
         if (txn == null) {
-            AckFuture future = writer.writeEvent(event);
+            CompletableFuture future = writer.writeEvent(event);
             try {
                 future.get();
                 output("Wrote '%s'%n", event);
@@ -222,7 +222,7 @@ public class ConsoleWriter implements AutoCloseable {
     
     private void writeEventRK(String routingKey, String message) {
         if (txn == null) {
-            AckFuture future = writer.writeEvent(routingKey, message);
+            CompletableFuture future = writer.writeEvent(routingKey, message);
             try {
                 future.get();
                 output("Wrote using routing key '%s' message '%s'%n", routingKey, message);
