@@ -98,3 +98,7 @@ SensorAggregate(1152000000,7,Delaware,(60.0,100.0))
 ...
 ```
 
+### Anomaly Detection
+A Flink streaming application for detecting anomalous input patterns using a finite-state machine.
+
+_See the [anomaly-detection/](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection) directory for more information._
