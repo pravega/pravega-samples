@@ -66,6 +66,11 @@ $ ./gradlew upload
 
 ## Flink Samples
 
+### Anomaly Detection
+A Flink streaming application for detecting anomalous input patterns using a finite-state machine.
+
+_See the [anomaly-detection/](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection) directory for more information._
+
 ### Turbine Heat Processor
 A Flink streaming application for processing temperature data from a Pravega stream.   Complements the Turbine Heat Sensor app (external).   The application computes a daily summary of the temperature range observed on that day by each sensor.
 
@@ -97,8 +102,3 @@ SensorAggregate(1152000000,15,Kansas,(40.0,80.0))
 SensorAggregate(1152000000,7,Delaware,(60.0,100.0))
 ...
 ```
-
-### Anomaly Detection
-A Flink streaming application for detecting anomalous input patterns using a finite-state machine.
-
-_See the [anomaly-detection/](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection) directory for more information._
