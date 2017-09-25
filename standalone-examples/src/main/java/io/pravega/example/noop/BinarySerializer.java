@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.example.binary;
+package io.pravega.example.noop;
 
 import io.pravega.client.stream.Serializer;
 import java.nio.ByteBuffer;

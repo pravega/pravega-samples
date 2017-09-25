@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.example.binary;
+package io.pravega.example.noop;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -21,7 +21,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
 
-public class NullReader {
+public class NoopReader {
     private static final String DEFAULT_STREAM_ID = "examples/null";
     private static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
 
@@ -61,12 +61,12 @@ public class NullReader {
             }
 
             final URI controllerURI = URI.create(cmd.getOptionValue("uri", DEFAULT_CONTROLLER_URI));
-            new NullReader().run(streamId[0], streamId[1], controllerURI);
+            new NoopReader().run(streamId[0], streamId[1], controllerURI);
         }
         catch (ParseException e) {
             System.out.format("%s.%n", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("NullReader", options);
+            formatter.printHelp("NoopReader", options);
             System.exit(1);
         }
     }
