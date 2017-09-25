@@ -18,25 +18,27 @@ import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Sequence;
+import io.pravega.client.stream.Serializer;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class BinaryReader implements Runnable {
+public class SimpleReader<T> implements Runnable {
     private static final int READER_TIMEOUT_MS = 200000;
 
     private String scope;
     private String streamName;
     private URI controllerURI;
-    private Consumer<ByteBuffer> onNext;
+    private Serializer<T> serializer;
+    private Consumer<T> onNext;
     private Consumer<Throwable> onError = (Throwable throwable) -> throwable.printStackTrace();
 
-    public BinaryReader(String scope, String streamName, URI controllerURI, Consumer<ByteBuffer> onNext) {
+    public SimpleReader(String scope, String streamName, URI controllerURI, Serializer<T> serializer, Consumer<T> onNext) {
         this.scope = scope;
         this.streamName = streamName;
         this.controllerURI = controllerURI;
+        this.serializer = serializer;
         this.onNext = onNext;
     }
 
@@ -54,13 +56,13 @@ public class BinaryReader implements Runnable {
         }
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-             EventStreamReader<ByteBuffer> reader = clientFactory.createReader("reader",
-                     readerGroup, new BinarySerializer(), ReaderConfig.builder().build())) {
+             EventStreamReader<T> reader = clientFactory.createReader("reader",
+                     readerGroup, serializer, ReaderConfig.builder().build())) {
 
             while (true) {
                 try {
-                    EventRead<ByteBuffer> event = reader.readNextEvent(READER_TIMEOUT_MS);
-                    ByteBuffer eventData = event.getEvent();
+                    EventRead<T> event = reader.readNextEvent(READER_TIMEOUT_MS);
+                    T eventData = event.getEvent();
                     if (eventData != null) {
                         onNext.accept(event.getEvent());
                     }

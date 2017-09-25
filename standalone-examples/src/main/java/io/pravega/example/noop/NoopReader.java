@@ -31,7 +31,7 @@ public class NoopReader {
     public void run(String scope, String streamName, URI controllerURI) throws InterruptedException {
         System.out.printf("Reading events from %s/%s\n", scope, streamName);
 
-        BinaryReader binaryReader = new BinaryReader(scope, streamName, controllerURI, (ByteBuffer buffer) -> {
+        SimpleReader<ByteBuffer> binaryReader = new SimpleReader<>(scope, streamName, controllerURI, new BinarySerializer(), (ByteBuffer buffer) -> {
             bytesRead.addAndGet(buffer.remaining());
             eventsRead.incrementAndGet();
         });
