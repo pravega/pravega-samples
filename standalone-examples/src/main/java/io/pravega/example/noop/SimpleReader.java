@@ -32,6 +32,7 @@ public class SimpleReader<T> implements Runnable {
     private URI controllerURI;
     private Serializer<T> serializer;
     private Consumer<T> onNext;
+    private volatile boolean running;
     private Consumer<Throwable> onError = (Throwable throwable) -> throwable.printStackTrace();
 
     public SimpleReader(String scope, String streamName, URI controllerURI, Serializer<T> serializer, Consumer<T> onNext) {
@@ -46,7 +47,16 @@ public class SimpleReader<T> implements Runnable {
         this.onError = onError;
     }
 
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
+
     public void run() {
+        setRunning(true);
         final String readerGroup = UUID.randomUUID().toString().replace("-", "");
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
                                                                      .build();
@@ -59,7 +69,7 @@ public class SimpleReader<T> implements Runnable {
              EventStreamReader<T> reader = clientFactory.createReader("reader",
                      readerGroup, serializer, ReaderConfig.builder().build())) {
 
-            while (true) {
+            while (isRunning()) {
                 try {
                     EventRead<T> event = reader.readNextEvent(READER_TIMEOUT_MS);
                     T eventData = event.getEvent();
