@@ -25,7 +25,7 @@ Most examples can be run either using the gradle wrapper (gradlew) or scripts.
 To run the examples using scripts, the scripts need to be generated.  In the directory where you downloaded the pravega samples, run the following once, and all the scripts will be generated.
 
 ```
-$ ./gradlew install
+$ ./gradlew installDist
 ```
 
 The scripts can be found under the pravega-samples directory in:
@@ -129,4 +129,12 @@ An example of a lightweight IOT application that writes simulated sensor events 
 
 ```
 $ bin/turbineSensor [--stream <stream name>]
+```
+
+## NoopReader
+
+An example of a simple reader that continually reads the contents of any stream. A binary serializer is used so it works against any event types. The sample emits basic information about number of events/bytes read every 30 seconds. 
+
+```
+$ bin/noopReader [--uri tcp://127.0.0.1:9090] [--stream <SCOPE>/<STREAM>]
 ```

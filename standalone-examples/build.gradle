@@ -115,6 +115,22 @@ task scriptSharedConfigCli(type: CreateStartScripts) {
   classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+task scriptNoopReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.noop.NoopReader'
+    applicationName = 'noopReader'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startNoopReader(type: JavaExec) {
+    main = "io.pravega.example.noop.NoopReader"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -126,6 +142,7 @@ distributions {
                 from project.scriptConsoleWriter
                 from project.scriptConsoleReader
                 from project.scriptSharedConfigCli
+                from project.scriptNoopReader
             }
             into('lib') {
                 from(jar)
