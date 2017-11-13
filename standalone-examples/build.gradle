@@ -29,6 +29,8 @@ dependencies {
     
     compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
+            "com.emc.nautilus:guardian-client:0.3-10568.b66ccfa",
+            "com.emc.nautilus:server-common:0.3-10568.b66ccfa",
             "commons-cli:commons-cli:${commonsCLIVersion}"
 
     compile "org.slf4j:slf4j-api:1.7.14"

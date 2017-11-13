@@ -10,6 +10,9 @@
  */
 package io.pravega.example.consolerw;
 
+import com.emc.nautilus.auth.client.GuardianClient;
+import com.emc.nautilus.auth.client.GuardianClientFactory;
+import com.emc.nautilus.auth.models.users.UserCreate;
 import com.google.auth.Credentials;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -452,7 +455,16 @@ public class ConsoleWriter implements AutoCloseable {
         final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
         final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
-        
+
+        String endpoint = String.format("http://localhost:9240");
+        GuardianClientFactory guardianClientFactory = new GuardianClientFactory(endpoint);
+
+        GuardianClient client = guardianClientFactory.withBasicAuthLogin("admin", "password");
+
+      //  client.createUser(new UserCreate("arvind","password",null));
+
+        String token = client.getAuthToken();
+
         final URI controllerURI = URI.create(uriString);
         
         StreamManager streamManager = StreamManager.create(controllerURI);
@@ -465,8 +477,9 @@ public class ConsoleWriter implements AutoCloseable {
         streamManager.createStream(scope, streamName, streamConfig);
         
         try(
+
                 ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI,
-                        new CustomCredentials("arvind", "password"));
+                        new GuardianCredentials("admin", token));
                 EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                                                                                 new JavaSerializer<String>(),
                                                                                 EventWriterConfig.builder().build());
@@ -494,8 +507,48 @@ public class ConsoleWriter implements AutoCloseable {
         @Override
         public Map<String, List<String>> getRequestMetadata(URI uri) throws IOException {
             Map<String, List<String>> retVal = new HashMap<>();
+            retVal.put("method", Arrays.asList(new String[] {"Pravega-Common"}));
             retVal.put("userName", Arrays.asList(new String[]{this.userName}));
             retVal.put("password", Arrays.asList(new String[]{this.password}));
+            return retVal;
+        }
+
+        @Override
+        public boolean hasRequestMetadata() {
+            return true;
+        }
+
+        @Override
+        public boolean hasRequestMetadataOnly() {
+            return true;
+        }
+
+        @Override
+        public void refresh() throws IOException {
+
+        }
+    }
+
+
+    private static class GuardianCredentials extends Credentials {
+        private final String userName;
+        private final String token;
+
+        public GuardianCredentials(String userName, String token) {
+            this.userName = userName;
+            this.token = token;
+        }
+        @Override
+        public String getAuthenticationType() {
+            return "guardian";
+        }
+
+        @Override
+        public Map<String, List<String>> getRequestMetadata(URI uri) throws IOException {
+            Map<String, List<String>> retVal = new HashMap<>();
+            retVal.put("method", Arrays.asList(new String[] {"guardian"}));
+            retVal.put("userName", Arrays.asList(new String[]{this.userName}));
+            retVal.put("token", Arrays.asList(new String[]{this.token}));
             return retVal;
         }
 
