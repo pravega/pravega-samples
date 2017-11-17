@@ -466,8 +466,10 @@ public class ConsoleWriter implements AutoCloseable {
         String token = client.getAuthToken();
 
         final URI controllerURI = URI.create(uriString);
-        
-        StreamManager streamManager = StreamManager.create(controllerURI);
+
+        Credentials guardianCreds = new GuardianCredentials("admin", token);
+
+        StreamManager streamManager = StreamManager.create(controllerURI, guardianCreds, true, "cert.pem");
         streamManager.createScope(scope);
 
         StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
@@ -479,7 +481,7 @@ public class ConsoleWriter implements AutoCloseable {
         try(
 
                 ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI,
-                        new GuardianCredentials("admin", token));
+                       guardianCreds, true, "cert.pem") ;
                 EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                                                                                 new JavaSerializer<String>(),
                                                                                 EventWriterConfig.builder().build());
