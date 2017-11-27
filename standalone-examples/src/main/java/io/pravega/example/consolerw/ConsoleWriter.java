@@ -10,13 +10,19 @@
  */
 package io.pravega.example.consolerw;
 
+import com.emc.nautilus.auth.client.GuardianClient;
+import com.emc.nautilus.auth.client.GuardianClientFactory;
+import com.emc.nautilus.auth.models.users.UserCreate;
+import com.google.auth.Credentials;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -263,7 +269,7 @@ public class ConsoleWriter implements AutoCloseable {
         
         if (txn == null) {
             try {
-                txn = writer.beginTxn(transactionTimeout, maxExecutionTime, scaleGracePeriod);
+                txn = writer.beginTxn();
             } catch (Exception e) {
                 warn("Failed to begin a new transaction.%n");
                 output(e);
@@ -323,19 +329,7 @@ public class ConsoleWriter implements AutoCloseable {
                 }
             }
         }
-        
-        if (txn == null ){
-            warn("Cannot ping transaction -- begin a transaction first.%n");
-        } else {
-            try {
-                txn.ping(lease);
-                output("Transaction ping completed.%n");
-            } catch (Exception e) {
-                warn("Failed to ping transaction.%n");
-                output(e);
-            }
-        }
-        
+
         if (ignoredParms != null) {
             warn("Ignoring parameters: '%s'%n", ignoredParms);
         }
@@ -461,10 +455,21 @@ public class ConsoleWriter implements AutoCloseable {
         final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
         final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
-        
+
+        String endpoint = String.format("http://localhost:9240");
+        GuardianClientFactory guardianClientFactory = new GuardianClientFactory(endpoint);
+
+        GuardianClient client = guardianClientFactory.withBasicAuthLogin("admin", "password");
+
+      //  client.createUser(new UserCreate("arvind","password",null));
+
+        String token = client.getAuthToken();
+
         final URI controllerURI = URI.create(uriString);
-        
-        StreamManager streamManager = StreamManager.create(controllerURI);
+
+        Credentials guardianCreds = new GuardianCredentials("admin", token);
+
+        StreamManager streamManager = StreamManager.create(controllerURI, guardianCreds, true, "cert.pem");
         streamManager.createScope(scope);
 
         StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
@@ -474,15 +479,94 @@ public class ConsoleWriter implements AutoCloseable {
         streamManager.createStream(scope, streamName, streamConfig);
         
         try(
-            ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-            EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
+
+                ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI,
+                       guardianCreds, true, "cert.pem") ;
+                EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                                                                                 new JavaSerializer<String>(),
-                                                                                EventWriterConfig.builder().build()); 
-            ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);
+                                                                                EventWriterConfig.builder().build());
+                ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);
            ){
             cw.run();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static class CustomCredentials extends Credentials {
+        private final String userName;
+        private final String password;
+
+        public CustomCredentials(String userName, String password) {
+            this.userName = userName;
+            this.password = password;
+        }
+        @Override
+        public String getAuthenticationType() {
+            return "Pravega-Common";
+        }
+
+        @Override
+        public Map<String, List<String>> getRequestMetadata(URI uri) throws IOException {
+            Map<String, List<String>> retVal = new HashMap<>();
+            retVal.put("method", Arrays.asList(new String[] {"Pravega-Common"}));
+            retVal.put("userName", Arrays.asList(new String[]{this.userName}));
+            retVal.put("password", Arrays.asList(new String[]{this.password}));
+            return retVal;
+        }
+
+        @Override
+        public boolean hasRequestMetadata() {
+            return true;
+        }
+
+        @Override
+        public boolean hasRequestMetadataOnly() {
+            return true;
+        }
+
+        @Override
+        public void refresh() throws IOException {
+
+        }
+    }
+
+
+    private static class GuardianCredentials extends Credentials {
+        private final String userName;
+        private final String token;
+
+        public GuardianCredentials(String userName, String token) {
+            this.userName = userName;
+            this.token = token;
+        }
+        @Override
+        public String getAuthenticationType() {
+            return "guardian";
+        }
+
+        @Override
+        public Map<String, List<String>> getRequestMetadata(URI uri) throws IOException {
+            Map<String, List<String>> retVal = new HashMap<>();
+            retVal.put("method", Arrays.asList(new String[] {"guardian"}));
+            retVal.put("userName", Arrays.asList(new String[]{this.userName}));
+            retVal.put("token", Arrays.asList(new String[]{this.token}));
+            return retVal;
+        }
+
+        @Override
+        public boolean hasRequestMetadata() {
+            return true;
+        }
+
+        @Override
+        public boolean hasRequestMetadataOnly() {
+            return true;
+        }
+
+        @Override
+        public void refresh() throws IOException {
+
         }
     }
 }

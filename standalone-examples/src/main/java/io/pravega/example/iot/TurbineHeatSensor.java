@@ -398,7 +398,7 @@ public class TurbineHeatSensor {
         TransactionTemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean
                 isTransaction, ClientFactory factory) {
             super(sensor, eventsPerSec, secondsToRun, isTransaction, factory);
-            transaction = producer.beginTxn(5000, 3600000, 60000);
+            transaction = producer.beginTxn();
         }
 
         BiFunction<String, String, Future> sendFunction() {
