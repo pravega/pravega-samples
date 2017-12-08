@@ -62,6 +62,7 @@ shadowJar {
         include dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.8.1")
         include dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.1")
         include dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.8.1")
+        include dependency("com.fasterxml.jackson.core:jackson-core:2.8.1")
         include dependency("com.tdunning:t-digest:3.0")
         include dependency("org.hdrhistogram:HdrHistogram:2.1.6")
         include dependency("net.java.dev.jna:jna:4.2.2")
