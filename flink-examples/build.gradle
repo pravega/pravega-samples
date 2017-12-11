@@ -19,8 +19,12 @@ apply plugin: "distribution"
 sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-examples'
 
+ext {
+    scalaJava8CompatVersion = '0.7.0'
+}
+
 dependencies {
-    compile "org.scala-lang.modules:scala-java8-compat_2.11:0.3.0"
+    compile "org.scala-lang.modules:scala-java8-compat_2.11:${scalaJava8CompatVersion}"
     compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
