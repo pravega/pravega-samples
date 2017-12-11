@@ -37,7 +37,7 @@ import io.pravega.client.stream.impl.JavaSerializer;
  * A Map<K, V> that uses Pravega StateSynchronizer to maintain a shared, consistent, optimistically locked, concurrently
  * accessible representation.
  * 
- * @oaram <K> - the type of key used in the map.
+ * @param <K> - the type of key used in the map.
  * @param <V> - the value type used in the map.
  *
  */
@@ -46,8 +46,6 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
     /**
      * The internal Map representation that gets synchronized.  This is the "shared state" object.
      * 
-     * @param K - type of the Map's keys.
-     * @param V - type of the Map's values.
      */
     private static class SharedStateMap<K, V> implements Revisioned, Serializable {
         private static final long serialVersionUID = 1L;

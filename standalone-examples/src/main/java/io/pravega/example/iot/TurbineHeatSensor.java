@@ -54,6 +54,9 @@ public class TurbineHeatSensor {
     private static boolean isTransaction = false;
     private static int reportingInterval = 200;
 
+    private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
+    private static final long DEFAULT_TXN_SCALE_GRACE_PERIOD_MS = 30000L;
+
 
     public static void main(String[] args) throws Exception {
 
@@ -298,7 +301,10 @@ public class TurbineHeatSensor {
             this.secondsToRun = secondsToRun;
             this.isTransaction = isTransaction;
 
-            EventWriterConfig eventWriterConfig =  EventWriterConfig.builder().build();
+            EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
+                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                    .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
+                    .build();
             this.producer = clientFactory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
 
         }
@@ -398,7 +404,7 @@ public class TurbineHeatSensor {
         TransactionTemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean
                 isTransaction, ClientFactory factory) {
             super(sensor, eventsPerSec, secondsToRun, isTransaction, factory);
-            transaction = producer.beginTxn(5000, 3600000, 60000);
+            transaction = producer.beginTxn();
         }
 
         BiFunction<String, String, Future> sendFunction() {

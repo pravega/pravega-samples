@@ -59,10 +59,9 @@ public class ConsoleWriter implements AutoCloseable {
             "",
             "WRITE_EVENT {event} - write the {event} out to the Stream or the current Transaction.",
             "WRITE_EVENT_RK <<{routingKey}>> , {event} - write the {event} out to the Stream or the current Transaction using {routingKey}. Note << and >> around {routingKey}.",
-            "BEGIN [{transactionTimeout}] [, {maxExecutionTime}] [, {scaleGracePeriod}] begin a Transaction. Only one Transaction at a time is supported by the CLI.",
+            "BEGIN - begin a Transaction. Only one Transaction at a time is supported by the CLI.",
             "GET_TXN_ID - output the current Transaction's Id (if a Transaction is running)",
             "FLUSH - flush the current Transaction (if a Transaction is running)",
-            "PING [{lease}] - refresh the time remaining on the Transaction (if a Transaction is running)",
             "COMMIT - commit the Transaction (if a Transaction is running)",
             "ABORT - abort the Transaction (if a Transaction is running)",
             "STATUS - check the status of the Transaction(if a Transaction is running)",
@@ -154,9 +153,6 @@ public class ConsoleWriter implements AutoCloseable {
             case "FLUSH":
                 doFlushTxn(parms);
                 break;
-            case "PING":
-                doPingTxn(restOfLine);
-                break;
             case "COMMIT":
                 doCommitTxn(parms);
                 break;
@@ -242,28 +238,9 @@ public class ConsoleWriter implements AutoCloseable {
     }
     
     private void doBeginTxn(List<String> parms) {
-        String ignoredParms = null;
-        long transactionTimeout = DEFAULT_TXN_TIMEOUT_MS;
-        long maxExecutionTime = DEFAULT_TXN_MAX_EXECUTION_TIME_MS;
-        long scaleGracePeriod = DEFAULT_TXN_SCALE_GRACE_PERIOD_MS;
-        
-        try {
-            if (parms.size() > 0) {
-                transactionTimeout = Long.parseLong(parms.get(0));
-            }
-            if (parms.size() > 1) {
-                maxExecutionTime = Long.parseLong(parms.get(1));
-            }
-            if (parms.size() > 2) {
-                scaleGracePeriod = Long.parseLong(parms.get(2));
-            }
-        } catch (Exception e ) {
-            warn("Expecting numeric values as parameters.%n");
-        }
-        
         if (txn == null) {
             try {
-                txn = writer.beginTxn(transactionTimeout, maxExecutionTime, scaleGracePeriod);
+                txn = writer.beginTxn();
             } catch (Exception e) {
                 warn("Failed to begin a new transaction.%n");
                 output(e);
@@ -271,9 +248,9 @@ public class ConsoleWriter implements AutoCloseable {
         } else {
             warn("Cannot begin a new transaction -- commit or abort the current transaction.%n");
         }
-        
-        if (parms.size() > 3) {
-            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(3).collect(Collectors.toList())));
+
+        if (parms.size() > 0) {
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
     
@@ -307,41 +284,7 @@ public class ConsoleWriter implements AutoCloseable {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
-    private void doPingTxn(String restOfLine) {
-        String ignoredParms = null;
-        long lease = DEFAULT_PING_LEASE_MS;
-        
-        if (restOfLine != null) {
-            try (final Scanner sc = new Scanner(restOfLine.trim()).useDelimiter(",")){
-                if (sc.hasNextLong()) {
-                    lease = sc.nextLong();
-                }
-                
-                if (sc.hasNextLine()) {
-                    ignoredParms = sc.nextLine();
-                }
-            }
-        }
-        
-        if (txn == null ){
-            warn("Cannot ping transaction -- begin a transaction first.%n");
-        } else {
-            try {
-                txn.ping(lease);
-                output("Transaction ping completed.%n");
-            } catch (Exception e) {
-                warn("Failed to ping transaction.%n");
-                output(e);
-            }
-        }
-        
-        if (ignoredParms != null) {
-            warn("Ignoring parameters: '%s'%n", ignoredParms);
-        }
 
-    }
-    
     private void doCommitTxn(List<String> parms) {
         if (txn == null ){
             warn("Cannot commit transaction -- begin a transaction first.%n");
@@ -475,9 +418,14 @@ public class ConsoleWriter implements AutoCloseable {
         
         try(
             ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+
             EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                                                                                new JavaSerializer<String>(),
-                                                                                EventWriterConfig.builder().build()); 
+                    new JavaSerializer<String>(),
+                    EventWriterConfig.builder()
+                            .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                            .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
+                            .build());
+
             ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);
            ){
             cw.run();
