@@ -49,9 +49,9 @@ public class ConsoleWriter implements AutoCloseable {
     private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
     private static final long DEFAULT_TXN_MAX_EXECUTION_TIME_MS = 30000L;
     private static final long DEFAULT_TXN_SCALE_GRACE_PERIOD_MS = 30000L;
-    
+
     private static final long DEFAULT_PING_LEASE_MS = 30000L;
-    
+
     private static final String[] HELP_TEXT = {
             "Enter one of the following commands at the command line prompt:",
             "",
@@ -59,30 +59,29 @@ public class ConsoleWriter implements AutoCloseable {
             "",
             "WRITE_EVENT {event} - write the {event} out to the Stream or the current Transaction.",
             "WRITE_EVENT_RK <<{routingKey}>> , {event} - write the {event} out to the Stream or the current Transaction using {routingKey}. Note << and >> around {routingKey}.",
-            "BEGIN [{transactionTimeout}] [, {maxExecutionTime}] [, {scaleGracePeriod}] begin a Transaction. Only one Transaction at a time is supported by the CLI.",
+            "BEGIN - begin a Transaction. Only one Transaction at a time is supported by the CLI.",
             "GET_TXN_ID - output the current Transaction's Id (if a Transaction is running)",
             "FLUSH - flush the current Transaction (if a Transaction is running)",
-            "PING [{lease}] - refresh the time remaining on the Transaction (if a Transaction is running)",
             "COMMIT - commit the Transaction (if a Transaction is running)",
             "ABORT - abort the Transaction (if a Transaction is running)",
             "STATUS - check the status of the Transaction(if a Transaction is running)",
             "HELP - print out a list of commands.",
             "QUIT - terminate the program."
     };
-    
+
     private final String scope;
-    private final String streamName; 
+    private final String streamName;
     private final EventStreamWriter<String> writer;
     private Transaction<String> txn = null;
-    
-    
+
+
     public ConsoleWriter(String scope, String streamName, EventStreamWriter<String> writer) {
         this.scope = scope;
         this.streamName = streamName;
         this.writer = writer;
-        
+
         this.txn = null;  //by default, the ConsoleWriter is not in TXN mode
-        
+
     }
 
     /*
@@ -90,9 +89,9 @@ public class ConsoleWriter implements AutoCloseable {
      */
     public void run() throws IOException{
         boolean done = false;
-        
+
         outputHelp();
-        
+
         while(!done){
             String commandLine = readLine("%s >", getPrompt()).trim();
             if (! commandLine.equals("")) {
@@ -100,11 +99,11 @@ public class ConsoleWriter implements AutoCloseable {
             }
         }
     }
-    
+
     private String getPrompt() {
         return txn != null ? txn.getTxnId().toString() : scope + "/" + streamName;
     }
-    
+
     /*
      * Indirection to deal with Eclipse console bug #122429
      */
@@ -116,9 +115,9 @@ public class ConsoleWriter implements AutoCloseable {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 System.in));
         return reader.readLine();
-        
+
     }
-    
+
     /*
      * The raw format of the command is [COMMAND] [parm [,parm]]
      */
@@ -137,7 +136,7 @@ public class ConsoleWriter implements AutoCloseable {
             parms = new ArrayList<String>();
             restOfLine = null;
         }
-        
+
         switch(command.toUpperCase()) {
             case "WRITE_EVENT":
                 doWriteEvent(restOfLine);
@@ -153,9 +152,6 @@ public class ConsoleWriter implements AutoCloseable {
                 break;
             case "FLUSH":
                 doFlushTxn(parms);
-                break;
-            case "PING":
-                doPingTxn(restOfLine);
                 break;
             case "COMMIT":
                 doCommitTxn(parms);
@@ -180,7 +176,7 @@ public class ConsoleWriter implements AutoCloseable {
         sc.close();
         return ret;
     }
-    
+
     private void doWriteEvent(String event) {
         if (txn == null) {
             CompletableFuture future = writer.writeEvent(event);
@@ -201,7 +197,7 @@ public class ConsoleWriter implements AutoCloseable {
             }
         }
     }
-    
+
     private void doWriteEventRK(String restOfLine) {
         final String routingKey;
         final String message;
@@ -219,7 +215,7 @@ public class ConsoleWriter implements AutoCloseable {
         }
         warn("Expecting '('routingkey')' message%n");
     }
-    
+
     private void writeEventRK(String routingKey, String message) {
         if (txn == null) {
             CompletableFuture future = writer.writeEvent(routingKey, message);
@@ -240,30 +236,11 @@ public class ConsoleWriter implements AutoCloseable {
             }
         }
     }
-    
+
     private void doBeginTxn(List<String> parms) {
-        String ignoredParms = null;
-        long transactionTimeout = DEFAULT_TXN_TIMEOUT_MS;
-        long maxExecutionTime = DEFAULT_TXN_MAX_EXECUTION_TIME_MS;
-        long scaleGracePeriod = DEFAULT_TXN_SCALE_GRACE_PERIOD_MS;
-        
-        try {
-            if (parms.size() > 0) {
-                transactionTimeout = Long.parseLong(parms.get(0));
-            }
-            if (parms.size() > 1) {
-                maxExecutionTime = Long.parseLong(parms.get(1));
-            }
-            if (parms.size() > 2) {
-                scaleGracePeriod = Long.parseLong(parms.get(2));
-            }
-        } catch (Exception e ) {
-            warn("Expecting numeric values as parameters.%n");
-        }
-        
         if (txn == null) {
             try {
-                txn = writer.beginTxn(transactionTimeout, maxExecutionTime, scaleGracePeriod);
+                txn = writer.beginTxn();
             } catch (Exception e) {
                 warn("Failed to begin a new transaction.%n");
                 output(e);
@@ -271,12 +248,12 @@ public class ConsoleWriter implements AutoCloseable {
         } else {
             warn("Cannot begin a new transaction -- commit or abort the current transaction.%n");
         }
-        
-        if (parms.size() > 3) {
-            warn("Ignoring parameters: '%s'%n", String.join(",", parms.stream().skip(3).collect(Collectors.toList())));
+
+        if (parms.size() > 0) {
+            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
+
     private void doGetTxnId(List<String> parms) {
         if (txn == null) {
             warn("Cannot get transaction id -- begin a transaction first.%n");
@@ -284,12 +261,12 @@ public class ConsoleWriter implements AutoCloseable {
             final UUID txn_id = txn.getTxnId();
             output("Transaction id: %s%n", txn_id);
         }
-        
+
         if (parms.size() > 0) {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
+
     private void doFlushTxn(List<String> parms) {
         if (txn == null) {
             warn("Cannot flush transaction -- begin a transaction first.%n");
@@ -302,46 +279,12 @@ public class ConsoleWriter implements AutoCloseable {
             }
             output("Transaction flush completed.%n");
         }
-        
+
         if (parms.size() > 0) {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
-    private void doPingTxn(String restOfLine) {
-        String ignoredParms = null;
-        long lease = DEFAULT_PING_LEASE_MS;
-        
-        if (restOfLine != null) {
-            try (final Scanner sc = new Scanner(restOfLine.trim()).useDelimiter(",")){
-                if (sc.hasNextLong()) {
-                    lease = sc.nextLong();
-                }
-                
-                if (sc.hasNextLine()) {
-                    ignoredParms = sc.nextLine();
-                }
-            }
-        }
-        
-        if (txn == null ){
-            warn("Cannot ping transaction -- begin a transaction first.%n");
-        } else {
-            try {
-                txn.ping(lease);
-                output("Transaction ping completed.%n");
-            } catch (Exception e) {
-                warn("Failed to ping transaction.%n");
-                output(e);
-            }
-        }
-        
-        if (ignoredParms != null) {
-            warn("Ignoring parameters: '%s'%n", ignoredParms);
-        }
 
-    }
-    
     private void doCommitTxn(List<String> parms) {
         if (txn == null ){
             warn("Cannot commit transaction -- begin a transaction first.%n");
@@ -355,12 +298,12 @@ public class ConsoleWriter implements AutoCloseable {
             }
             txn = null;
         }
-        
+
         if (parms.size() > 0) {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
+
     private void doAbortTxn(List<String> parms) {
         if (txn == null ){
             warn("Cannot abort transaction -- begin a transaction first.%n");
@@ -374,12 +317,12 @@ public class ConsoleWriter implements AutoCloseable {
                 output(e);
             }
         }
-        
+
         if (parms.size() > 0) {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
+
     private void doCheckTxnStatus(List<String> parms) {
         if (txn == null ){
             warn("Cannot check transaction status -- begin a transaction first.%n");
@@ -392,7 +335,7 @@ public class ConsoleWriter implements AutoCloseable {
                 output(e);
             }
         }
-        
+
         if (parms.size() > 0) {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
@@ -400,36 +343,36 @@ public class ConsoleWriter implements AutoCloseable {
 
     private void doHelp(List<String> parms) {
         outputHelp();
-        
+
         if (parms.size() > 0) {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
-    
+
     private void outputHelp() {
         Arrays.stream(HELP_TEXT).forEach(System.out::println);
         System.out.println("");
     }
-    
+
     private void output(String format, Object... args){
         System.out.format("**** ");
         System.out.format(format, args);
     }
-    
+
     private void warn(String format, Object... args){
         System.out.format("!!!! ");
         System.out.format(format, args);
     }
-    
+
     private void output(Exception e) {
         e.printStackTrace();
         output("%n");
     }
-    
+
     @Override
     public void close(){
         // TODO Auto-generated method stub
-        
+
     }
 
     private static Options getOptions() {
@@ -445,7 +388,7 @@ public class ConsoleWriter implements AutoCloseable {
         CommandLine cmd = parser.parse(options, args);
         return cmd;
     }
-    
+
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLine cmd = null;
@@ -461,9 +404,9 @@ public class ConsoleWriter implements AutoCloseable {
         final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
         final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
-        
+
         final URI controllerURI = URI.create(uriString);
-        
+
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scope);
 
@@ -472,14 +415,19 @@ public class ConsoleWriter implements AutoCloseable {
                 .build();
 
         streamManager.createStream(scope, streamName, streamConfig);
-        
+
         try(
-            ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-            EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                                                                                new JavaSerializer<String>(),
-                                                                                EventWriterConfig.builder().build()); 
-            ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);
-           ){
+                ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+
+                EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
+                        new JavaSerializer<String>(),
+                        EventWriterConfig.builder()
+                                .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                                .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
+                                .build());
+
+                ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);
+        ){
             cw.run();
         } catch (IOException e) {
             e.printStackTrace();
