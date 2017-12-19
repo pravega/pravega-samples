@@ -14,6 +14,7 @@ import com.emc.nautilus.auth.client.GuardianClient;
 import com.emc.nautilus.auth.client.GuardianClientFactory;
 import com.emc.nautilus.auth.models.users.UserCreate;
 import com.google.auth.Credentials;
+import io.pravega.client.stream.impl.PravegaCredentials;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -457,17 +458,17 @@ public class ConsoleWriter implements AutoCloseable {
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
 
         String endpoint = String.format("http://localhost:9240");
-        GuardianClientFactory guardianClientFactory = new GuardianClientFactory(endpoint);
+      //  GuardianClientFactory guardianClientFactory = new GuardianClientFactory(endpoint);
 
-        GuardianClient client = guardianClientFactory.withBasicAuthLogin("admin", "password");
+//        GuardianClient client = guardianClientFactory.withBasicAuthLogin("admin", "1111_aaaa");
 
       //  client.createUser(new UserCreate("arvind","password",null));
 
-        String token = client.getAuthToken();
+     //   String token = client.getAuthToken();
 
         final URI controllerURI = URI.create(uriString);
 
-        Credentials guardianCreds = new GuardianCredentials("admin", token);
+        PravegaCredentials guardianCreds = new CustomCredentials("admin", "1111_aaaa");
 
         StreamManager streamManager = StreamManager.create(controllerURI, guardianCreds, true, "cert.pem");
         streamManager.createScope(scope);
@@ -493,7 +494,7 @@ public class ConsoleWriter implements AutoCloseable {
         }
     }
 
-    private static class CustomCredentials extends Credentials {
+    private static class CustomCredentials implements PravegaCredentials {
         private final String userName;
         private final String password;
 
@@ -503,36 +504,20 @@ public class ConsoleWriter implements AutoCloseable {
         }
         @Override
         public String getAuthenticationType() {
-            return "Pravega-Common";
+            return "Pravega-Default";
         }
 
         @Override
-        public Map<String, List<String>> getRequestMetadata(URI uri) throws IOException {
-            Map<String, List<String>> retVal = new HashMap<>();
-            retVal.put("method", Arrays.asList(new String[] {"Pravega-Common"}));
-            retVal.put("userName", Arrays.asList(new String[]{this.userName}));
-            retVal.put("password", Arrays.asList(new String[]{this.password}));
+        public Map<String, String> getAuthorizationHeaders() {
+            Map<String, String> retVal = new HashMap<>();
+            retVal.put("userName", this.userName);
+            retVal.put("password", this.password);
             return retVal;
-        }
-
-        @Override
-        public boolean hasRequestMetadata() {
-            return true;
-        }
-
-        @Override
-        public boolean hasRequestMetadataOnly() {
-            return true;
-        }
-
-        @Override
-        public void refresh() throws IOException {
-
         }
     }
 
 
-    private static class GuardianCredentials extends Credentials {
+    private static class GuardianCredentials implements PravegaCredentials {
         private final String userName;
         private final String token;
 
@@ -546,27 +531,15 @@ public class ConsoleWriter implements AutoCloseable {
         }
 
         @Override
-        public Map<String, List<String>> getRequestMetadata(URI uri) throws IOException {
-            Map<String, List<String>> retVal = new HashMap<>();
-            retVal.put("method", Arrays.asList(new String[] {"guardian"}));
-            retVal.put("userName", Arrays.asList(new String[]{this.userName}));
-            retVal.put("token", Arrays.asList(new String[]{this.token}));
+        public Map<String, String> getAuthorizationHeaders() {
+            Map<String, String> retVal = new HashMap<>();
+
+            retVal.put("method", "guardian");
+            retVal.put("userName", this.userName);
+            retVal.put("token", this.token);
+
             return retVal;
         }
 
-        @Override
-        public boolean hasRequestMetadata() {
-            return true;
-        }
-
-        @Override
-        public boolean hasRequestMetadataOnly() {
-            return true;
-        }
-
-        @Override
-        public void refresh() throws IOException {
-
-        }
     }
 }
