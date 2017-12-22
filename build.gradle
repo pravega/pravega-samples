@@ -29,9 +29,6 @@ subprojects {
         jcenter()
         mavenCentral()
         maven {
-            url "https://oss.sonatype.org/content/repositories/iopravega-1008"
-        }
-        maven {
             url "https://repository.apache.org/snapshots"
         }
         maven {
