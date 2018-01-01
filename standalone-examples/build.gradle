@@ -33,8 +33,6 @@ dependencies {
             "com.emc.nautilus:server-common:0.3-10568.b66ccfa",
             "commons-cli:commons-cli:${commonsCLIVersion}"
 
-    compile "io.netty:netty-tcnative-boringssl-static:2.0.6.Final"
-
     compile "org.slf4j:slf4j-api:1.7.14"
     compile "ch.qos.logback:logback-classic:1.1.7"
 }

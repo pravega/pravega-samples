@@ -508,7 +508,7 @@ public class ConsoleWriter implements AutoCloseable {
         }
 
         @Override
-        public Map<String, String> getAuthorizationHeaders() {
+        public Map<String, String> getAuthHeaders() {
             Map<String, String> retVal = new HashMap<>();
             retVal.put("userName", this.userName);
             retVal.put("password", this.password);
@@ -531,7 +531,7 @@ public class ConsoleWriter implements AutoCloseable {
         }
 
         @Override
-        public Map<String, String> getAuthorizationHeaders() {
+        public Map<String, String> getAuthHeaders() {
             Map<String, String> retVal = new HashMap<>();
 
             retVal.put("method", "guardian");
