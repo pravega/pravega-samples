@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
+}
+
+apply plugin: "java"
+apply plugin: "distribution"
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+sourceCompatibility = "1.8"
+
+archivesBaseName = 'pravega-flink-wordcount'
+
+dependencies {
+    compile "org.slf4j:slf4j-log4j12:1.7.14"
+    compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
+}
+
+shadowJar {
+    dependencies {
+        include dependency("io.pravega:pravega-connectors-flink_2.11")
+    }
+}
+
+task scriptWordCountWriter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountWriter'
+    applicationName = 'wordCountWriter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptWordCountReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountReader'
+    applicationName = 'wordCountReader'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('bin') {
+                from project.scriptWordCountWriter
+                from project.scriptWordCountReader
+            }
+        }
+    }
+}
+
