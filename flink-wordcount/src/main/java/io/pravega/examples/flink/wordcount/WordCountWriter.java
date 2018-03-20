@@ -62,7 +62,7 @@ public class WordCountWriter {
     //   the input parameter name
     //   the default Pravega stream - scope/name
     private static final String STREAM_PARAMETER = "stream";
-    private static final String DEFAULT_STREAM = "examples/wordcount";
+    private static final String DEFAULT_STREAM = "myscope/wordcount";
 
     public static void main(String[] args) throws Exception {
         LOG.info("Starting WordCountWriter...");
