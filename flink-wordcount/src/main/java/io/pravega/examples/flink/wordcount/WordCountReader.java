@@ -60,7 +60,7 @@ public class WordCountReader {
         pravega.createStream(streamId);
 
         // initialize up the execution environment for Flink to perform streaming
-        final StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // create the Pravega stream reader
         long startTime = 0;
@@ -72,13 +72,13 @@ public class WordCountReader {
         //
 
         // add the Pravega reader as the data source
-        DataStream<WordCount> dataStream = see.addSource(flinkPravegaReader);
+        DataStream<WordCount> dataStream = env.addSource(flinkPravegaReader);
 
         // create an output sink to print to stdout for verification
         dataStream.print();
 
-        // execute the above playbook within the Flink environment
-        see.execute("WordCountReader");
+        // execute within the Flink environment
+        env.execute("WordCountReader");
 
         LOG.info("Ending WordCountReader...");
     }

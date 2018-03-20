@@ -82,31 +82,33 @@ public class WordCountWriter {
         pravega.createStream(streamId);
 
         // retrieve the network host and port information to read the incoming data from
-        String hostIP = params.get(NW_HOST_PARAMETER, DEFAULT_HOST_PARAMETER);
-        int hostPort = Integer.parseInt(params.get(NW_PORT_PARAMETER, DEFAULT_PORT_PARAMETER));
+        String host = params.get(NW_HOST_PARAMETER, DEFAULT_HOST_PARAMETER);
+        int port = Integer.parseInt(params.get(NW_PORT_PARAMETER, DEFAULT_PORT_PARAMETER));
 
         // initialize up the execution environment for Flink to perform streaming
-        final StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // as an example, the below reads input from a network and summarizes the words 
         // every five seconds the code below sets up the following
         //   setup an incoming socket stream to read from a network host and port
         //   a sentence/line is read and split into words
         //   set a transformation window of 5 seconds to perform a basic count analytics for each word
-        DataStream<WordCount> dataStream =
-            see.socketTextStream(hostIP,hostPort).flatMap(new Splitter()).keyBy("word")
-                                .timeWindow(Time.seconds(5))
-                                .sum("count");
+   
+        // get input data by connecting to the socket
+        DataStream<String> text = env.socketTextStream(host, port);
+        DataStream<WordCount> dataStream = text.flatMap(new Splitter()).keyBy("word")
+                                           .timeWindow(Time.seconds(5))
+                                           .sum("count");
 
         // create the Pravega writer and add this as a sink for the events to be written to
         FlinkPravegaWriter<WordCount> writer = pravega.newWriter(streamId, WordCount.class, new EventRouter());
         dataStream.addSink(writer);
 
         // create another output sink to print to stdout for verification
-        dataStream.print();
+        //dataStream.print();
 
-        // execute the above playbook within the Flink environment
-        see.execute("WordCountWriter");
+        // execute within the Flink environment
+        env.execute("WordCountWriter");
 
         LOG.info("Ending WordCountWriter...");
     }
