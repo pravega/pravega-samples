@@ -26,7 +26,7 @@ $ ./gradlew clean installDist
 ```
 
 ## Word Count Example
-This example consists of two applications, a WordCountWriter that reads data from a network stream, transforms the data, and writes the data to a Pravega stream; and a WordCountReader that reads from a Pravega stream and prints the word counts summarty. You might want to run WordCountWriter in one window and WordCountReader in another.
+This example consists of two applications, a WordCountWriter that reads data from a network stream, transforms the data, and writes the data to a Pravega stream; and a WordCountReader that reads from a Pravega stream and prints the word counts summary. You might want to run WordCountWriter in one window and WordCountReader in another.
 
 The scripts can be found under the flink-wordcount directory in:
 ```
