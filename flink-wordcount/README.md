@@ -46,7 +46,7 @@ Then start the WordCountWriter
 $ bin/wordCountWriter [-host localhost] [-port 9999] [-stream myscope/wordcount] [-collector tcp://localhost:9090]
 ```
 
-All args are optional, if not included, the defaults are:
+All args are optional, if not specified, the defaults are:
 
  * host - "localhost"
  * port - "9999"
@@ -97,7 +97,6 @@ $ flink run -m localhost:6123 -c io.pravega.examples.flink.wordcount.WordCountWr
 ```
 The WordCountWriter job should show up on the Flink UI as a running job.
 
-
 ### Start WordCountReader
 In a different window
 ```
@@ -131,12 +130,14 @@ Submit WordCountWriter job
 - Browser to flink-wordcout/build/install/pravega-flink-wordcount/lib and select the uber jar file: pravega-flink-wordcount-0.2.0-SNAPSHOT-**all**.jar
 - Click **Upload** button
 - Click the checkbox next to the uploaded jar file.
-- In the **Entry Class** field, enter: io.pravega.examples.flink.wordcount.WordCountWriter
-- In the **Program Arguments** field, enter: --host localhost --port 9999 --controller tcp://localhost:9090
+- In the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountWriter```
+- In the **Program Arguments** field, enter: ```--host localhost --port 9999 --controller tcp://localhost:9090```
 - Click **Submit** button
 
 ![](image/flink-wordcount-submit-writer.png)
 
 Submit WordCountReader job
 
-Repeat the steps above to, except in the **Program Arguments** field, enter --controller tcp://localhost:9090.
+Repeat the steps above except
+- in the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountReader```
+- in the **Program Arguments** field, enter: ```--controller tcp://localhost:9090```
