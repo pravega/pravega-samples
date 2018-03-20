@@ -135,7 +135,8 @@ Submit WordCountWriter job
 - In the **Program Arguments** field, enter: --host localhost --port 9999 --controller tcp://localhost:9090
 - Click **Submit** button
 
-[Submit WordCountWriter Job Screeshot](image/flink-wordcount-submit-writer.png)
+![](image/flink-wordcount-submit-writer.png)
 
 Submit WordCountReader job
+
 Repeat the steps above to, except in the **Program Arguments** field, enter --controller tcp://localhost:9090.
