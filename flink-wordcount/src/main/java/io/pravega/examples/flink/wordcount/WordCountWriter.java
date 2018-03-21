@@ -45,67 +45,42 @@ public class WordCountWriter {
     private static final Logger LOG = LoggerFactory.getLogger(WordCountWriter.class);
 
     // Application parameters
-
-    // Network host running the netcat utility
-    //   the input parameter name
-    //   the default host IP Address
-    private static final String NW_HOST_PARAMETER = "host";
-    private static final String DEFAULT_HOST_PARAMETER = "127.0.0.1";
-
-    // Network port running the netcat utility
-    //   the input parameter name
-    //   the default port
-    private static final String NW_PORT_PARAMETER = "port";
-    private static final String DEFAULT_PORT_PARAMETER = "9999";
-
-    // the Pravega stream that the incoming data will be written to
-    //   the input parameter name
-    //   the default Pravega stream - scope/name
-    private static final String STREAM_PARAMETER = "stream";
-    private static final String DEFAULT_STREAM = "myscope/wordcount";
+    //   host - host running netcat, default 127.0.0.1
+    //   port - port on which netcat listens, default 9999
+    //   stream - the Pravega stream to write data to, default myscope/wordcount
+    //   controller - the Pravega controller uri, default tcp://127.0.0.1:9090
 
     public static void main(String[] args) throws Exception {
         LOG.info("Starting WordCountWriter...");
 
-        // the following code snippet will setup and initialize a Pravega stream
-
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
 
-        // create pravega helper utility for Flink using the input paramaters
-        FlinkPravegaParams pravega = new FlinkPravegaParams(params);
+        // create Pravega helper
+        FlinkPravegaParams helper = new FlinkPravegaParams(params);
 
         // get the Pravega stream information from the input parameters
-        StreamId streamId = pravega.getStreamFromParam(STREAM_PARAMETER, DEFAULT_STREAM);
+        StreamId streamId = helper.getStreamFromParam(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM);
 
-        // create the pravega stream itself using the stream ID
-        pravega.createStream(streamId);
+        // create the Pravega stream
+        helper.createStream(streamId);
 
         // retrieve the network host and port information to read the incoming data from
-        String host = params.get(NW_HOST_PARAMETER, DEFAULT_HOST_PARAMETER);
-        int port = Integer.parseInt(params.get(NW_PORT_PARAMETER, DEFAULT_PORT_PARAMETER));
+        String host = params.get(Constants.HOST_PARAM, Constants.DEFAULT_HOST);
+        int port = Integer.parseInt(params.get(Constants.PORT_PARAM, Constants.DEFAULT_PORT));
 
-        // initialize up the execution environment for Flink to perform streaming
+        // initialize Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // as an example, the below reads input from a network and summarizes the words 
-        // every five seconds the code below sets up the following
-        //   setup an incoming socket stream to read from a network host and port
-        //   a sentence/line is read and split into words
-        //   set a transformation window of 5 seconds to perform a basic count analytics for each word
-   
         // get input data by connecting to the socket
-        DataStream<String> text = env.socketTextStream(host, port);
-        DataStream<WordCount> dataStream = text.flatMap(new Splitter()).keyBy("word")
-                                           .timeWindow(Time.seconds(5))
-                                           .sum("count");
+        DataStream<String> dataStream = env.socketTextStream(host, port);
 
         // create the Pravega writer and add this as a sink for the events to be written to
-        FlinkPravegaWriter<WordCount> writer = pravega.newWriter(streamId, WordCount.class, new EventRouter());
+        FlinkPravegaWriter<String> writer = helper.newWriter(streamId, String.class, new EventRouter());
         dataStream.addSink(writer);
 
         // create another output sink to print to stdout for verification
-        //dataStream.print();
+        dataStream.print();
 
         // execute within the Flink environment
         env.execute("WordCountWriter");
@@ -114,26 +89,14 @@ public class WordCountWriter {
     }
 
     /*
-     * splits the incoming stream in sentence/line form into individual words
-     * creates each sord as an event of type WordCount
-     */
-    public static class Splitter implements FlatMapFunction<String, WordCount> {
-        @Override
-        public void flatMap(String sentence, Collector<WordCount> out) throws Exception {
-            for (String word: sentence.split(" ")) {
-                out.collect(new WordCount(word, 1));
-            }
-        }
-    }
-
-    /*
      * Event Router class
      */
-    public static class EventRouter implements PravegaEventRouter<WordCount> {
+    public static class EventRouter implements PravegaEventRouter<String> {
+        // Ordering - events with the same routing key will always be
+        // read in the order they were written
         @Override
-        public String getRoutingKey(WordCount event) {
-            return event.getWord();
+        public String getRoutingKey(String event) {
+            return "SameRoutingKey";
         }
     }
-
 }

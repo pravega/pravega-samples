@@ -13,9 +13,12 @@ package io.pravega.examples.flink.wordcount;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.util.FlinkPravegaParams;
 import io.pravega.connectors.flink.util.StreamId;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,37 +37,36 @@ public class WordCountReader {
     // Logger initialization
     private static final Logger LOG = LoggerFactory.getLogger(WordCountReader.class);
 
-    // Application parameters
+    // The application reads data from specified Pravega stream and once every 10 seconds
+    // prints the distinct words and counts from the previous 10 seconds.
 
-    // the Pravega stream that the incoming data will be read from
-    //   the input parameter name
-    //   the default Pravega stream - scope/name
-    private static final String STREAM_PARAMETER = "stream";
-    private static final String DEFAULT_STREAM = "myscope/wordcount";
+    // Application parameters
+    //   stream - default myscope/wordcount
+    //   controller - default tcp://127.0.0.1:9090
 
     public static void main(String[] args) throws Exception {
         LOG.info("Starting WordCountReader...");
-
-        // the following code snippet will setup and initialize a Pravega stream
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
 
         // create pravega helper utility for Flink using the input paramaters
+        // the controller param is processed in FlinkPravegaParams
         FlinkPravegaParams pravega = new FlinkPravegaParams(params);
 
-        // get the Pravega stream information from the input parameters
-        StreamId streamId = pravega.getStreamFromParam(STREAM_PARAMETER, DEFAULT_STREAM);
+        // get the Pravega stream from the input parameters
+        StreamId streamId = pravega.getStreamFromParam(Constants.STREAM_PARAM,
+                                                       Constants.DEFAULT_STREAM);
 
-        // create the pravega stream itself using the stream ID
+        // create the Pravega stream is not exists.
         pravega.createStream(streamId);
 
-        // initialize up the execution environment for Flink to perform streaming
+        // initialize Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // create the Pravega stream reader
         long startTime = 0;
-        FlinkPravegaReader<WordCount> flinkPravegaReader = pravega.newReader(streamId, startTime, WordCount.class);
+        FlinkPravegaReader<String> reader = pravega.newReader(streamId, startTime, String.class);
 
         // If needed - add the below for example on creating checkpoint
         // long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
@@ -72,7 +74,11 @@ public class WordCountReader {
         //
 
         // add the Pravega reader as the data source
-        DataStream<WordCount> dataStream = env.addSource(flinkPravegaReader);
+        DataStream<WordCount> dataStream = env.addSource(reader)
+                .flatMap(new WordCountReader.Splitter())
+                .keyBy("word")
+                .timeWindow(Time.seconds(10))
+                .sum("count");
 
         // create an output sink to print to stdout for verification
         dataStream.print();
@@ -81,6 +87,16 @@ public class WordCountReader {
         env.execute("WordCountReader");
 
         LOG.info("Ending WordCountReader...");
+    }
+
+    // split data into word by space
+    private static class Splitter implements FlatMapFunction<String, WordCount> {
+        @Override
+        public void flatMap(String line, Collector<WordCount> out) throws Exception {
+            for (String word: line.split(Constants.WORD_SEPARATOR)) {
+                out.collect(new WordCount(word, 1));
+            }
+        }
     }
 
 }
