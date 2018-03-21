@@ -141,3 +141,20 @@ Submit WordCountReader job
 Repeat the steps above except
 - in the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountReader```
 - in the **Program Arguments** field, enter: ```--controller tcp://localhost:9090```
+
+## IDE Setup
+### IntelliJ
+- File Open
+- Browse to pravega-examples folder
+- Select gradle.build, then click **OK**
+- Click **Open as Project**
+- Choose **Use Auto-import**, and **Use gradle wrapper task configuration**, then click **OK**
+![](image/flink-wordcount-intellij01.png)
+![](image/flink-wordcount-intellij02.png)
+
+### Eclipse
+
+TBD
+
+- 
+
