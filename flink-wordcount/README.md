@@ -146,7 +146,7 @@ Repeat the steps above except
 ### IntelliJ
 - File Open
 - Browse to pravega-examples folder
-- Select gradle.build, then click **OK**
+- Select **build.gradle**, then click **OK**
 - Click **Open as Project**
 - Choose **Use Auto-import**, and **Use gradle wrapper task configuration**, then click **OK**
 
@@ -154,5 +154,6 @@ Repeat the steps above except
 
 ![](image/flink-wordcount-intellij-02.png)
 
+- Run Configuration for WordCountWriter
 ![](image/flink-wordcount-intellij-04.png)
 
