@@ -150,9 +150,9 @@ Repeat the steps above except
 - Click **Open as Project**
 - Choose **Use Auto-import**, and **Use gradle wrapper task configuration**, then click **OK**
 
-![](image/flink-wordcount-intellij01.png)
+![](image/flink-wordcount-intellij-01.png)
 
-![](image/flink-wordcount-intellij02.png)
+![](image/flink-wordcount-intellij-02.png)
 
-![](image/flink-wordcount-intellij04.png)
+![](image/flink-wordcount-intellij-04.png)
 
