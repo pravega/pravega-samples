@@ -19,7 +19,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 sourceCompatibility = "1.8"
-archivesBaseName = 'pravega-flink-scenario-turbineheatprocessor'
+archivesBaseName = 'pravega-flink-examples'
 
 ext {
     scalaJava8CompatVersion = '0.7.0'
@@ -27,10 +27,13 @@ ext {
 
 dependencies {
     compile "org.scala-lang.modules:scala-java8-compat_2.11:${scalaJava8CompatVersion}"
-    compile "io.pravega:pravega-connectors-flink_2.11:${flinkConnectorVersion}"
+    compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
+    compile "org.apache.flink:flink-cep_2.11:${flinkVersion}"
     compile "org.slf4j:slf4j-log4j12:1.7.14"
+    compile "com.google.code.gson:gson:2.3.+"
+    compile "joda-time:joda-time:2.9.+"
 }
 
 shadowJar {
@@ -40,10 +43,24 @@ shadowJar {
     }
 }
 
-task scriptTrubineHeatProcessor(type: CreateStartScripts) {
+task scriptWordCountWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.turbineheatprocessor.TurbineHeatProcessor'
-    applicationName = 'turbineHeatProcessor'
+    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountWriter'
+    applicationName = 'wordCountWriter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptWordCountReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountReader'
+    applicationName = 'wordCountReader'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptFlinkAlerter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.alert.HighCountAlerter'
+    applicationName = 'highCountAlerter'
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -58,7 +75,9 @@ distributions {
                 from(project.configurations.runtime)
             }
             into('bin') {
-                from project.scriptTrubineHeatProcessor
+                from project.scriptWordCountWriter
+                from project.scriptWordCountReader
+                from project.scriptFlinkAlerter
             }
         }
     }
