@@ -11,5 +11,3 @@
 include 'standalone-examples'
 include 'flink-examples'
 include 'anomaly-detection'
-include 'flink-wordcount'
-
