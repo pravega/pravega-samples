@@ -10,30 +10,22 @@
  */
 package io.pravega.examples.flink.alert;
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.joda.time.DateTime;
+import io.pravega.shaded.com.google.gson.Gson;
 
 /**
  * Object to process Apache access log
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class AccessLog {
     private String ClientIP;
-
     private String Status;
-
+    private long Timestamp;
     private String Verb;
-
-    private String TimestampStr;
 
     public AccessLog(){
         Status=Verb=ClientIP="";
+        Timestamp=0L;
     }
 
-    @JsonProperty("clientip")
     public String getClientIP() {
         return ClientIP;
     }
@@ -42,7 +34,6 @@ public class AccessLog {
         ClientIP = clientIP;
     }
 
-    @JsonProperty("response")
     public String getStatus() {
         return Status;
     }
@@ -51,16 +42,14 @@ public class AccessLog {
         Status = status;
     }
 
-    @JsonProperty("@timestamp")
-    public String getTimestampStr() { return TimestampStr; }
-
-    public void setTimestampStr(String timestampStr) { TimestampStr = timestampStr; }
-
-    public long getTimestampMillis() {
-        return new DateTime(getTimestampStr()).getMillis();
+    public long getTimestamp() {
+        return Timestamp;
     }
 
-    @JsonProperty("verb")
+    public void setTimestamp(long timestamp) {
+        this.Timestamp = timestamp;
+    }
+
     public String getVerb() {
         return Verb;
     }
@@ -85,7 +74,7 @@ public class AccessLog {
         AccessLog accessLog =(AccessLog)obj;
         return accessLog.Verb.equals(Verb) &&
                accessLog.Status.equals(Status) &&
-               accessLog.TimestampStr.equals(TimestampStr) &&
+               accessLog.Timestamp==Timestamp &&
                accessLog.ClientIP.equals(ClientIP);
     }
 
@@ -94,19 +83,15 @@ public class AccessLog {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((Status == null) ? 0 : Status.hashCode());
+        result = prime * result + (int) (Timestamp ^ (Timestamp >>> 32));
         result = prime * result + ((ClientIP == null) ? 0 : ClientIP.hashCode());
-        result = prime * result + ((TimestampStr == null) ? 0 : TimestampStr.hashCode());
         result = prime * result + ((Verb == null) ? 0 : Verb.hashCode());
         return result;
     }
 
     @Override
     public String toString() {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "AccessLog: Timestamp=" + getTimestampStr() +", ClientIP=" + getClientIP() + ", Verb=" + getVerb() + ", Status=" + getStatus();
-        }
+        Gson gson = new Gson();
+        return gson.toJson(this);
     }
 }

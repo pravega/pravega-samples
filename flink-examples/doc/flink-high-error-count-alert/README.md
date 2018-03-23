@@ -89,7 +89,11 @@ $ bin/highCountAlerter [--controller tcp://127.0.0.1:9090] [--stream myscope/apa
 
 Add access logs to /tmp/access.log, e.g., by running command below every one or two seconds.
 ```
+<<<<<<< 0be606ead973c15c7e658cd33dc0b55d2ceb0ede
 echo '10.1.1.11 - peter [19/Mar/2018:02:24:01 -0400] "PUT /mapping/ HTTP/1.1" 500 182 "http://example.com/myapp" "python-client"' >> /tmp/access.log
+=======
+echo '10.1.1.11 - peter [19/Mar/2018:02:24:01 -0400] "PUT /mapping/ HTTP/1.1" 500 182 "http://example.com/myapp" "python-client"' >> /tmp/accesslog
+>>>>>>> example to generate alert from apache access log via logstash pravega output plugin
 ```
 
 Logstash will push the data to Pravega in json string, e.g.,
