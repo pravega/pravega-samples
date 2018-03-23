@@ -15,6 +15,8 @@ plugins {
 apply plugin: "java"
 apply plugin: "scala"
 apply plugin: "distribution"
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-examples'
@@ -28,6 +30,7 @@ dependencies {
     compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
+    compile "org.slf4j:slf4j-log4j12:1.7.14"
 }
 
 shadowJar {
@@ -37,6 +40,20 @@ shadowJar {
     }
 }
 
+task scriptWordCountWriter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountWriter'
+    applicationName = 'wordCountWriter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptWordCountReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountReader'
+    applicationName = 'wordCountReader'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -44,6 +61,12 @@ distributions {
             into('lib') {
                 from shadowJar
                 from(project.configurations.shadow)
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('bin') {
+                from project.scriptWordCountWriter
+                from project.scriptWordCountReader
             }
         }
     }
