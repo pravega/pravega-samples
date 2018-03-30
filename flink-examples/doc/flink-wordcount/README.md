@@ -134,3 +134,7 @@ Repeat the steps above except
 - Run Configuration for WordCountWriter
 ![](image/flink-wordcount-intellij-04.png)
 
+
+## Contributors ##
+* [Kartik Vandra](https://github.com/kvandra)   <img src="https://avatars3.githubusercontent.com/u/5042709?s=460&v=4" width="30" height="30">
+* [Lida He](https://github.com/hldnova)   <img src="https://avatars0.githubusercontent.com/u/11613034?s=460&v=4" width="30" height="30">
