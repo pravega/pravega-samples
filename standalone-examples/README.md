@@ -3,7 +3,7 @@ These applications only need a running Pravega to execute against.
 
 ## Pre requisites
 1. Java 8
-2. Pravega running (see [here](http://pravega.io/docs/getting-started/) for instructions)
+2. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 
 
 ## Publish Pravega jars to local Maven (optional)
