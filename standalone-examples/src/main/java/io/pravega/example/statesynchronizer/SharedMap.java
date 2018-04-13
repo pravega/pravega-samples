@@ -12,7 +12,6 @@ package io.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -255,11 +254,9 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      * Use the StateSynchronizer to compact the shared state.
      */
     public void clear(){
-        stateSynchronizer.updateState(state -> { 
+        stateSynchronizer.updateState((state, updates) -> {
             if (state.size() > 0) {
-                return Collections.singletonList(new Clear<K,V>());
-            } else {
-                return Collections.emptyList();
+                updates.add(new Clear<K,V>());
             }
         });
         compact();
@@ -322,9 +319,9 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      */
     public V put(K key, V value){
         final AtomicReference<V> oldValue = new AtomicReference<V>(null);
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState((state, updates) -> {
             oldValue.set(state.get(key));
-            return Collections.singletonList(new Put<K,V>(key,value));
+            updates.add(new Put<K,V>(key,value));
         });
         return oldValue.get();
     }
@@ -335,8 +332,8 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      * @param map - the map to copy.
      */
     public void putAll(Map<K,V> map){
-        stateSynchronizer.updateState(state -> {
-            return Collections.singletonList(new PutAll<K,V>(map));
+        stateSynchronizer.updateState((state, updates) -> {
+            updates.add(new PutAll<K,V>(map));
         });
     }
     
@@ -352,13 +349,12 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
         final AtomicReference<V> ret = new AtomicReference<V>();
         
         refresh();  //this is a conditional modifying operation, need to update local state with current shared state before checking the condition
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState((state, updates) -> {
             if (state.containsKey(key) && state.get(key) != null) {
                 ret.set(state.get(key));
-                return Collections.emptyList();
             } else {
                 ret.set(null);
-                return Collections.singletonList(new Put<K,V>(key,value));
+                updates.add(new Put<K,V>(key,value));
             }
         });
         return ret.get();
@@ -373,13 +369,12 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      */
     public V remove(K key) {
         final AtomicReference<V> oldValue = new AtomicReference<V>(null);
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState((state, updates) -> {
             if (state.impl.containsKey(key)) {
                 oldValue.set(state.get(key));
-                return Collections.singletonList(new Remove<K,V>(key));
+                updates.add(new Remove<K,V>(key));
             } else {
                 oldValue.set(null);
-                return Collections.emptyList();
             }
         });
         
@@ -399,13 +394,12 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      */
     public boolean remove(K key, V value){
         AtomicBoolean ret = new AtomicBoolean(false);
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState((state, updates) -> {
             if (state.impl.containsKey(key) && state.impl.get(key).equals(value)) {
                 ret.set(true);
-                return Collections.singletonList(new Remove<K,V>(key));
+                updates.add(new Remove<K,V>(key));
             } else {
                 ret.set(false);
-                return Collections.emptyList();
             }
         });
         
@@ -424,13 +418,12 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      */
     public V replace(K key, V value){
         final AtomicReference<V> oldValue = new AtomicReference<V>(null);
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState((state, updates) -> {
             if (state.impl.containsKey(key)) {
                 oldValue.set(state.get(key));
-                return Collections.singletonList(new Put<K,V>(key,value));
+                updates.add(new Put<K,V>(key,value));
             } else {
                 oldValue.set(null);
-                return Collections.emptyList();
             }
         });
         return oldValue.get();
@@ -446,13 +439,12 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      */
     public boolean replace(K key, V oldValue, V newValue){
         AtomicBoolean ret = new AtomicBoolean(false);
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState((state, updates) -> {
             if (state.impl.containsKey(key) && state.impl.get(key).equals(oldValue)) {
                 ret.set(true);
-                return Collections.singletonList(new Put<K,V>(key, newValue));
+                updates.add(new Put<K,V>(key, newValue));
             } else {
                 ret.set(false);
-                return Collections.emptyList();
             }
         });
         return ret.get();
@@ -481,8 +473,7 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      */
     public void close() {
         if( stateSynchronizer != null) {
-            //TODO how do you close a state synchronizer?
-            //stateSynchronizer.close();
+            stateSynchronizer.close();
         }
     }
 }
