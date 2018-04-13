@@ -459,8 +459,10 @@ public class TurbineHeatSensor {
             //reusing a reader group name doesn't work (probably because the sequence is already consumed)
             //until we figure out how to manage this, use a random reader group name
             String readerGroup = UUID.randomUUID().toString().replace("-", "");
-            ReaderGroupConfig groupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE).build();
-            readerGroupManager.createReaderGroup(readerGroup, groupConfig, Collections.singleton(streamName));
+            ReaderGroupConfig groupConfig = ReaderGroupConfig.builder()
+                    .stream(Stream.of(scopeName, streamName))
+                    .build();
+            readerGroupManager.createReaderGroup(readerGroup, groupConfig);
             ReaderConfig readerConfig = ReaderConfig.builder().build();
             return clientFactory.createReader(readerName, readerGroup, SERIALIZER, readerConfig);
         }
