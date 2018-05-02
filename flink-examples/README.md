@@ -31,3 +31,8 @@ This example demonstrates how to use the Pravega Flink Connectors to write data 
 from an external network stream into a Pravega stream and read the data from the Pravega stream.
 See [Flink Word Count Sample](doc/flink-wordcount/README.md) for instructions.
 
+
+## Exactly Once Sample
+
+This sample demonstrates Pravega EXACTLY_ONCE feature in conjuction with Flink checkpointing and exactly-once mode.
+See [Exactly Once Sample](doc/exactly-once/README.md) for instructions.

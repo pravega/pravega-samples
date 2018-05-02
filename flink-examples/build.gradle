@@ -54,6 +54,20 @@ task scriptWordCountReader(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+task scriptExactlyOnceWriter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.primer.process.ExactlyOnceWriter'
+    applicationName = 'exactlyOnceWriter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptExactlyOnceChecker(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.primer.process.ExactlyOnceChecker'
+    applicationName = 'exactlyOnceChecker'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -67,6 +81,8 @@ distributions {
             into('bin') {
                 from project.scriptWordCountWriter
                 from project.scriptWordCountReader
+                from project.scriptExactlyOnceWriter
+                from project.scriptExactlyOnceChecker
             }
         }
     }
