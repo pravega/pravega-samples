@@ -2,16 +2,12 @@
 
 This example demonstrates how Pravega EXACTLY_ONCE mode works in conjection with Flink checkpointing and exactly-once mode. More information on Pravega EXACTLY_ONCE semantics can be found at [here](http://pravega.io/docs/latest/key-features/#exactly-once-semantics).
 
-
-
 The example consists of two applications, a writer and a checker.
 
 ```
 
 $ cd flink-examples/build/install/pravega-flink-examples
-
 $ bin/exactlyOnceChecker  [--controller tcp://localhost:9090] [--stream myscope/mystream] 
-
 $ bin/exactlyOnceWriter   [--controller tcp://localhost:9090] [--stream myscope/mystream] [--num-events 50] [--exactlyonce true]
 
 ```
@@ -62,13 +58,10 @@ at position 26. Upon the failure, the app restores from its last successful chec
 at position 16. Without the Pravega EXACTLY_ONCE enabled, it is likely that duplicate events, 
 from position 17 to 26, will be written to the Pravega stream. 
 
-
-
 And indeed, that's what checker app shows. Note that output of duplicate events may not necessarily 
 be within the checker start and end block. 
 
 ```
-
 ============== Checker starts ===============
 Duplicate event: 18
 Duplicate event: 20
@@ -80,7 +73,6 @@ Duplicate event: 21
 Duplicate event: 23
 Found duplicates
 ============== Checker ends  ===============
-
 ```
 
 If you wish, run the writer app a few more times by specifying different values for --num-events option.
@@ -95,9 +87,7 @@ $ bin/exactlyOnceWriter --controller tcp://localhost:9090 --stream myscope/mystr
 The output should look like the followings:
 
 ```
-
 ============== Checker starts ===============
 No duplicate found. EXACTLY_ONCE!
 ============== Checker ends  ===============
-
 ```
