@@ -40,8 +40,9 @@ import java.util.*;
 public class ExactlyOnceChecker {
 
     // read data from the time when the program starts
-    private static final long readStartTimeMillis = Instant.now().toEpochMilli();
-    //private static final long readStartTimeMillis = 0L;
+    //private static final long readStartTimeMillis = Instant.now().toEpochMilli();
+    private static final long readStartTimeMillis = 0L;
+    private static final String defaultStream = "myscope/mystream";
 
     private static Set<IntegerEvent> checker = new HashSet<>();
     private static List<IntegerEvent> duplicates = new ArrayList<IntegerEvent>();
@@ -54,13 +55,12 @@ public class ExactlyOnceChecker {
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
-        String requestStreamName = params.getRequired("stream");
 
         // create Pravega helper utility for Flink using the input paramaters
         FlinkPravegaHelper helper = new FlinkPravegaHelper(params);
 
         // get the Pravega stream from the input parameters
-        StreamId streamId = helper.getStreamFromParam("stream", requestStreamName);
+        StreamId streamId = helper.getStreamFromParam("stream", defaultStream);
 
         // create the Pravega stream if not existed.
         helper.createStream(streamId);

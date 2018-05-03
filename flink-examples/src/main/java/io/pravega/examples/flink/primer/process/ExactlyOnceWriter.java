@@ -46,6 +46,7 @@ public class ExactlyOnceWriter {
     private static final long txnTimeoutMillis = 30 * 1000;
     private static final long txnGracePeriodMillis = 30 * 1000;
     private static final int defaultNumEvents = 50;
+    private static final String defaultStream = "myscope/mystream";
 
     // read data from the time when the program starts
     //private static final long readStartTimeMillis = Instant.now().toEpochMilli();
@@ -58,7 +59,6 @@ public class ExactlyOnceWriter {
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
-        String streamName = params.getRequired("stream");
 
         boolean exactlyOnce = Boolean.parseBoolean(params.get("exactlyonce", "true"));
         int numEvents = Integer.parseInt(params.get("num-events", String.valueOf(defaultNumEvents)));
@@ -67,7 +67,7 @@ public class ExactlyOnceWriter {
         FlinkPravegaHelper helper = new FlinkPravegaHelper(params);
 
         // get the Pravega stream from the input parameters
-        StreamId streamId = helper.getStreamFromParam("stream", streamName);
+        StreamId streamId = helper.getStreamFromParam("stream", defaultStream);
 
         // create the Pravega stream if not existed.
         helper.createStream(streamId);
