@@ -5,11 +5,9 @@ This example demonstrates how Pravega EXACTLY_ONCE mode works in conjection with
 The example consists of two applications, a writer and a checker.
 
 ```
-
 $ cd flink-examples/build/install/pravega-flink-examples
 $ bin/exactlyOnceChecker  [--controller tcp://localhost:9090] [--stream myscope/mystream] 
 $ bin/exactlyOnceWriter   [--controller tcp://localhost:9090] [--stream myscope/mystream] [--num-events 50] [--exactlyonce true]
-
 ```
 
 The writer application generates a set of "integer" events and introduces an artificial exception to 
