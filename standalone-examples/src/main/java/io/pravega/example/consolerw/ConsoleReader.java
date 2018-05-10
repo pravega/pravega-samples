@@ -10,8 +10,10 @@
  */
 package io.pravega.example.consolerw;
 
+import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
+import io.pravega.common.concurrent.ExecutorServiceHelpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -23,7 +25,10 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -287,6 +292,7 @@ public class ConsoleReader {
 
         ConsoleReader reader = new ConsoleReader(scope, streamName, controllerURI);
         reader.run();
+        System.exit(0);
     }
 
     private static Options getOptions() {
@@ -311,9 +317,10 @@ class MyReader implements Runnable {
     private final String streamName;
     private final URI controllerURI;
     private final String readerGroupName = UUID.randomUUID().toString().replace("-", "");
-    private Map<Stream, StreamCut> lastStreamCut;
+    private AtomicReference<Map<Stream, StreamCut>> lastStreamCut = new AtomicReference<>();
 
     private final AtomicBoolean end = new AtomicBoolean(false);
+    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
 
     MyReader(String scope, String streamName, URI controllerURI) {
         this.scope = scope;
@@ -322,13 +329,16 @@ class MyReader implements Runnable {
     }
 
     public void run() {
-        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName)).build();
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().disableAutomaticCheckpoints()
+                                                                     .stream(Stream.of(scope, streamName)).build();
 
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI);
              ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
 
             // Create the ReaderGroup to which readers will belong to.
             readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
+            ReaderGroup readerGroup = readerGroupManager.getReaderGroup(readerGroupName);
+
             EventStreamReader<String> reader = clientFactory.createReader("reader", readerGroupName,
                     new JavaSerializer<>(), ReaderConfig.builder().build());
             EventRead<String> event;
@@ -342,21 +352,24 @@ class MyReader implements Runnable {
                         System.out.format("'%s'%n", event.getEvent());
                     }
 
-                    // Update the StreamCut after every read, just in case the user wants to use it.
-                    reader.close();
-                    lastStreamCut = readerGroupManager.getReaderGroup(readerGroupName).getStreamCuts();
-                    reader = clientFactory.createReader("reader",
-                            readerGroupName, new JavaSerializer<>(), ReaderConfig.builder().build());
+                    // Update the StreamCut after every event read, just in case the user wants to use it.
+                    if (!event.isCheckpoint()) {
+                        readerGroup.initiateCheckpoint("myCheckpoint" + System.nanoTime(), executor)
+                                   .thenAccept(checkpoint -> lastStreamCut.set(checkpoint.asImpl().getPositions()));
+                    }
                 } catch (ReinitializationRequiredException e) {
                     // There are certain circumstances where the reader needs to be reinitialized.
                     e.printStackTrace();
                 }
             } while (!end.get());
+
+        } finally {
+            ExecutorServiceHelpers.shutdown(executor);
         }
     }
 
     Map<Stream, StreamCut> getLastStreamCut() {
-        return lastStreamCut;
+        return lastStreamCut.get();
     }
 
     void close() {

@@ -10,8 +10,8 @@
  */
 package io.pravega.example.gettingstarted;
 
+import io.pravega.client.stream.Stream;
 import java.net.URI;
-import java.util.Collections;
 import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
@@ -51,24 +51,21 @@ public class HelloWorldReader {
 
     public void run() {
         StreamManager streamManager = StreamManager.create(controllerURI);
-        
         final boolean scopeIsNew = streamManager.createScope(scope);
-        StreamConfiguration streamConfig = StreamConfiguration.builder()
-                .scalingPolicy(ScalingPolicy.fixed(1))
-                .build();
+
+        StreamConfiguration streamConfig = StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build();
         final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         final String readerGroup = UUID.randomUUID().toString().replace("-", "");
-        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
-                .build();
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName)).build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
-            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
+            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         }
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
              EventStreamReader<String> reader = clientFactory.createReader("reader",
                                                                            readerGroup,
-                                                                           new JavaSerializer<String>(),
+                                                                           new JavaSerializer<>(),
                                                                            ReaderConfig.builder().build())) {
             System.out.format("Reading all the events from %s/%s%n", scope, streamName);
             EventRead<String> event = null;
@@ -118,7 +115,6 @@ public class HelloWorldReader {
 
     private static CommandLine parseCommandLineArgs(Options options, String[] args) throws ParseException {
         CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-        return cmd;
+        return parser.parse(options, args);
     }
 }
