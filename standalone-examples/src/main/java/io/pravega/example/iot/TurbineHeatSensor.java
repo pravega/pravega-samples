@@ -99,8 +99,7 @@ public class TurbineHeatSensor {
                     .scalingPolicy(policy)
                     .build();
             streamManager.createStream(scopeName, streamName, config);
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
 
@@ -111,7 +110,8 @@ public class TurbineHeatSensor {
             SensorReader reader = new SensorReader(producerCount * eventsPerSec * runtimeSec);
             executor.execute(reader);
         }
-        /* Create producerCount number of threads to simulate sensors. */
+
+        // Create producerCount number of threads to simulate sensors.
         Instant startEventTime = Instant.EPOCH.plus(8, ChronoUnit.HOURS); // sunrise
         for (int i = 0; i < producerCount; i++) {
             URI controllerUri = new URI(TurbineHeatSensor.controllerUri);
@@ -129,7 +129,6 @@ public class TurbineHeatSensor {
                         isTransaction, factory);
             }
             executor.execute(worker);
-
         }
 
         executor.shutdown();
@@ -142,7 +141,7 @@ public class TurbineHeatSensor {
         if ( !onlyWrite ) {
             consumeStats.printTotal();
         }
-//        ZipKinTracer.getTracer().close();
+
         System.exit(0);
     }
 
@@ -159,7 +158,6 @@ public class TurbineHeatSensor {
         options.addOption("stream", true, "Stream name");
         options.addOption("writeonly", true, "Just produce vs read after produce");
         options.addOption("blocking", true, "Block for each ack");
-//        options.addOption("zipkin", true, "Enable zipkin trace");
         options.addOption("reporting", true, "Reporting internval");
 
         options.addOption("help", false, "Help message");
@@ -304,8 +302,7 @@ public class TurbineHeatSensor {
                     .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
                     .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
                     .build();
-            this.producer = clientFactory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
-
+            this.producer = factory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
         }
 
         /**
@@ -313,7 +310,7 @@ public class TurbineHeatSensor {
          * @return A function which takes String key and data and returns a future object.
          */
         BiFunction<String, String, Future> sendFunction() {
-            return  ( key, data) -> producer.writeEvent(key, data);
+            return producer::writeEvent;
         }
 
         public static <T> CompletableFuture<T> makeCompletableFuture(Future<T> future) {
@@ -349,12 +346,8 @@ public class TurbineHeatSensor {
                     String payload = String.format("%-" + messageSize + "s", val);
                     // event ingestion
                     long now = System.currentTimeMillis();
-                    retFuture = produceStats.runAndRecordTime(() -> {
-                                return this.makeCompletableFuture(fn.apply(Integer.toString(producerId),
-                                        payload));
-                            },
-                            now,
-                            payload.length());
+                    retFuture = produceStats.runAndRecordTime(() ->
+                                    this.makeCompletableFuture(fn.apply(Integer.toString(producerId), payload)), now, payload.length());
                     //If it is a blocking call, wait for the ack
                     if ( blocking ) {
                         try {
@@ -394,7 +387,6 @@ public class TurbineHeatSensor {
             runLoop(sendFunction());
         }
     }
-
 
     private static class TransactionTemperatureSensors extends TemperatureSensors {
 
@@ -464,6 +456,4 @@ public class TurbineHeatSensor {
             return clientFactory.createReader(readerName, readerGroup, SERIALIZER, readerConfig);
         }
     }
-
-
 }
