@@ -36,6 +36,9 @@ import com.google.common.base.Charsets;
  * This class is copied from apache/hadoop and modified by adding logic to
  * support PravegaInputFormat
  *
+ * https://github.com/apache/hadoop/blob/trunk/hadoop-mapreduce-project/hadoop-mapreduce-examples
+ * /src/main/java/org/apache/hadoop/examples/WordMean.java
+ *
  */
 public class WordMean extends Configured implements Tool {
 

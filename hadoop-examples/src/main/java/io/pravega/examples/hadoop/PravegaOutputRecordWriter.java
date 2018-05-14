@@ -42,7 +42,7 @@ public class PravegaOutputRecordWriter<V> extends RecordWriter<String, V> {
                 if (e != null) {
                     log.warn("Detected a write failure: {}", e);
                 }
-			}
+            }
         );
     }
 

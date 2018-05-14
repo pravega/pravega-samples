@@ -29,6 +29,9 @@ import java.util.Random;
  * This class is copied from apache/hadoop and modified by adding logic to
  * support PravegaInputFormat
  *
+ * https://github.com/apache/hadoop/blob/trunk/hadoop-mapreduce-project/hadoop-mapreduce-examples
+ * /src/main/java/org/apache/hadoop/examples/RandomTextWriter.java
+ *
  * This program uses map/reduce to just run a distributed job where there is
  * no interaction between the tasks and each task writes a large unsorted
  * random sequence of words.

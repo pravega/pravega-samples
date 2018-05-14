@@ -16,6 +16,9 @@ import org.apache.hadoop.util.ProgramDriver;
  * This class is copied from apache/hadoop and modified by removing
  * unsupported commands
  *
+ * https://github.com/apache/hadoop/blob/trunk/hadoop-mapreduce-project/hadoop-mapreduce-examples
+ * /src/main/java/org/apache/hadoop/examples/ExampleDriver.java
+ *
  * A description of an example program based on its class and a
  * human-readable description.
  */

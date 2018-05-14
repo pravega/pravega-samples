@@ -37,6 +37,9 @@ import java.util.Random;
  *
  * This class is copied from apache/hadoop
  *
+ * https://github.com/apache/hadoop/blob/trunk/hadoop-mapreduce-project/hadoop-mapreduce-examples
+ * /src/main/java/org/apache/hadoop/examples/RandomWriter.java
+ *
  * This program uses map/reduce to just run a distributed job where there is
  * no interaction between the tasks and each task write a large unsorted
  * random binary sequence file of BytesWritable.

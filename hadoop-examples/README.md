@@ -13,7 +13,7 @@ Examples of Hadoop Connectors for Pravega.
 
 Description
 -----------
-These examples give you some basic ideas how to use hadoop-connectors for pravega
+These examples give you some basic ideas how to use hadoop-connectors for pravega.
 
 Build
 -------
@@ -45,13 +45,13 @@ Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
 1. setup and start hdfs
 
 2. set env variables
-   export HDFS=hdfs://192.168.0.188:9000
-   export HADOOP_EXAMPLES_JAR=build/libs/pravega-hadoop-examples-0.3.0-SNAPSHOT-all.jar
+   export HDFS=hdfs://<hdfs_ip_and_port> # e.g. hdfs://192.168.0.188:9000
+   export HADOOP_EXAMPLES_JAR=<pravega-hadoop-examples-0.3.0-SNAPSHOT-all.jar location> # e.g. ./build/libs/pravega-hadoop-examples-0.3.0-SNAPSHOT-all.jar
    export HADOOP_EXAMPLES_INPUT_DUMMY=${HDFS}/tmp/hadoop_examples_input_dummy
    export HADOOP_EXAMPLES_OUTPUT=${HDFS}/tmp/hadoop_examples_output
-   export PRAVEGA_URI=tcp://192.168.0.188:9090
-   export PRAVEGA_SCOPE=myScope
-   export PRAVEGA_STREAM=myStream
+   export PRAVEGA_URI=tcp://<pravega_controller_ip_and_port> # e.g. tcp://192.168.0.188:9090
+   export PRAVEGA_SCOPE=<scope_name>   # e.g. myScope
+   export PRAVEGA_STREAM=<stream_name> # e.g. myStream
    export CMD=wordcount # so far, can also try wordmean and wordmedian
 
 3. make sure below dirs are empty
@@ -69,11 +69,11 @@ Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
 Additionally, you can run WordCount program (more will be coming soon) on top of [HiBench](https://github.com/intel-hadoop/HiBench)
 ```
 0. set same env variables as previous section, and
-   export HADOOP_HOME=~/services/hadoop-2.8.3
-   export HDFS=hdfs://192.168.0.188:9000
+   export HADOOP_HOME=<hadoop_home_dir>  # e.g. /services/hadoop-2.8.3
+   export HDFS=hdfs://<hdfs_ip_and_port> # e.g. hdfs://192.168.0.188:9000
    export INPUT_HDFS="${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}"
 
-1. fetch/build/patch HiBench
+1. fetch/build/patch HiBench (make sure mvn is installed)
    gradle wcHiBench
 
 2. prepare testing data
