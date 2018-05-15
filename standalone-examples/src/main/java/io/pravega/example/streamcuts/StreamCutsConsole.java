@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -21,6 +22,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public class StreamCutsConsole {
+
+    private static final int exampleMaxStreams = 5;
+    private static final int exampleMaxEvents = 20;
 
     private final String scope;
     private final URI controllerURI;
@@ -88,10 +92,10 @@ public class StreamCutsConsole {
 
         switch(command.toUpperCase()) {
             case "SIMPLE":
-                do_simple_example();
+                doSimpleExample();
                 break;
             case "TIMESERIES":
-                do_time_data_example();
+                doTimeSeriesExample();
                 break;
             case "HELP" :
                 doHelp(parms);
@@ -108,35 +112,50 @@ public class StreamCutsConsole {
         return ret;
     }
 
-    private void do_simple_example() throws IOException {
+    // Examples region
+
+    private void doSimpleExample() throws IOException {
         final String prefix = "simple_example > ";
-        final int exampleNumEvents = 10;
-        final int exampleMaxStreams = 5;
-        final char streamId = StreamCutsExample.streamBaseId;
 
         output("You have selected a simple example to see how Pravega StreamCuts work. Great choice!!%n");
         output("Now, we will ask you some questions to set up the example: %n%n");
 
-        output("How many streams do you want to create (e.g., from 1 to 5):%n");
-        int numStreams = askForIntInput(prefix, 0, exampleMaxStreams);
+        output("How many streams do you want to create? (e.g., from 1 to %s):%n", exampleMaxStreams);
+        final int numStreams = askForIntInput(prefix, 0, exampleMaxStreams);
+
+        output("How many events per stream do you want to create? (e.g., from 1 to %s):%n", exampleMaxEvents);
+        final int numEvents = askForIntInput(prefix, 0, exampleMaxEvents);
 
         // Set up and write data in streams.
-        StreamCutsExample example = new StreamCutsExample(numStreams, exampleNumEvents, scope, controllerURI);
-
-        example.createAndPopulateStreams();
+        StreamCutsExample example = new StreamCutsExample(numStreams, numEvents, scope, controllerURI);
+        example.createAndPopulateStreamsWithNumbers();
         System.out.println(example.printStreams());
 
         output("Your Streams are ready :)%n");
         output("Now, to see how StreamCuts work, we are going to build them!%n");
+
+        // After setting up the streams and populating them, we can exercise StreamCuts multiple times.
+        do {
+            doBoundedPrinting(prefix, numStreams, numEvents, example);
+            output("Do you want to repeat? (Y)%n");
+        } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
+
+        example.deleteStreams();
+        example.close();
+    }
+
+    private void doBoundedPrinting(String prefix, int numStreams, int exampleNumEvents, StreamCutsExample example) throws IOException {
+        final char streamId = StreamCutsExample.streamBaseId;
         Map<Stream, StreamCut> startStreamCuts = new LinkedHashMap<>();
         Map<Stream, StreamCut> endStreamCuts = new LinkedHashMap<>();
-        for (char i = streamId; i < streamId + numStreams; i++) {
-            String streamName = String.valueOf(i);
+
+        for (char id = streamId; id < streamId + numStreams; id++) {
+            final String streamName = String.valueOf(id);
             output("[Stream " + streamName + "] StreamCut start event number.%n");
-            int iniEventIndex = askForIntInput(prefix, -1, exampleNumEvents);
+            int iniEventIndex = askForIntInput(prefix, 0, exampleNumEvents);
             output("[Stream " + streamName + "] StreamCut end event number.%n");
-            int endEventIndex = askForIntInput(prefix, iniEventIndex, exampleNumEvents);
-            List<StreamCut> myStreamCuts = example.createStreamCutsFor(streamName, iniEventIndex, endEventIndex);
+            int endEventIndex = askForIntInput(prefix, iniEventIndex+1, exampleNumEvents);
+            final List<StreamCut> myStreamCuts = example.createStreamCutsByIndexFor(streamName, iniEventIndex, endEventIndex);
             startStreamCuts.put(Stream.of(scope, streamName), myStreamCuts.get(0));
             endStreamCuts.put(Stream.of(scope, streamName), myStreamCuts.get(1));
         }
@@ -151,17 +170,71 @@ public class StreamCutsConsole {
         ReaderGroupConfig config = configBuilder.startFromStreamCuts(startStreamCuts)
                                                 .endingStreamCuts(endStreamCuts)
                                                 .build();
-        output("Now, look! We can read bounded slices of multiple Streams:%n%n");
-        System.out.println(example.printBoundedStream(config));
+        output("Now, look! We can print bounded slices of multiple Streams:%n%n");
+        System.out.println(example.printBoundedStreams(config));
+    }
+
+    private void doTimeSeriesExample() throws IOException {
+        final String prefix = "timeseries_example > ";
+
+        output("You have selected a timeseries example to see how Pravega StreamCuts work. Perfect!!%n");
+        output("Now, we will ask you some questions to set up the example: %n%n");
+
+        output("How many streams do you want to create? (e.g., from 1 to %s):%n", exampleMaxStreams);
+        final int numStreams = askForIntInput(prefix, 1, exampleMaxStreams);
+
+        output("How many days do you want to emulate in your data? (e.g., from 1 to %s):%n", exampleMaxEvents);
+        final int exampleNumDays = askForIntInput(prefix, 1, exampleMaxEvents);
+
+        // Set up and write data in streams.
+        StreamCutsExample example = new StreamCutsExample(numStreams, exampleNumDays, scope, controllerURI);
+
+        example.createAndPopulateStreamsWithDataSeries();
+        System.out.println(example.printStreams());
+
+        output("Your Streams are ready :)%n");
+        output("Now, to see how StreamCuts work, we are going to build them!%n");
+
+        do {
+            doBoundedSummingOfStreamValues(prefix, numStreams, exampleNumDays, example);
+            output("Do you want to repeat? (Y)%n");
+        } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
+
         example.deleteStreams();
         example.close();
-
     }
 
-    private void do_time_data_example() {
-        // TODO: Create a second example with time series and BatchClient
-        output("do_time_data_example");
+    private void doBoundedSummingOfStreamValues(String prefix, int numStreams, int exampleNumDays, StreamCutsExample example) throws IOException {
+        final char streamId = StreamCutsExample.streamBaseId;
+        output("For which day number do you want to sum up values?.%n");
+        int dayNumber = askForIntInput(prefix, 0, exampleNumDays);
+
+        Map<Stream, List<StreamCut>> streamDayStreamCuts = new LinkedHashMap<>();
+        for (char id = streamId; id < streamId + numStreams; id++) {
+            final String streamName = String.valueOf(id);
+            final SimpleEntry<Integer, Integer> eventIndexesForDay = example.getStreamEventIndexesForDay(streamName, dayNumber);
+
+            // Due to randomization, there could be streams with no events for a given day.
+            if (eventIndexesForDay == null){
+                continue;
+            }
+            output(eventIndexesForDay.toString() + "%n");
+
+            // Get the StreamCuts that define the event boundaries for the given day in this stream.
+            final List<StreamCut> myStreamCuts = example.createStreamCutsByIndexFor(streamName, eventIndexesForDay.getKey(),
+                    eventIndexesForDay.getValue());
+            streamDayStreamCuts.put(Stream.of(scope, streamName), myStreamCuts);
+        }
+
+        // Next, we demonstrate the capabilities of StreamCuts by enabling readers to perform bounded reads.
+        output("Now, look! We can sum up values from bounded slices of multiple Streams:%n%n");
+        output("Result from summing all the values belonging to day%s is: %s!%n", dayNumber,
+                example.sumBoundedStreams(streamDayStreamCuts));
     }
+
+    // End examples region
+
+    // Console utils region
 
     private int askForIntInput(String prefix, int minVal, int maxVal) throws IOException {
         int result = Integer.MAX_VALUE;
@@ -172,12 +245,12 @@ public class StreamCutsConsole {
                 if (firstAttempt) {
                     firstAttempt = false;
                 } else {
-                    warn("Please, numbers should be between (%s, %s] %n", minVal, maxVal);
+                    warn("Please, numbers should be between [%s, %s] %n", minVal, maxVal);
                 }
             } catch (NumberFormatException e) {
                 warn("Please, introduce a correct number%n");
             }
-        } while (result <= minVal || result > maxVal);
+        } while (result < minVal || result > maxVal);
         return result;
     }
 
@@ -202,6 +275,8 @@ public class StreamCutsConsole {
             warn("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
+
+    // End console utils region
 
     public static void main(String[] args) throws IOException {
         Options options = getOptions();
