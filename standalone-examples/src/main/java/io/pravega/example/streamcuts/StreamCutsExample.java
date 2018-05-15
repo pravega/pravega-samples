@@ -1,8 +1,12 @@
 package io.pravega.example.streamcuts;
 
+import com.google.common.collect.Lists;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
+import io.pravega.client.batch.BatchClient;
+import io.pravega.client.batch.SegmentRange;
+import io.pravega.client.batch.StreamSegmentsIterator;
 import io.pravega.client.stream.Checkpoint;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
@@ -19,16 +23,23 @@ import io.pravega.client.stream.StreamCut;
 import io.pravega.client.stream.impl.JavaSerializer;
 import java.io.Closeable;
 import java.net.URI;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.function.Consumer;
 import lombok.Cleanup;
 
 public class StreamCutsExample implements Closeable {
 
     public static final char streamBaseId = 'a';
+    public static final int maxEventsPerDay = 3;
+
+    private static final String eventSeparator = ":";
 
     private int numStreams;
     private int numEvents;
@@ -36,6 +47,8 @@ public class StreamCutsExample implements Closeable {
     private String scope;
     private ScheduledExecutorService executor;
     private StreamManager streamManager;
+
+    private Map<String, SimpleEntry<Integer, Integer>> perDayEventIndex = new LinkedHashMap<>();
 
     public StreamCutsExample(int numStreams, int numEvents, String scope, URI controllerURI) {
         this.numStreams = numStreams;
@@ -47,47 +60,19 @@ public class StreamCutsExample implements Closeable {
     }
 
     /**
-     * This method first creates the scope that will contain the streams to write and read events. Then, we write
-     * numEvents at each stream.
-     */
-    public void createAndPopulateStreams() {
-        // Create the scope in first place, before creating the Streams.
-        streamManager.createScope(scope);
-
-        // Create Streams and write dummy events in them.
-        for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
-            String streamName = String.valueOf(id);
-            StreamConfiguration streamConfig = StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build();
-            System.out.println("Stream " + id + " has been created? " + !streamManager.createStream(scope, streamName, streamConfig));
-
-            // Note that we use the try-with-resources statement for those classes that should be closed after usage.
-            try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-                 EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                         new JavaSerializer<>(), EventWriterConfig.builder().build())) {
-
-                // Write dummy events that identify each Stream.
-                StringBuilder sb = new StringBuilder();
-                for (int j = 0; j < numEvents; j++) {
-                    writer.writeEvent(sb.append(streamName).append(j).toString()).join();
-                    sb.setLength(0);
-                }
-            }
-        }
-    }
-
-    /**
      * A {@link StreamCut} is an offset that indicates an event boundary. With a {@link StreamCut}, users can instruct
-     * readers to read from or up to a particular boundary (e.g., read events from 100 to 200, events created since
+     * readers to read from and/or up to a particular boundary (e.g., read events from 100 to 200, events created since
      * Tuesday). To this end, Pravega allows us to create {@link StreamCut}s while readers are processing a stream
-     * (e.g., via a {@link Checkpoint}). In this method, we read a {@link Stream} and create two {@link StreamCut}s,
-     * according to the initial and final event indexes needed to read a slice of a {@link Stream}.
+     * (e.g., via a {@link Checkpoint}) that can be used in the future to bound the processing of a set of
+     * {@link Stream}s. In this method, we read create two {@link StreamCut}s for a {@link Stream} according to the
+     * initial and final event indexes passed by parameter.
      *
      * @param streamName Name of the {@link Stream} from which {@link StreamCut}s will be created.
      * @param iniEventIndex Index of the initial boundary for the {@link Stream} slice to process.
      * @param endEventIndex Index of the final boundary for the {@link Stream} slice to process.
      * @return Initial and final {@link Stream} boundaries represented as {@link StreamCut}s.
      */
-    public List<StreamCut> createStreamCutsFor(String streamName, int iniEventIndex, int endEventIndex) {
+    public List<StreamCut> createStreamCutsByIndexFor(String streamName, int iniEventIndex, int endEventIndex) {
         // Create the StreamCuts for the streams.
         final List<StreamCut> streamCuts = new ArrayList<>();
         final String randomId = String.valueOf(new Random(System.nanoTime()).nextInt());
@@ -95,36 +80,42 @@ public class StreamCutsExample implements Closeable {
         // Free resources after execution.
         try (ReaderGroupManager manager = ReaderGroupManager.withScope(scope, controllerURI);
              ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+
+            // Create a reader group and a reader to read from the stream.
             final String readerGroupName = streamName + randomId;
             ReaderGroupConfig config = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName)).build();
             manager.createReaderGroup(readerGroupName, config);
             @Cleanup
             ReaderGroup readerGroup = manager.getReaderGroup(readerGroupName);
             @Cleanup
-            EventStreamReader<String> reader = clientFactory.createReader(randomId, readerGroupName,
+            EventStreamReader<String> reader = clientFactory.createReader(randomId, readerGroup.getGroupName(),
                     new JavaSerializer<>(), ReaderConfig.builder().build());
 
             // Read streams and create the StreamCuts during the read process.
             Checkpoint checkpoint;
-            for (int j = 0; j < numEvents; j++) {
-
+            int eventIndex = 0;
+            EventRead<String> event = null;
+            do {
                 // Here is where we create a StreamCut that points to the event indicated by the user.
-                if (j == iniEventIndex || j == endEventIndex) {
+                if (eventIndex == iniEventIndex || eventIndex == endEventIndex) {
                     reader.close();
-                    checkpoint = readerGroup.initiateCheckpoint(randomId + j, executor).join();
+                    checkpoint = readerGroup.initiateCheckpoint(randomId + eventIndex, executor).join();
                     streamCuts.add(checkpoint.asImpl().getPositions().values().iterator().next());
-                    reader = clientFactory.createReader(randomId, readerGroupName,
+                    reader = clientFactory.createReader(randomId, readerGroup.getGroupName(),
                             new JavaSerializer<>(), ReaderConfig.builder().build());
                 }
+
                 try {
-                    reader.readNextEvent(1000);
+                    event = reader.readNextEvent(1000);
                 } catch (ReinitializationRequiredException e) {
                     e.printStackTrace();
                 }
-            }
 
-            // This StreamCut represents the tail of the Stream
-            if (endEventIndex == numEvents) {
+                eventIndex++;
+            } while (event.isCheckpoint() || event.getEvent() != null);
+
+            // If there is only the initial StreamCut, this means that the final one is the tail of the stream.
+            if (streamCuts.size() == 1) {
                 streamCuts.add(StreamCut.UNBOUNDED);
             }
         }
@@ -137,20 +128,20 @@ public class StreamCutsExample implements Closeable {
      * boundaries in the form of {@link StreamCut}s that will limit the events to be read by reader processes. Note that
      * event readers (i.e., {@link EventStreamReader}) are agnostic to any notion of boundaries and they do not interact
      * with {@link StreamCut}s; they only consume events, which will be bounded within specific {@link Stream} slices as
-     * configured in {@link ReaderGroupConfig}.
+     * configured in {@link ReaderGroupConfig}. The method basically creates a string representation of the events read
+     * from {@link Stream}s within the bounds defined in the configuration parameter.
      *
      * @param config Configuration for the {@link ReaderGroup}, possibly containing {@link StreamCut} boundaries for
      *               limiting the number of events to read.
      * @return String representation of the events read by the reader.
      */
-    public String printBoundedStream(ReaderGroupConfig config) {
+    public String printBoundedStreams(ReaderGroupConfig config) {
         StringBuilder result = new StringBuilder();
         final String randomId = String.valueOf(new Random(System.nanoTime()).nextInt());
         try (ReaderGroupManager manager = ReaderGroupManager.withScope(scope, controllerURI);
              ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
             final String readerGroupName = "RG" + randomId;
             manager.createReaderGroup(readerGroupName, config);
-
             @Cleanup
             EventStreamReader<String> reader = clientFactory.createReader(randomId, readerGroupName,
                     new JavaSerializer<>(), ReaderConfig.builder().build());
@@ -172,6 +163,115 @@ public class StreamCutsExample implements Closeable {
     }
 
     /**
+     * A good use-case for {@link StreamCut}s is to allow efficient batch processing of data events within specific
+     * boundaries (e.g., perform a mean on the temperature values in 1986). Instead of ingesting all the data and force
+     * the reader to discard useless events, {@link StreamCut}s help readers to only read the events that are important
+     * for a particular task. In this sense, this method enables the Pravega {@link BatchClient} to read from various
+     * {@link Stream}s within the specific ranges passed as input, and the sum up all the values contained in read
+     * events.
+     *
+     * @param streamCuts Map that defines the slices to read of a set of {@link Stream}s.
+     * @return Sum of all the values of time series data belonging to {@link Stream}s and bounded by {@link StreamCut}s.
+     */
+    public int sumBoundedStreams(Map<Stream, List<StreamCut>> streamCuts) {
+        int totalSumValuesInDay = 0;
+        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+            final BatchClient batchClient = clientFactory.createBatchClient();
+            for (Stream myStream: streamCuts.keySet()) {
+
+                // Get the cuts for this stream that will bound the number of events to read.
+                final StreamCut startStreamCut = streamCuts.get(myStream).get(0);
+                final StreamCut endStreamCut = streamCuts.get(myStream).get(1);
+
+                // Then, we get the segment ranges according to the StreamCuts.
+                StreamSegmentsIterator segments = batchClient.getSegments(myStream, startStreamCut ,endStreamCut);
+                List<SegmentRange> ranges = Lists.newArrayList(segments.getIterator());
+
+                // We basically sum up all the values of events within the ranges.
+                for (SegmentRange range: ranges) {
+                    List<String> eventData = Lists.newArrayList(batchClient.readSegment(range, new JavaSerializer<>()));
+                    totalSumValuesInDay += eventData.stream().map(s -> s.split(eventSeparator)[2]).mapToInt(Integer::valueOf).sum();
+                }
+            }
+        }
+        return totalSumValuesInDay;
+    }
+
+    // Region stream utils
+
+    public void createAndPopulateStreamsWithNumbers() {
+        Consumer<SimpleEntry> consumer = this::numericDataEvents;
+        createAndPopulateStreams(consumer);
+    }
+
+    public void createAndPopulateStreamsWithDataSeries() {
+        Consumer<SimpleEntry> consumer = this::dataSeriesEvents;
+        createAndPopulateStreams(consumer);
+    }
+
+    public SimpleEntry<Integer, Integer> getStreamEventIndexesForDay(String streamName, int day) {
+        return perDayEventIndex.get(getStreamDayKey(streamName, day));
+    }
+
+    /**
+     * This method first creates the scope that will contain the streams to write and read events.
+     */
+    public void createAndPopulateStreams(Consumer<SimpleEntry> createDataEvents) {
+        // Create the scope in first place, before creating the Streams.
+        streamManager.createScope(scope);
+
+        // Create Streams and write dummy events in them.
+        for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
+            String streamName = String.valueOf(id);
+            StreamConfiguration streamConfig = StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build();
+            System.out.println("Stream " + id + " is new? " + streamManager.createStream(scope, streamName, streamConfig));
+
+            // Note that we use the try-with-resources statement for those classes that should be closed after usage.
+            try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+                 EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
+                         new JavaSerializer<>(), EventWriterConfig.builder().build())) {
+
+                // Write data to the streams according to our preferences
+                final SimpleEntry<EventStreamWriter<String>, String> writerAndStreamName = new SimpleEntry<>(writer, streamName);
+                createDataEvents.accept(writerAndStreamName);
+            }
+        }
+    }
+
+    public void numericDataEvents(SimpleEntry<EventStreamWriter<String>, String> writerAndStreamName) {
+        // Write dummy events that identify each Stream.
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < numEvents; j++) {
+            writerAndStreamName.getKey().writeEvent(sb.append(writerAndStreamName.getValue()).append(j).toString()).join();
+            sb.setLength(0);
+        }
+    }
+
+    public void dataSeriesEvents(SimpleEntry<EventStreamWriter<String>, String> writerAndStreamName) {
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        int totalEventsSoFar = 0;
+        for (int i = 0; i < numEvents; i++) {
+            final String streamAndDayKey = writerAndStreamName.getValue() + eventSeparator + "day" + i;
+            int eventsPerDay = random.nextInt(maxEventsPerDay);
+            int lastDayEventIndex;
+
+            // Write events specifying the day they belong to and the value in their content.
+            for (lastDayEventIndex = 0; lastDayEventIndex < eventsPerDay; lastDayEventIndex++) {
+                writerAndStreamName.getKey().writeEvent(sb.append(streamAndDayKey).append(eventSeparator)
+                                                          .append(random.nextInt(20)).toString()).join();
+                sb.setLength(0);
+            }
+
+            // Record the event indexes of events for day currentDayNumber
+            if (lastDayEventIndex > 0) {
+                perDayEventIndex.put(streamAndDayKey, new SimpleEntry<>(totalEventsSoFar, totalEventsSoFar + lastDayEventIndex));
+                totalEventsSoFar += lastDayEventIndex;
+            }
+        }
+    }
+
+    /**
      * This method provides a print facility on the contents of all the {@link Stream}s.
      *
      * @return String containing the content of events for a specific {@link Stream}.
@@ -181,7 +281,7 @@ public class StreamCutsExample implements Closeable {
         for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
             final String streamName = String.valueOf(id);
             ReaderGroupConfig config = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName)).build();
-            result = result.append(printBoundedStream(config));
+            result = result.append(printBoundedStreams(config));
         }
         return result.toString();
     }
@@ -205,11 +305,17 @@ public class StreamCutsExample implements Closeable {
         }
     }
 
+    // End region stream utils
+
     /**
      * Close resources.
      */
     public void close() {
         streamManager.close();
         executor.shutdown();
+    }
+
+    private String getStreamDayKey (String streamName, int day) {
+        return streamName + eventSeparator + "day" + day;
     }
 }
