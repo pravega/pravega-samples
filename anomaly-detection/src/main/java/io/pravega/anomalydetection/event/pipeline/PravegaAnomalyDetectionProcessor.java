@@ -53,7 +53,7 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 				.withPravegaConfig(getPravegaConfig())
 				.forStream(getStreamId())
 				.withDeserializationSchema(PravegaSerialization.deserializationFor(Event.class))
-			.build();
+				.build();
 
 		// Configure the Flink job environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
