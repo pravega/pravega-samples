@@ -11,21 +11,32 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.connectors.flink.PravegaConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StreamCreator extends AbstractPipeline {
 	private static final Logger LOG = LoggerFactory.getLogger(StreamCreator.class);
 
-	public StreamCreator(AppConfiguration appConfiguration, FlinkPravegaParams pravega) {
-		super(appConfiguration, pravega);
+	public StreamCreator(AppConfiguration appConfiguration, PravegaConfig pravegaConfig, Stream stream) {
+		super(appConfiguration, pravegaConfig, stream);
 	}
 
 	public void run() {
-		StreamId streamId = getStreamId();
-		pravega.createStream(streamId);
-		LOG.info("Succesfully created stream: {}", streamId);
+		Stream streamId = getStreamId();
+
+		try(StreamManager streamManager = StreamManager.create(pravegaConfig.getClientConfig())) {
+			// create the requested scope (if necessary)
+			streamManager.createScope(stream.getScope());
+
+			// create the requested stream
+			StreamConfiguration streamConfig = StreamConfiguration.builder().build();
+			streamManager.createStream(stream.getScope(), stream.getStreamName(), streamConfig);
+		}
+
+		LOG.info("Successfully created stream: {}", streamId);
 	}
 }

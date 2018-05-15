@@ -1,8 +1,22 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.examples.flink.iot;
 
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.connectors.flink.FlinkPravegaReader;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.connectors.flink.PravegaConfig;
+import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.examples.flink.Utils;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -17,17 +31,27 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 
 public class TurbineHeatProcessor {
     public static void main(String[] args) throws Exception {
-        ParameterTool params = ParameterTool.fromArgs(args);
-        FlinkPravegaParams helper = new FlinkPravegaParams(params);
-        StreamId stream = helper.createStreamFromParam("input", "examples/turbineHeatTest");
 
+        ParameterTool params = ParameterTool.fromArgs(args);
+        PravegaConfig pravegaConfig = PravegaConfig.fromParams(params);
+
+        // ensure that the scope and stream exist
+        Stream stream = Utils.createStream(
+                pravegaConfig,
+                params.get("input", "examples/turbineHeatTest"),
+                StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
+
+        // set up the streaming execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         // 1. read and decode the sensor events from a Pravega stream
-        long startTime = params.getLong("start", 0L);
-        FlinkPravegaReader<String> reader = helper.newReader(stream, startTime, String.class);
-        DataStream<SensorEvent> events = env.addSource(reader, "input").map(new SensorMapper()).name("events");
+        FlinkPravegaReader<String> source = FlinkPravegaReader.<String>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(stream)
+                .withDeserializationSchema(PravegaSerialization.deserializationFor(String.class))
+                .build();
+        DataStream<SensorEvent> events = env.addSource(source, "input").map(new SensorMapper()).name("events");
 
         // 2. extract timestamp information to support 'event-time' processing
         SingleOutputStreamOperator<SensorEvent> timestamped = events.assignTimestampsAndWatermarks(

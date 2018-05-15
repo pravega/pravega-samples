@@ -10,7 +10,10 @@
  */
 package io.pravega.examples.flink.iot
 
-import io.pravega.connectors.flink.util.FlinkPravegaParams
+import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
+import io.pravega.connectors.flink.serialization.PravegaSerialization
+import io.pravega.connectors.flink.{FlinkPravegaReader, PravegaConfig}
+import io.pravega.examples.flink.Utils
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -18,6 +21,7 @@ import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrderness
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
+
 import scala.math._
 
 /**
@@ -64,20 +68,26 @@ object TurbineHeatProcessorScala {
   def main(args: Array[String]) {
 
     val params = ParameterTool.fromArgs(args)
-    val helper = new FlinkPravegaParams(params)
+    val pravegaConfig = PravegaConfig.fromParams(params)
 
     // ensure that the scope and stream exist
-    val stream = helper.createStreamFromParam("input", "examples/turbineHeatTest")
+    val stream = Utils.createStream(
+      pravegaConfig,
+      params.get("input", "examples/turbineHeatTest"),
+      StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build())
 
     // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     // 1. read and decode the sensor events from a Pravega stream
-    val events: DataStream[SensorEvent] = env.addSource(helper.newReader(
-      stream,
-      params.getLong("start", 0),
-      classOf[String])).name("input").map { line =>
+    val source = FlinkPravegaReader.builder()
+      .withPravegaConfig(pravegaConfig)
+      .forStream(stream)
+      .withDeserializationSchema(PravegaSerialization.deserializationFor(classOf[String]))
+      .build()
+
+    val events: DataStream[SensorEvent] = env.addSource(source).name("input").map { line =>
       val l = line.trim.split(", ")
       SensorEvent(l(0).toLong, l(1).toInt, l(2), l(3).toFloat)
     }.name("events")

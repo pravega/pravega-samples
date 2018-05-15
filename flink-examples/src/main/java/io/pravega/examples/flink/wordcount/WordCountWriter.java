@@ -11,18 +11,17 @@
 
 package io.pravega.examples.flink.wordcount;
 
+import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
+import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.PravegaEventRouter;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.examples.flink.Utils;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.util.Collector;
 
 /*
  * At a high level, WordCountWriter reads from an external network socket, 
@@ -55,28 +54,30 @@ public class WordCountWriter {
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
+        PravegaConfig pravegaConfig = PravegaConfig.fromParams(params);
 
-        // create Pravega helper
-        FlinkPravegaParams helper = new FlinkPravegaParams(params);
+        // create the Pravega input stream (if necessary)
+        Stream stream = Utils.createStream(
+                pravegaConfig,
+                params.get(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM));
 
-        // get the Pravega stream information from the input parameters
-        StreamId streamId = helper.getStreamFromParam(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM);
-
-        // create the Pravega stream
-        helper.createStream(streamId);
-
-        // retrieve the network host and port information to read the incoming data from
+        // retrieve the socket host and port information to read the incoming data from
         String host = params.get(Constants.HOST_PARAM, Constants.DEFAULT_HOST);
         int port = Integer.parseInt(params.get(Constants.PORT_PARAM, Constants.DEFAULT_PORT));
 
-        // initialize Flink execution environment
+        // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // get input data by connecting to the socket
         DataStream<String> dataStream = env.socketTextStream(host, port);
 
-        // create the Pravega writer and add this as a sink for the events to be written to
-        FlinkPravegaWriter<String> writer = helper.newWriter(streamId, String.class, new EventRouter());
+        // create the Pravega sink to write a stream of text
+        FlinkPravegaWriter<String> writer = FlinkPravegaWriter.<String>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(stream)
+                .withEventRouter(new EventRouter())
+                .withSerializationSchema(PravegaSerialization.serializationFor(String.class))
+                .build();
         dataStream.addSink(writer);
 
         // create another output sink to print to stdout for verification
