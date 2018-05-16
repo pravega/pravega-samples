@@ -163,8 +163,8 @@ public class ConsoleReader {
     }
 
     /**
-     * This method gets the current StreamCut representing the last event read by the main loop for using it in further
-     * calls that use StreamCuts for bounded processing.
+     * This method gets the current {@link StreamCut} representing the last event read by the main loop for using it in
+     * further calls that use {@link StreamCut}s for bounded processing.
      */
     private void doCreateStreamCut() {
         streamCut = reader.getLastStreamCut();
@@ -172,8 +172,9 @@ public class ConsoleReader {
     }
 
     /**
-     * This method uses startingStreamCuts method to define a start boundary on the events to be read by readers. This
-     * means that reader will only read events from the point represented by streamCut until the tail of the stream.
+     * This method uses {@link ReaderGroupConfig#startingStreamCuts} method to define a start boundary on the events to
+     * be read by readers. This means that a reader will only read events from the point represented by streamCut
+     * variable until the tail of the {@link Stream}.
      */
     private void doReadFromStreamCut() {
         if (streamCut == null) {
@@ -186,8 +187,9 @@ public class ConsoleReader {
     }
 
     /**
-     * This method uses endingStreamCuts method to define a terminal boundary on the events to be read by readers. This
-     * means that reader will only read events from the head of the Stream up to the point represented by streamCut.
+     * This method uses {@link ReaderGroupConfig#endingStreamCuts} method to define a terminal boundary on the events to
+     * be read by readers. This means that a reader will only read events from the head of the {@link Stream} up to the
+     * point represented by streamCut variable.
      */
     private void doReadUpToStreamCut() {
         if (streamCut == null) {
@@ -200,12 +202,12 @@ public class ConsoleReader {
     }
 
     /**
-     * This method shows a possible usage of StreamCuts related to bounded stream processing. The input parameter has
-     * defined a ReaderGroupConfig with a StreamCut set to be either the initial or terminal boundary for reading
-     * events. Once we create a ReaderGroup with this input configuration, then all the readers belonging to this group
-     * will consume the events only within the defined boundaries.
+     * This method shows a possible usage of {@link StreamCut}s related to bounded stream processing. The input
+     * parameter has defined a {@link ReaderGroupConfig} with a {@link StreamCut} set to be either the initial or
+     * terminal boundary for reading events. Once we create a {@link ReaderGroup} with this input configuration, then
+     * all the readers belonging to this group will consume the events only within the defined boundaries.
      *
-     * @param config Configuration for a ReaderGroup that will contain read boundaries in that Stream.
+     * @param config Configuration for a {@link ReaderGroup} that will contain read boundaries in that {@link Stream}.
      */
     private void readBasedOnStreamCuts(ReaderGroupConfig config) {
         final String readerGroup = UUID.randomUUID().toString().replace("-", "");
@@ -309,6 +311,9 @@ public class ConsoleReader {
     }
 }
 
+/**
+ * This class aims at continuously reading from the {@link Stream} and creating {@link StreamCut}s in a separate thread.
+ */
 class MyReader implements Runnable {
 
     private static final int READER_TIMEOUT_MS = 1000;
@@ -328,6 +333,12 @@ class MyReader implements Runnable {
         this.controllerURI = controllerURI;
     }
 
+    /**
+     * This method continuously performs two tasks: first, it reads events that are being written by console writer
+     * or by any other process in that stream. Second, it creates a new StreamCut after every read event. The new
+     * {@link StreamCut} represents the current tail of the {@link Stream} and it may be used to read events to or from
+     * that position in the {@link Stream}.
+     */
     public void run() {
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().disableAutomaticCheckpoints()
                                                                      .stream(Stream.of(scope, streamName)).build();
