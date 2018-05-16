@@ -21,7 +21,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-public class StreamCutsConsole {
+public class StreamCutsCli {
 
     private static final int exampleMaxStreams = 5;
     private static final int exampleMaxEvents = 20;
@@ -38,7 +38,7 @@ public class StreamCutsConsole {
             "QUIT - terminate the program."
     };
 
-    public StreamCutsConsole(String scope, URI controllerURI) {
+    public StreamCutsCli(String scope, URI controllerURI) {
         this.scope = scope;
         this.controllerURI = controllerURI;
     }
@@ -298,7 +298,7 @@ public class StreamCutsConsole {
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
 
-        StreamCutsConsole console = new StreamCutsConsole(scope, controllerURI);
+        StreamCutsCli console = new StreamCutsCli(scope, controllerURI);
         console.run();
         System.exit(0);
     }
