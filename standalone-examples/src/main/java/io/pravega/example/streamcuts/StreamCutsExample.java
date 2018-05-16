@@ -145,6 +145,7 @@ public class StreamCutsExample implements Closeable {
             @Cleanup
             EventStreamReader<String> reader = clientFactory.createReader(randomId, readerGroupName,
                     new JavaSerializer<>(), ReaderConfig.builder().build());
+
             // Write dummy events that identify each Stream.
             EventRead<String> event = null;
             do {

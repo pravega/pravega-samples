@@ -131,7 +131,7 @@ public class StreamCutsConsole {
         example.createAndPopulateStreamsWithNumbers();
         System.out.println(example.printStreams());
 
-        output("Your Streams are ready :)%n");
+        output("Your Streams are ready :)%n%n");
         output("Now, to see how StreamCuts work, we are going to build them!%n");
 
         // After setting up the streams and populating them, we can exercise StreamCuts multiple times.
@@ -140,6 +140,7 @@ public class StreamCutsConsole {
             output("Do you want to repeat? (Y)%n");
         } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
 
+        output("Sealing and deleting streams.%n");
         example.deleteStreams();
         example.close();
     }
@@ -151,9 +152,9 @@ public class StreamCutsConsole {
 
         for (char id = streamId; id < streamId + numStreams; id++) {
             final String streamName = String.valueOf(id);
-            output("[Stream " + streamName + "] StreamCut start event number.%n");
+            output("[Stream %s]  StreamCut start event number.%n", streamName);
             int iniEventIndex = askForIntInput(prefix, 0, exampleNumEvents);
-            output("[Stream " + streamName + "] StreamCut end event number.%n");
+            output("[Stream %s] StreamCut end event number.%n", streamName);
             int endEventIndex = askForIntInput(prefix, iniEventIndex+1, exampleNumEvents);
             final List<StreamCut> myStreamCuts = example.createStreamCutsByIndexFor(streamName, iniEventIndex, endEventIndex);
             startStreamCuts.put(Stream.of(scope, streamName), myStreamCuts.get(0));
@@ -192,14 +193,17 @@ public class StreamCutsConsole {
         example.createAndPopulateStreamsWithDataSeries();
         System.out.println(example.printStreams());
 
-        output("Your Streams are ready :)%n");
-        output("Now, to see how StreamCuts work, we are going to build them!%n");
+        output("Your Streams are ready :)%n%n");
+        output("We want to show the use of StreamCuts with BatchClient. To this end, we have created StreamCuts %n" +
+               "for each stream that bound the events belonging to the same day.%n");
+        output("The example consists of summing up all the values from events belonging to the same day (e.g., day1).%n%n");
 
         do {
             doBoundedSummingOfStreamValues(prefix, numStreams, exampleNumDays, example);
             output("Do you want to repeat? (Y)%n");
         } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
 
+        output("Sealing and deleting streams.%n");
         example.deleteStreams();
         example.close();
     }
@@ -218,7 +222,7 @@ public class StreamCutsConsole {
             if (eventIndexesForDay == null){
                 continue;
             }
-            output(eventIndexesForDay.toString() + "%n");
+            output("Indexes to bound day%s events: %s%n", dayNumber, eventIndexesForDay.toString());
 
             // Get the StreamCuts that define the event boundaries for the given day in this stream.
             final List<StreamCut> myStreamCuts = example.createStreamCutsByIndexFor(streamName, eventIndexesForDay.getKey(),
