@@ -94,13 +94,13 @@ There is a Linux/Mac script and a Windows (.bat) script for each separate execut
 # Proposed Roadmap
 
 We propose a roadmap to proceed with the execution of examples based on their complexity:
-1. [Pravega features](readme pravega features): First step to understand the basics of 
+1. [Pravega features](https://github.com/RaulGracia/pravega-samples/tree/master/standalone-examples): First step to understand the basics of 
 Pravega and exercise the concepts presented in the documentation. 
-2. [Pravega scenarios](readme pravega scenarios): These examples will demonstrate the 
+2. [Pravega scenarios](https://github.com/RaulGracia/pravega-samples/tree/master/standalone-examples): These examples will demonstrate the 
 developer how applications can exploit Pravega once s/he is familiar with the main APIs.
-3. [Flink-connector features](readme flink-connector features): These examples will show 
+3. [Flink-connector features](https://github.com/RaulGracia/pravega-samples/tree/master/flink-examples): These examples will show 
 the basic functionality of the Flink connector for Pravega.
-4. [Flink-connector scenarios](readme flink-connector scenarios): These examples go beyond
+4. [Flink-connector scenarios](https://github.com/RaulGracia/pravega-samples/tree/master/flink-examples): These examples go beyond
 basic the interaction between Pravega and Flink to demonstrate complex analytics use cases.
 
 
