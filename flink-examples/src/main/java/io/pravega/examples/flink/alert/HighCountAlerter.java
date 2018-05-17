@@ -94,7 +94,7 @@ public class HighCountAlerter {
                     out.collect(new ResponseCount(value.getStatus(), 1));
                 }
             }).filter((FilterFunction<ResponseCount>) count -> {
-                  return !count.response.isEmpty();
+                  return !count.response.equals("500");
               }).keyBy("response")
               .timeWindow(Time.seconds(Constants.ALERT_WINDOW), Time.seconds(Constants.ALERT_INTERVAL))
               .sum("count");
@@ -107,8 +107,7 @@ public class HighCountAlerter {
             .where(new SimpleCondition<ResponseCount>() {
                 @Override
                 public boolean filter(ResponseCount value) throws Exception {
-                    return value.count >= Constants.ALERT_THRESHOLD &&
-                           value.response.equals("500");
+                    return value.count >= Constants.ALERT_THRESHOLD;
                 }
             });
 
