@@ -1,10 +1,11 @@
 # Pravega Flink Connector Examples
-Steps to set up and run Pravega Flink connector samples.
+Battery of code examples to demonstrate the capabilities of Pravega as a data stream storage 
+system for Apache Flink. 
 
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
-2. Build `flink-connector` repository
-3. Build `pravega-samples` repository
+2. Build [flink-connectors](https://github.com/pravega/flink-connectors) repository
+3. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
 4. Apache Flink running
 
 

@@ -1,5 +1,5 @@
 # Pravega Examples 
-These applications only need a running Pravega to execute against.
+Set of example applications to demonstrate the features of Pravega and potential use-case scenarios.
 
 
 ## Pre-requisites

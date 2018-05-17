@@ -1,7 +1,7 @@
 
 # Event pattern detection with Apache Flink and Pravega
 Sample application which simulates network anomaly intrusion and detection using Apache Flink 
-and Apache Pravega.
+and Pravega.
 
 This application is based on [streaming-state-machine](https://github.com/StephanEwen/flink-demos/tree/master/streaming-state-machine) 
 which is slightly extended to demonstrate Pravega/Flink integration capabilities.
@@ -35,8 +35,8 @@ The following diagram depicts the state machine used in this example.
 
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
-2. Build `flink-connector` repository
-3. Build `pravega-samples` repository
+2. Build [flink-connectors](https://github.com/pravega/flink-connectors) repository
+3. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
 4. Apache Flink running
 5. ELK running (optional)
 
