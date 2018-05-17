@@ -6,6 +6,8 @@ These applications only need a running Pravega to execute against.
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build `pravega-samples` repository
 
+---
+
 # Feature Examples Catalog
 
 ## `gettingstarted`
@@ -130,9 +132,9 @@ To demonstrate the use of `StreamCut`s, we provide a CLI. To use it, please exec
 $ bin/streamCutsCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
 ```
 
+---
+
 # Scenario Examples Catalog
-
-
 
 ## `turbineheatsensor`
 

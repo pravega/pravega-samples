@@ -41,6 +41,8 @@ Then, upload the samples to the cluster.  They'll be copied to `/home/centos` on
 $ ./gradlew upload
 ```
 
+---
+
 # Feature Examples Catalog
 
 ## Word Count Sample
@@ -48,6 +50,8 @@ $ ./gradlew upload
 This example demonstrates how to use the Pravega Flink Connectors to write data collected
 from an external network stream into a Pravega stream and read the data from the Pravega stream.
 See [Flink Word Count Sample](doc/flink-wordcount/README.md) for execution instructions.
+
+---
 
 # Scenario Examples Catalog
 
