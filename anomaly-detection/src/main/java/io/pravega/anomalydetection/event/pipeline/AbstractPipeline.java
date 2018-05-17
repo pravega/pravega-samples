@@ -11,23 +11,27 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.client.stream.Stream;
+import io.pravega.connectors.flink.PravegaConfig;
+import org.apache.flink.util.Preconditions;
 
 public abstract class AbstractPipeline {
-	public static final String STREAM_PARAMETER = "stream";
-	public static final String DEFAULT_STREAM = "examples/NetworkPacket";
-
 	protected AppConfiguration appConfiguration;
-	protected FlinkPravegaParams pravega;
+	protected PravegaConfig pravegaConfig;
+	protected Stream stream;
 
-	public AbstractPipeline(AppConfiguration appConfiguration, FlinkPravegaParams pravega) {
-		this.appConfiguration = appConfiguration;
-		this.pravega = pravega;
+	public AbstractPipeline(AppConfiguration appConfiguration, PravegaConfig pravegaConfig, Stream stream) {
+		this.appConfiguration = Preconditions.checkNotNull(appConfiguration, "appConfiguration");
+		this.pravegaConfig = Preconditions.checkNotNull(pravegaConfig, "pravegaConfig");
+		this.stream = Preconditions.checkNotNull(stream, "stream");
 	}
 
-	public StreamId getStreamId() {
-		return pravega.getStreamFromParam(STREAM_PARAMETER, DEFAULT_STREAM);
+	public PravegaConfig getPravegaConfig() {
+		return pravegaConfig;
+	}
+
+	public Stream getStreamId() {
+		return stream;
 	}
 
 	public abstract void run() throws Exception;

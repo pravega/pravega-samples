@@ -11,7 +11,8 @@
 package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
+import io.pravega.client.stream.Stream;
+import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.shaded.com.google.gson.Gson;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
@@ -27,11 +28,16 @@ public class PipelineRunner {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PipelineRunner.class);
 
+	public static final String STREAM_PARAMETER = "stream";
+	public static final String DEFAULT_SCOPE = "examples";
+	public static final String DEFAULT_STREAM = "NetworkPacket";
+
 	private static final String configFile = "app.json";
 
 	private AppConfiguration appConfiguration;
-	private FlinkPravegaParams pravega;
+	private PravegaConfig pravegaConfig;
 	private int runMode;
+	private Stream stream;
 
 	private void parseConfigurations(String[] args) {
 
@@ -40,12 +46,12 @@ public class PipelineRunner {
 		ParameterTool parameterTool = ParameterTool.fromArgs(args);
 		LOG.info("Parameter Tool: {}", parameterTool.toMap());
 
-		if(parameterTool.getNumberOfParameters() != 2) {
+		if(!parameterTool.has("mode")) {
 			printUsage();
 			System.exit(1);
 		}
 
-		String configDirPath = parameterTool.getRequired("configDir");
+		String configDirPath = parameterTool.get("configDir", "conf");
 		try {
 			byte[] configurationData = Files.readAllBytes(Paths.get(configDirPath + File.separator + configFile));
 			String jsonData = new String(configurationData);
@@ -58,17 +64,23 @@ public class PipelineRunner {
 		}
 
 		runMode = parameterTool.getInt("mode");
-
-		pravega = new FlinkPravegaParams(ParameterTool.fromArgs(args));
+		pravegaConfig = PravegaConfig.fromParams(parameterTool).withDefaultScope(DEFAULT_SCOPE);
+		stream = pravegaConfig.resolve(parameterTool.get(STREAM_PARAMETER, DEFAULT_STREAM));
 	}
 
 	private void printUsage() {
 		StringBuilder message = new StringBuilder();
 		message.append("\n############################################################################################################\n");
-		message.append("Usage: com.emc.pravega.ApplicationMain --configDir <app.json file location> --mode <1 or 2 or 3>").append("\n");
-		message.append("Mode 1 == Create pravega stream as defined in the configuration file").append("\n");
-		message.append("Mode 2 == Publish streaming events to Pravega").append("\n");
-		message.append("Mode 3 == Run Anomaly Detection by reading from Pravega stream").append("\n");
+		message.append("Options:").append("\n");
+		message.append("  --configDir='conf': the directory containing the configuration file (app.json)").append("\n");
+		message.append("  --mode: 1 or 2 or 3 (see below for details)").append("\n");
+		message.append("  --controller='tcp://localhost:9090': the Pravega controller URI").append("\n");
+		message.append("  --scope='examples': the Pravega scope to use").append("\n");
+		message.append("  --stream='NetworkPacket': the Pravega stream to use").append("\n");
+		message.append("Modes:").append("\n");
+		message.append("  1: Create a Pravega stream").append("\n");
+		message.append("  2: Publish streaming events to a Pravega stream").append("\n");
+		message.append("  3: Run Anomaly Detection over events from a Pravega stream").append("\n");
 		message.append("############################################################################################################");
 		LOG.error("{}", message.toString());
 	}
@@ -83,15 +95,15 @@ public class PipelineRunner {
 			switch (runMode) {
 				case 1:
 					LOG.info("Going to create Pravega stream");
-					pipeline = new StreamCreator(appConfiguration, pravega);
+					pipeline = new StreamCreator(appConfiguration, pravegaConfig, stream);
 					break;
 				case 2:
 					LOG.info("Running event publisher to publish events to Pravega stream");
-					pipeline = new PravegaEventPublisher(appConfiguration, pravega);
+					pipeline = new PravegaEventPublisher(appConfiguration, pravegaConfig, stream);
 					break;
 				case 3:
 					LOG.info("Running anomaly detection by reading from Pravega stream");
-					pipeline = new PravegaAnomalyDetectionProcessor(appConfiguration, pravega);
+					pipeline = new PravegaAnomalyDetectionProcessor(appConfiguration, pravegaConfig, stream);
 					break;
 				default:
 					LOG.error("Incorrect run mode [{}] specified", runMode);
