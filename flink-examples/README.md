@@ -48,20 +48,19 @@ $ ./gradlew upload
 ## Word Count Sample
 
 This example demonstrates how to use the Pravega Flink Connectors to write data collected
-from an external network stream into a Pravega stream and read the data from the Pravega stream.
-See [Flink Word Count Sample](doc/flink-wordcount/README.md) for execution instructions.
+from an external network stream into a Pravega `Stream` and read the data from the Pravega `Stream`.
+_See [wordcount](doc/flink-wordcount/README.md) for more information and execution instructions_.
 
 ---
 
 # Scenario Examples Catalog
 
 ## Turbine Heat Processor
-A Flink streaming application for processing temperature data from a Pravega stream. 
-Complements the Turbine Heat Sensor app (external). The application computes a daily summary of 
-the temperature range observed on that day by each sensor.
+A Flink streaming application for processing temperature data from a Pravega `Stream`. 
+Complements the Turbine Heat Sensor app ([`turbineheatsensor`](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/turbineheatsensor)). 
+The application computes a daily summary of the temperature range observed on that day by each sensor.
 
-Automatically creates a scope (default: `examples`) and stream (default: `turbineHeatTest`) as 
-necessary.
+Automatically creates a scope (default: `examples`) and stream (default: `turbineHeatTest`) as necessary.
 
 ### Execution
 Run the sample from the command-line:
@@ -74,8 +73,8 @@ Alternately, run the sample from the Flink UI.
 - Main class: `io.pravega.examples.flink.iot.TurbineHeatProcessor` or `io.pravega.examples.flink.iot.TurbineHeatProcessorScala`
 
 ### Outputs
-The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day.   The data is
-also emitted to stdout (which may be viewed in the Flink UI).  For example:
+The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day. The data is
+also emitted to stdout (which may be viewed in the Flink UI). For example:
 
 ```
 ...
@@ -92,6 +91,6 @@ SensorAggregate(1152000000,7,Delaware,(60.0,100.0))
 
 ## Anomaly Detection
 A Flink streaming application for detecting anomalous input patterns using a finite-state machine.
-
-_See the [anomaly-detection](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection) directory for more information._
+_See the [anomaly-detection](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection/README.md) 
+for more information and execution instructions_.
 
