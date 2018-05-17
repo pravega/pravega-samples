@@ -51,7 +51,7 @@ public class HelloWorldReader {
 
     public void run() {
         StreamManager streamManager = StreamManager.create(controllerURI);
-
+        
         final boolean scopeIsNew = streamManager.createScope(scope);
         StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))

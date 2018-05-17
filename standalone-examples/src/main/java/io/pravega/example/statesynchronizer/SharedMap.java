@@ -255,7 +255,7 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
      * Use the StateSynchronizer to compact the shared state.
      */
     public void clear(){
-        stateSynchronizer.updateState(state -> {
+        stateSynchronizer.updateState(state -> { 
             if (state.size() > 0) {
                 return Collections.singletonList(new Clear<K,V>());
             } else {

@@ -40,7 +40,7 @@ import io.pravega.client.stream.impl.JavaSerializer;
 public class ConsoleReader {
     
     private static final int READER_TIMEOUT_MS = 200000;
-
+    
     public final String scope;
     public final String streamName;
     public final URI controllerURI;
@@ -50,7 +50,7 @@ public class ConsoleReader {
         this.streamName = streamName;
         this.controllerURI = controllerURI;
     }
-
+    
     public void run() {
         final String readerGroup = UUID.randomUUID().toString().replace("-", "");
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE)
@@ -89,7 +89,7 @@ public class ConsoleReader {
         }
     }
 
-
+    
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLine cmd = null;
@@ -106,7 +106,7 @@ public class ConsoleReader {
         final String streamName = cmd.getOptionValue("name") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("name");
         final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
         final URI controllerURI = URI.create(uriString);
-
+        
         ConsoleReader reader = new ConsoleReader(scope, streamName, controllerURI);
         reader.run();
     }
