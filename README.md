@@ -53,10 +53,12 @@ To install the Pravega libraries to your local Maven repository:
 
 ```
 $ git clone https://github.com/pravega/pravega.git
+$ cd pravega
 $ ./gradlew install
 ```
 
 The above command should generate the required `jar` files into your local Maven repository.
+For more information, please visit [Pravega Git repository](https://github.com/pravega/pravega). 
 
 > Hint: If you use a different version of Pravega, please check the gradle.properties file.
 
@@ -66,10 +68,12 @@ To execute Flink connector examples, follow the below steps to build and publish
 source to local Maven repository:
 
 ```
-$ git clone https://github.com/pravega/flink-connectors.git
+$ git clone --recursive https://github.com/pravega/flink-connectors.git
 $ cd flink-connectors
 $ ./gradlew clean install
 ```
+
+For more information, please visit [Flink connector Git repository](https://github.com/pravega/flink-connectors). 
 
 ## Pravega Samples Build Instructions
 
@@ -83,10 +87,10 @@ $ ./gradlew clean installDist
 ```
 To ease their execution, most examples can be run either using the gradle wrapper (gradlew) or 
 scripts. The above gradle command automatically creates the execution scripts that can be found
-under the `pravega-samples` directory in:
+under:
 
 ```
-standalone-examples/build/install/pravega-standalone-examples/bin
+pravega-samples/standalone-examples/build/install/pravega-standalone-examples/bin
 ```
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
