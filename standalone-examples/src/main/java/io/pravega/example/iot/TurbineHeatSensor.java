@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -99,7 +100,8 @@ public class TurbineHeatSensor {
                     .scalingPolicy(policy)
                     .build();
             streamManager.createStream(scopeName, streamName, config);
-        } catch (URISyntaxException e) {
+        }
+        catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
 
@@ -110,8 +112,7 @@ public class TurbineHeatSensor {
             SensorReader reader = new SensorReader(producerCount * eventsPerSec * runtimeSec);
             executor.execute(reader);
         }
-
-        // Create producerCount number of threads to simulate sensors.
+        /* Create producerCount number of threads to simulate sensors. */
         Instant startEventTime = Instant.EPOCH.plus(8, ChronoUnit.HOURS); // sunrise
         for (int i = 0; i < producerCount; i++) {
             URI controllerUri = new URI(TurbineHeatSensor.controllerUri);
@@ -129,6 +130,7 @@ public class TurbineHeatSensor {
                         isTransaction, factory);
             }
             executor.execute(worker);
+
         }
 
         executor.shutdown();
@@ -141,7 +143,7 @@ public class TurbineHeatSensor {
         if ( !onlyWrite ) {
             consumeStats.printTotal();
         }
-
+//        ZipKinTracer.getTracer().close();
         System.exit(0);
     }
 
@@ -158,6 +160,7 @@ public class TurbineHeatSensor {
         options.addOption("stream", true, "Stream name");
         options.addOption("writeonly", true, "Just produce vs read after produce");
         options.addOption("blocking", true, "Block for each ack");
+//        options.addOption("zipkin", true, "Enable zipkin trace");
         options.addOption("reporting", true, "Reporting internval");
 
         options.addOption("help", false, "Help message");
@@ -302,7 +305,8 @@ public class TurbineHeatSensor {
                     .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
                     .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
                     .build();
-            this.producer = factory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
+            this.producer = clientFactory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
+
         }
 
         /**
@@ -310,7 +314,7 @@ public class TurbineHeatSensor {
          * @return A function which takes String key and data and returns a future object.
          */
         BiFunction<String, String, Future> sendFunction() {
-            return producer::writeEvent;
+            return  ( key, data) -> producer.writeEvent(key, data);
         }
 
         public static <T> CompletableFuture<T> makeCompletableFuture(Future<T> future) {
@@ -346,8 +350,12 @@ public class TurbineHeatSensor {
                     String payload = String.format("%-" + messageSize + "s", val);
                     // event ingestion
                     long now = System.currentTimeMillis();
-                    retFuture = produceStats.runAndRecordTime(() ->
-                                    this.makeCompletableFuture(fn.apply(Integer.toString(producerId), payload)), now, payload.length());
+                    retFuture = produceStats.runAndRecordTime(() -> {
+                                return this.makeCompletableFuture(fn.apply(Integer.toString(producerId),
+                                        payload));
+                            },
+                            now,
+                            payload.length());
                     //If it is a blocking call, wait for the ack
                     if ( blocking ) {
                         try {
@@ -387,6 +395,7 @@ public class TurbineHeatSensor {
             runLoop(sendFunction());
         }
     }
+
 
     private static class TransactionTemperatureSensors extends TemperatureSensors {
 
@@ -450,10 +459,12 @@ public class TurbineHeatSensor {
             //reusing a reader group name doesn't work (probably because the sequence is already consumed)
             //until we figure out how to manage this, use a random reader group name
             String readerGroup = UUID.randomUUID().toString().replace("-", "");
-            ReaderGroupConfig groupConfig = ReaderGroupConfig.builder().stream(Stream.of(scopeName, streamName)).build();
-            readerGroupManager.createReaderGroup(readerGroup, groupConfig);
+            ReaderGroupConfig groupConfig = ReaderGroupConfig.builder().startingPosition(Sequence.MIN_VALUE).build();
+            readerGroupManager.createReaderGroup(readerGroup, groupConfig, Collections.singleton(streamName));
             ReaderConfig readerConfig = ReaderConfig.builder().build();
             return clientFactory.createReader(readerName, readerGroup, SERIALIZER, readerConfig);
         }
     }
+
+
 }
