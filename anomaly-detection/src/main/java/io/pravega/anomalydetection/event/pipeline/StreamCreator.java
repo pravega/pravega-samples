@@ -12,6 +12,7 @@ package io.pravega.anomalydetection.event.pipeline;
 
 import io.pravega.anomalydetection.event.AppConfiguration;
 import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.connectors.flink.PravegaConfig;
@@ -33,7 +34,9 @@ public class StreamCreator extends AbstractPipeline {
 			streamManager.createScope(stream.getScope());
 
 			// create the requested stream
-			StreamConfiguration streamConfig = StreamConfiguration.builder().build();
+			StreamConfiguration streamConfig = StreamConfiguration.builder()
+					.scalingPolicy(ScalingPolicy.fixed(1))
+					.build();
 			streamManager.createStream(stream.getScope(), stream.getStreamName(), streamConfig);
 		}
 

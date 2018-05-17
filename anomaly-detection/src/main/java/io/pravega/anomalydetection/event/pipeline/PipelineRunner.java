@@ -29,7 +29,8 @@ public class PipelineRunner {
 	private static final Logger LOG = LoggerFactory.getLogger(PipelineRunner.class);
 
 	public static final String STREAM_PARAMETER = "stream";
-	public static final String DEFAULT_STREAM = "examples/NetworkPacket";
+	public static final String DEFAULT_SCOPE = "examples";
+	public static final String DEFAULT_STREAM = "NetworkPacket";
 
 	private static final String configFile = "app.json";
 
@@ -45,12 +46,12 @@ public class PipelineRunner {
 		ParameterTool parameterTool = ParameterTool.fromArgs(args);
 		LOG.info("Parameter Tool: {}", parameterTool.toMap());
 
-		if(parameterTool.getNumberOfParameters() != 2) {
+		if(!parameterTool.has("mode")) {
 			printUsage();
 			System.exit(1);
 		}
 
-		String configDirPath = parameterTool.getRequired("configDir");
+		String configDirPath = parameterTool.get("configDir", "conf");
 		try {
 			byte[] configurationData = Files.readAllBytes(Paths.get(configDirPath + File.separator + configFile));
 			String jsonData = new String(configurationData);
@@ -63,17 +64,23 @@ public class PipelineRunner {
 		}
 
 		runMode = parameterTool.getInt("mode");
-		pravegaConfig = PravegaConfig.fromParams(parameterTool);
+		pravegaConfig = PravegaConfig.fromParams(parameterTool).withDefaultScope(DEFAULT_SCOPE);
 		stream = pravegaConfig.resolve(parameterTool.get(STREAM_PARAMETER, DEFAULT_STREAM));
 	}
 
 	private void printUsage() {
 		StringBuilder message = new StringBuilder();
 		message.append("\n############################################################################################################\n");
-		message.append("Usage: com.emc.pravega.ApplicationMain --configDir <app.json file location> --mode <1 or 2 or 3>").append("\n");
-		message.append("Mode 1 == Create pravega stream as defined in the configuration file").append("\n");
-		message.append("Mode 2 == Publish streaming events to Pravega").append("\n");
-		message.append("Mode 3 == Run Anomaly Detection by reading from Pravega stream").append("\n");
+		message.append("Options:").append("\n");
+		message.append("  --configDir='conf': the directory containing the configuration file (app.json)").append("\n");
+		message.append("  --mode: 1 or 2 or 3 (see below for details)").append("\n");
+		message.append("  --controller='tcp://localhost:9090': the Pravega controller URI").append("\n");
+		message.append("  --scope='examples': the Pravega scope to use").append("\n");
+		message.append("  --stream='NetworkPacket': the Pravega stream to use").append("\n");
+		message.append("Modes:").append("\n");
+		message.append("  1: Create a Pravega stream").append("\n");
+		message.append("  2: Publish streaming events to a Pravega stream").append("\n");
+		message.append("  3: Run Anomaly Detection over events from a Pravega stream").append("\n");
 		message.append("############################################################################################################");
 		LOG.error("{}", message.toString());
 	}

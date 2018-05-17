@@ -33,12 +33,14 @@ public class TurbineHeatProcessor {
     public static void main(String[] args) throws Exception {
 
         ParameterTool params = ParameterTool.fromArgs(args);
-        PravegaConfig pravegaConfig = PravegaConfig.fromParams(params);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withDefaultScope("examples");
 
         // ensure that the scope and stream exist
         Stream stream = Utils.createStream(
                 pravegaConfig,
-                params.get("input", "examples/turbineHeatTest"),
+                params.get("input", "turbineHeatTest"),
                 StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
 
         // set up the streaming execution environment
@@ -61,7 +63,6 @@ public class TurbineHeatProcessor {
                 return element.getTimestamp();
             }
         });
-        timestamped.print();
 
         // 3. summarize the temperature data for each sensor
         SingleOutputStreamOperator<SensorAggregate> summaries = timestamped
@@ -98,7 +99,7 @@ public class TurbineHeatProcessor {
                 return new SensorAggregate(evt.getTimestamp(), evt.getSensorId(), evt.getLocation(),
                         evt.getTemp(), evt.getTemp());
             }
-            return new SensorAggregate(evt.getTimestamp(), evt.getSensorId(), evt.getLocation(),
+            return new SensorAggregate(accumulator.getStartTime(), evt.getSensorId(), evt.getLocation(),
                     Math.min(evt.getTemp(), accumulator.getTempMin()),
                     Math.max(evt.getTemp(), accumulator.getTempMax())
             );

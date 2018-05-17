@@ -68,12 +68,14 @@ object TurbineHeatProcessorScala {
   def main(args: Array[String]) {
 
     val params = ParameterTool.fromArgs(args)
-    val pravegaConfig = PravegaConfig.fromParams(params)
+    val pravegaConfig = PravegaConfig
+      .fromParams(params)
+      .withDefaultScope("examples")
 
     // ensure that the scope and stream exist
     val stream = Utils.createStream(
       pravegaConfig,
-      params.get("input", "examples/turbineHeatTest"),
+      params.get("input", "turbineHeatTest"),
       StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build())
 
     // set up the streaming execution environment

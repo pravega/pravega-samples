@@ -46,7 +46,7 @@ public class WordCountWriter {
     // Application parameters
     //   host - host running netcat, default 127.0.0.1
     //   port - port on which netcat listens, default 9999
-    //   stream - the Pravega stream to write data to, default myscope/wordcount
+    //   stream - the Pravega stream to write data to, default examples/wordcount
     //   controller - the Pravega controller uri, default tcp://127.0.0.1:9090
 
     public static void main(String[] args) throws Exception {
@@ -54,7 +54,9 @@ public class WordCountWriter {
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
-        PravegaConfig pravegaConfig = PravegaConfig.fromParams(params);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withDefaultScope(Constants.DEFAULT_SCOPE);
 
         // create the Pravega input stream (if necessary)
         Stream stream = Utils.createStream(
@@ -78,10 +80,10 @@ public class WordCountWriter {
                 .withEventRouter(new EventRouter())
                 .withSerializationSchema(PravegaSerialization.serializationFor(String.class))
                 .build();
-        dataStream.addSink(writer);
+        dataStream.addSink(writer).name("Pravega Stream");
 
         // create another output sink to print to stdout for verification
-        dataStream.print();
+        dataStream.print().name("stdout");
 
         // execute within the Flink environment
         env.execute("WordCountWriter");

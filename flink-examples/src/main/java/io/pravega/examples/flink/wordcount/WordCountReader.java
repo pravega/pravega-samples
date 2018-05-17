@@ -43,7 +43,7 @@ public class WordCountReader {
     // prints the distinct words and counts from the previous 10 seconds.
 
     // Application parameters
-    //   stream - default myscope/wordcount
+    //   stream - default examples/wordcount
     //   controller - default tcp://127.0.0.1:9090
 
     public static void main(String[] args) throws Exception {
@@ -51,7 +51,9 @@ public class WordCountReader {
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
-        PravegaConfig pravegaConfig = PravegaConfig.fromParams(params);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withDefaultScope(Constants.DEFAULT_SCOPE);
 
         // create the Pravega input stream (if necessary)
         Stream stream = Utils.createStream(
@@ -69,7 +71,7 @@ public class WordCountReader {
                 .build();
 
         // count each word over a 10 second time period
-        DataStream<WordCount> dataStream = env.addSource(source)
+        DataStream<WordCount> dataStream = env.addSource(source).name("Pravega Stream")
                 .flatMap(new WordCountReader.Splitter())
                 .keyBy("word")
                 .timeWindow(Time.seconds(10))

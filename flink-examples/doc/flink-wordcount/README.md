@@ -20,23 +20,25 @@ $ nc -lk 9999
 
 Then start the WordCountWriter
 ```
-$ bin/wordCountWriter [-host localhost] [-port 9999] [-stream myscope/wordcount] [-collector tcp://localhost:9090]
+$ bin/wordCountWriter [-host localhost] [-port 9999] [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
 ```
 
 All args are optional, if not specified, the defaults are:
 
  * host - "localhost"
  * port - "9999"
- * stream - "myscope/wordcount"
+ * scope - "examples" 
+ * stream - "wordcount"
  * controller - "tcp://localhost:9090"
 
 ### Start WordCountReader
 The application reads data from a Pravega stream and prints the data.
 ```
-$ bin/wordCountReader [-stream myscope/wordcount] [-collector tcp://localhost:9090]
+$ bin/wordCountReader [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
 ```
 All args are optional, if not included, the defaults are:
- * stream - "myscop/wordcount"
+ * scope - "examples"
+ * stream - "wordcount"
  * controller - "tcp://localhost:9090"
 
 Now in the windows where netcat is running, enter some text, for example,
