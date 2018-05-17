@@ -1,104 +1,112 @@
-# pravega-samples
+# Pravega and Analytics Connectors Examples
 
-Sample applications for Pravega.
+This repository contains code examples to demonstrate how developers can work with 
+[Pravega](http://pravega.io). We also provide code examples to connect analytics 
+engines such as [Flink](https://flink.apache.org/) and
+[Hadoop](http://hadoop.apache.org/) with Pravega as a storage substrate for data 
+streams. 
 
-## Getting Started
+For more information on Pravega we recommend to read the [documentation and the
+developer guide](http://pravega.io).
 
-### Building Pravega
+# Repository Structure
 
-Optional: This step is required only if you want to use a different version
-of Pravega than is published to maven central.
+This repository is divided into sub-folders specifically addressed to demonstrate a
+single component (`pravega-examples`, `flink-examples`, and `hadoop-examples`). 
+We divided the examples into two categories: i) `features`, which are very simple
+examples aimed at demonstrating how a particular feature or API works; and ii)
+`scenarios`, which are more complex applications that show use-cases exploiting the 
+component at hand.
 
-Install the Pravega client libraries to your local Maven repository:
+## Pravega Examples
+| Example Name        |  Type  | Description  | Language |
+| ------------- |:-------------| :-----| :-----|
+| `gettingstarted` | feature | Simple example of how to read/write a Pravega `Stream`. | Java
+| `consolerw` | feature      | Application that allows users to work with `Stream`, `Transaction` and `StreamCut` APIs via CLI. | Java
+| `noop`      | feature      | Example of how to add a simple callback executed upon a read event. | Java
+| `statesynchronizer` | feature | Application that allows users to work with `StateSynchronizer` API via CLI. | Java
+| `streamcuts` | feature | Application examples demonstrating the use of `StreamCut`s via CLI. | Java
+| `turbineheatsensor` | scenario | Application that emulates parallel sensors producing temperature values (writers) and parallel consumers performing real-time statistics (readers). | Java
+
+## Flink-connector Examples
+| Example Name        |  Type  | Description  | Language |
+| ------------- |:-------------| :-----| :-----|
+| `wordcount` | feature | Continuous count words on a Pravega `Stream` to demonstrate the usage of Flink connector. | Java
+| `turbineheatprocessor` | scenario | A Flink streaming application for processing temperature data from a Pravega stream. Complements the `turbineheatsensor` app. The application computes a daily summary of the temperature range observed on that day by each sensor. | Java, Scala
+| `anomaly-detection` | scenario | A Flink streaming application for detecting anomalous input patterns using a finite-state machine. | Java
+
+# Build Instructions
+
+## Pre-requisites
+
+* Java 8
+
+* Maven 2
+
+## Pravega Build Instructions (Optional)
+
+If you have downloaded a nightly build of Pravega, you may need to generate the latest 
+Pravega `jar` files and publish them to your local Maven repository. For release builds of 
+Pravega, the artifacts will already be in Maven Central and you will not need to run this step.
+
+To install the Pravega libraries to your local Maven repository:
+
 ```
 $ git clone https://github.com/pravega/pravega.git
-$./gradlew install
+$ ./gradlew install
 ```
 
-### Building the Flink Connector
+The above command should generate the required `jar` files into your local Maven repository.
 
-Optional: This step is required only if you want to use a different version
-of Pravega than is published to maven central.
+> Hint: If you use a different version of Pravega, please check the gradle.properties file.
 
-Install the shaded Flink Connector library to your local Maven repository:
+## Flink Connector Build Instructions
+
+To execute Flink connector examples, follow the below steps to build and publish artifacts from 
+source to local Maven repository:
+
 ```
 $ git clone https://github.com/pravega/flink-connectors.git
-$./gradlew install
+$ cd flink-connectors
+$ ./gradlew clean install
 ```
 
-### Building the Samples
-Use the built-in gradle wrapper to build the samples.
-```
-$ ./gradlew build
-...
-BUILD SUCCESSFUL
-```
+## Pravega Samples Build Instructions
 
-### Distributing (Flink Samples)
-#### Assemble
-Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy uber-jar called `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`.
-```
-$ ./gradlew installDist
-...
-$ ls -R flink-examples/build/install/pravega-flink-examples
-bin	lib
-
-flink-examples/build/install/pravega-flink-examples/bin:
-run-example
-
-flink-examples/build/install/pravega-flink-examples/lib:
-pravega-flink-examples-0.1.0-SNAPSHOT-all.jar
-```
-
-#### Upload
-The `upload` task makes it easy to upload the sample binaries to your cluster.  First, configure Gradle
-with the address of a node in your cluster.   Edit `~/.gradle/gradle.properties` to specify a value for `dcosAddress`.
+Finally, we need to build the code of the examples. To this end, use the built-in gradle wrapper 
+to build the samples as follows:
 
 ```
-$ cat ~/.gradle/gradle.properties
-dcosAddress=10.240.124.164
+$ git clone https://github.com/pravega/pravega-samples.git
+$ cd pravega-samples
+$ ./gradlew clean installDist
 ```
-
-Then, upload the samples to the cluster.  They'll be copied to `/home/centos` on the target node.
-```
-$ ./gradlew upload
-```
-
-## Flink Samples
-
-### Anomaly Detection
-A Flink streaming application for detecting anomalous input patterns using a finite-state machine.
-
-_See the [anomaly-detection/](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection) directory for more information._
-
-### Turbine Heat Processor
-A Flink streaming application for processing temperature data from a Pravega stream.   Complements the Turbine Heat Sensor app (external).   The application computes a daily summary of the temperature range observed on that day by each sensor.
-
-Automatically creates a scope (default: `examples`) and stream (default: `turbineHeatTest`) as necessary.
-
-#### Running
-Run the sample from the command-line:
-```
-$ bin/run-example [--controller <URI>] [--input <scope>/<stream>] [--startTime <long>] [--output <path>]
-```
-
-Alternately, run the sample from the Flink UI.
-- JAR: `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`
-- Main class: `io.pravega.examples.flink.iot.TurbineHeatProcessor` or `io.pravega.examples.flink.iot.TurbineHeatProcessorScala`
-
-#### Outputs
-The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day.   The data is
-also emitted to stdout (which may be viewed in the Flink UI).  For example:
+To ease their execution, most examples can be run either using the gradle wrapper (gradlew) or 
+scripts. The above gradle command automatically create the execution scripts that can be found
+under the `pravega-samples` directory in:
 
 ```
-...
-SensorAggregate(1065600000,12,Illinois,(60.0,100.0))
-SensorAggregate(1065600000,3,Arkansas,(60.0,100.0))
-SensorAggregate(1065600000,7,Delaware,(60.0,100.0))
-SensorAggregate(1065600000,15,Kansas,(40.0,80.0))
-SensorAggregate(1152000000,3,Arkansas,(60.0,100.0))
-SensorAggregate(1152000000,12,Illinois,(60.0,100.0))
-SensorAggregate(1152000000,15,Kansas,(40.0,80.0))
-SensorAggregate(1152000000,7,Delaware,(60.0,100.0))
-...
+standalone-examples/build/install/pravega-standalone-examples/bin
 ```
+
+There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
+
+# Roadmap
+
+We propose a roadmap to proceed with the execution of examples based on their complexity:
+1. [Pravega features](readme pravega features): First step to understand the basics of 
+Pravega and exercise the concepts presented in the documentation. 
+2. [Pravega scenarios](readme pravega scenarios): These examples will demonstrate the 
+developer how applications can exploit Pravega once s/he is familiar with the main APIs.
+3. [Flink-connector features](readme flink-connector features): These examples will show 
+the basic functionality of the Flink connector for Pravega.
+4. [Flink-connector scenarios](readme flink-connector scenarios): These examples go beyond
+basic the interaction between Pravega and Flink to demonstrate complex analytics use cases.
+
+
+Have fun!!
+
+
+
+
+
