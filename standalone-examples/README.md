@@ -11,8 +11,8 @@ These applications only need a running Pravega to execute against.
 # Feature Examples Catalog
 
 ## `gettingstarted`
-This example consists of two applications, a `HelloWorldReader` that reads from a stream and a 
-`HelloWorldWriter`, that writes to a stream. 
+This example consists of two applications, a `HelloWorldReader` that reads from a `Stream` and a 
+`HelloWorldWriter`, that writes to a `Stream`.  
 
 ### Execution
 
@@ -29,7 +29,7 @@ All args are optional, if not included, the defaults are:
  * routingKey - "helloRoutingKey"
  * message - "hello world"
 
-The program writes the given message with the given routing key to the stream with given scope/stream 
+The program writes the given message with the given routing key to the `Stream` with given scope/stream 
 name.
 
 Then, execute `HelloWorldReader`in another console:
@@ -44,21 +44,21 @@ All args are optional, if not included, the defaults are:
  * name - "helloStream"
  * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
 
-The program reads all the events from the stream with given scope/stream name and prints each event to 
+The program reads all the events from the `Stream` with given scope/stream name and prints each event to 
 the console.
 
 
 ## `consolerw`
 This example includes two applications, a `ConsoleReader` and a `ConsoleWriter`. On the one hand,
-`ConsoleReader` continuously reads from a stream and emits all of the Events onto the console. 
-Moreover, it allows you to select a StreamCut at a particular point, and then re-read existing
-events wither from the head of the Stream until that point or from that point to the end of the
-Stream.
+`ConsoleReader` continuously reads from a `Stream` and emits all of the events onto the console. 
+Moreover, it allows you to select a `StreamCut` at a particular point, and then re-read existing
+events either from the head of the `Stream` until that point, or from that point to the end of the
+`Stream`.
 
-On the other hand, `ConsoleWriter` can write to streams or transactions, and manage transactions.
+On the other hand, `ConsoleWriter` can write to `Stream`s or `Transaction`s, and manage `Transaction`s.
 This application uses the console to present an interactive DSL environment that presents 
-operations to write events to a stream or into a transaction. In addition, it presents operations 
-to begin, commit, abort, ping, check status on and retrieve the id of a transaction.
+operations to write events to a `Stream` or into a `Transaction`. In addition, it presents operations 
+to begin, commit, abort, ping, check status on and retrieve the id of a `Transaction`.
 
 ### Execution
 You might want to run `ConsoleReader` in one window and `ConsoleWriter` in another window.
@@ -88,7 +88,8 @@ All args are optional, if not included, the defaults are:
  
 ## `noop`
  
- An example of a simple reader that continually reads the contents of any stream. A binary serializer is used so it works against any event types. The sample emits basic information about number of events/bytes read every 30 seconds. 
+ An example of a simple reader that continually reads the contents of any `Stream`. A binary serializer is used so it 
+ works against any event types. The sample emits basic information about number of events/bytes read every 30 seconds. 
  
  ```
  $ bin/noopReader [--uri tcp://127.0.0.1:9090] [--stream <SCOPE>/<STREAM>]
@@ -114,15 +115,15 @@ the same settings and observe how changes in one CLI process are not visible in 
 process until that other CLI process invokes `REFRESH`.
 
 ## `streamcuts`
-This application aims at demonstrating the use of `StreamCut`s four bounded stream processing
+This application aims at demonstrating the use of `StreamCut`s four bounded processing
 on multiple `Stream`s. At the moment, the application contains two examples accessible via
-command line interface: i) Simple example: The user decides which stream slices s/he wants 
-to read from all the streams by specifying indexes, and the application prints these slices 
-using `ReaderGroupConfig` methods for bounded processing. ii) Time series example: streams are 
-filled with events that are supposed to belong to a certain day with a given value: "day1:5". 
-There is a variable number of events per day in each stream. The user selects a day number, 
+command line interface: i) Simple example: The user decides which `Stream` slices s/he wants 
+to read from all the st`Stream`reams by specifying indexes, and the application prints these slices 
+using `ReaderGroupConfig` methods for bounded processing. ii) Time series example: `Stream`s are 
+filled with events that are supposed to belong to a certain day with a given value: "_day1:5_". 
+There is a variable number of events per day in each `Stream`. The user selects a day number, 
 and the program makes use of `BatchClient` and `StreamCuts` to sum all the values from events 
-in all streams belonging to that day.
+in all `Stream`s belonging to that day.
 
 ### Execution
 
