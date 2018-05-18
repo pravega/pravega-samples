@@ -10,25 +10,22 @@
  */
 package io.pravega.examples.flink.primer.process;
 
-import com.sun.org.apache.bcel.internal.generic.DUP;
+import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaReader;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.connectors.flink.PravegaConfig;
+import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.examples.flink.Utils;
+import io.pravega.examples.flink.primer.datatype.Constants;
 import io.pravega.examples.flink.primer.datatype.IntegerEvent;
-import io.pravega.examples.flink.primer.util.FlinkPravegaHelper;
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.IterativeStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.time.Instant;
+import java.net.URI;
 import java.util.*;
 
 /*
@@ -38,11 +35,6 @@ import java.util.*;
  *
  */
 public class ExactlyOnceChecker {
-
-    // read data from the time when the program starts
-    //private static final long readStartTimeMillis = Instant.now().toEpochMilli();
-    private static final long readStartTimeMillis = 0L;
-    private static final String defaultStream = "myscope/mystream";
 
     private static Set<IntegerEvent> checker = new HashSet<>();
     private static List<IntegerEvent> duplicates = new ArrayList<IntegerEvent>();
@@ -56,25 +48,27 @@ public class ExactlyOnceChecker {
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
 
-        // create Pravega helper utility for Flink using the input paramaters
-        FlinkPravegaHelper helper = new FlinkPravegaHelper(params);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withControllerURI(URI.create(params.get(Constants.Default_URI_PARAM, Constants.Default_URI)))
+                .withDefaultScope(params.get(Constants.SCOPE_PARAM, Constants.DEFAULT_SCOPE));
 
-        // get the Pravega stream from the input parameters
-        StreamId streamId = helper.getStreamFromParam("stream", defaultStream);
-
-        // create the Pravega stream if not existed.
-        helper.createStream(streamId);
+        // create the Pravega input stream (if necessary)
+        Stream stream = Utils.createStream(
+                pravegaConfig,
+                params.get(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM));
 
         // initialize Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment
                 .getExecutionEnvironment()
                 .setParallelism(1);
 
-        FlinkPravegaReader<IntegerEvent> reader = helper.newReader(
-                streamId,
-                readStartTimeMillis,
-                IntegerEvent.class
-        );
+        // create the Pravega source to read a stream of text
+        FlinkPravegaReader<IntegerEvent> reader = FlinkPravegaReader.<IntegerEvent>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(stream)
+                .withDeserializationSchema(PravegaSerialization.deserializationFor(IntegerEvent.class))
+                .build();
 
         DataStream<IntegerEvent> dataStream = env
                 .addSource(reader)

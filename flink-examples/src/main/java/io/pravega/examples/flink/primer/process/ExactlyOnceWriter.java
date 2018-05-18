@@ -10,41 +10,36 @@
  */
 package io.pravega.examples.flink.primer.process;
 
-import io.pravega.client.stream.EventRead;
-import io.pravega.client.stream.EventStreamReader;
-import io.pravega.connectors.flink.FlinkPravegaReader;
-import io.pravega.connectors.flink.FlinkPravegaWriter;
-import io.pravega.connectors.flink.PravegaWriterMode;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.client.stream.Stream;
+import io.pravega.connectors.flink.*;
+import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.examples.flink.Utils;
 import io.pravega.examples.flink.primer.datatype.IntegerEvent;
+import io.pravega.examples.flink.primer.datatype.Constants;
 import io.pravega.examples.flink.primer.source.ThrottledIntegerEventProducer;
 import io.pravega.examples.flink.primer.util.FailingMapper;
-import io.pravega.examples.flink.primer.util.FlinkPravegaHelper;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.common.serialization.SerializationSchema;
+ import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.time.Instant;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.net.URI;
 
 /*
  * Parameters
- *     -stream <pravega_scope>/<pravega_stream>, e.g., myscope/stream1
+ *     -scope  Pravega scope
+ *     -stream Pravega stream
  *     -controller tcp://<controller_host>:<port>, e.g., tcp://localhost:9090
  *     -num-events <number of events to be generated>
  *
  */
 public class ExactlyOnceWriter {
     private static final long checkpointIntervalMillis = 100;
-    private static final long txnTimeoutMillis = 30 * 1000;
-    private static final long txnGracePeriodMillis = 30 * 1000;
+    private static final Time txnTimeoutMillis = Time.milliseconds(30 * 1000);
+    private static final Time txnGracePeriodMillis = Time.milliseconds(30 * 1000);
     private static final int defaultNumEvents = 50;
     private static final String defaultStream = "myscope/mystream";
 
@@ -63,14 +58,15 @@ public class ExactlyOnceWriter {
         boolean exactlyOnce = Boolean.parseBoolean(params.get("exactlyonce", "true"));
         int numEvents = Integer.parseInt(params.get("num-events", String.valueOf(defaultNumEvents)));
 
-        // create Pravega helper utility for Flink using the input paramaters
-        FlinkPravegaHelper helper = new FlinkPravegaHelper(params);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withControllerURI(URI.create(params.get(Constants.Default_URI_PARAM, Constants.Default_URI)))
+                .withDefaultScope(params.get(Constants.SCOPE_PARAM, Constants.DEFAULT_SCOPE));
 
-        // get the Pravega stream from the input parameters
-        StreamId streamId = helper.getStreamFromParam("stream", defaultStream);
-
-        // create the Pravega stream if not existed.
-        helper.createStream(streamId);
+        // create the Pravega input stream (if necessary)
+        Stream stream = Utils.createStream(
+                pravegaConfig,
+                params.get(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM));
 
         // initialize Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
@@ -80,24 +76,24 @@ public class ExactlyOnceWriter {
         // Restart flink job from last checkpoint once.
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0L));
 
-        FlinkPravegaWriter<IntegerEvent> writer = helper.newWriter(
-                streamId,
-                IntegerEvent.class,
-                event -> "fixedkey",
-                txnTimeoutMillis,
-                txnGracePeriodMillis
-        );
-        if (exactlyOnce) {
-            writer.setPravegaWriterMode(PravegaWriterMode.EXACTLY_ONCE);
-        }
+
+        // create the Pravega sink to write a stream of text
+
+        FlinkPravegaWriter<IntegerEvent> writer = FlinkPravegaWriter.<IntegerEvent>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(stream)
+                .withEventRouter( new EventRouter())
+                .withTxnTimeout(txnTimeoutMillis)
+                .withTxnGracePeriod(txnGracePeriodMillis)
+                .withWriterMode( exactlyOnce ? PravegaWriterMode.EXACTLY_ONCE : PravegaWriterMode.ATLEAST_ONCE )
+                .withSerializationSchema(PravegaSerialization.serializationFor(IntegerEvent.class))
+                .build();
 
         env
             .addSource(new ThrottledIntegerEventProducer(numEvents))
             .map(new FailingMapper<>(numEvents /2 ))  // simulate failure
             .addSink(writer)
-            .setParallelism(2)
-            ;
-
+            .setParallelism(2);
 
         // execute within the Flink environment
         env.execute("ExactlyOnce");
@@ -106,10 +102,11 @@ public class ExactlyOnceWriter {
         LOG.info("Ending ExactlyOnce...");
     }
 
-    private static class IntSerializer implements SerializationSchema<Integer> {
+    public static class EventRouter implements PravegaEventRouter<IntegerEvent> {
         @Override
-        public byte[] serialize(Integer integer) {
-            return ByteBuffer.allocate(4).putInt(0, integer).array();
+        public String getRoutingKey(IntegerEvent event) {
+            return "fixedkey";
         }
     }
+
 }

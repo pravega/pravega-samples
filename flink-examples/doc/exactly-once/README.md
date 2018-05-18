@@ -6,8 +6,8 @@ The example consists of two applications, a writer and a checker.
 
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ bin/exactlyOnceChecker  [--controller tcp://localhost:9090] [--stream myscope/mystream] 
-$ bin/exactlyOnceWriter   [--controller tcp://localhost:9090] [--stream myscope/mystream] [--num-events 50] [--exactlyonce true]
+$ bin/exactlyOnceChecker  [--controller tcp://localhost:9090] [--scope examples] [--stream mystream]
+$ bin/exactlyOnceWriter   [--controller tcp://localhost:9090] [--scope examples] [--stream mystream] [--num-events 50] [--exactlyonce true]
 ```
 
 The writer application generates a set of "integer" events and introduces an artificial exception to 
@@ -19,7 +19,7 @@ Start the ExactlyOnceChecker app in one window. Come back to the window to obser
 after running the writer app.
 
 ```
-$ bin/exactlyOnceChecker --stream myscope/mystream --controller tcp://localhost:9090
+$ bin/exactlyOnceChecker --scope examples --stream mystream --controller tcp://localhost:9090
 ```
 
 
@@ -27,7 +27,7 @@ In another window, start the ExactlyOnceWriter with EXACTLY_ONCE mode set to fal
 This is to demonstrate what happens when Pravega EXACTLY_ONCE mode not enabled 
 
 ```
-$ bin/exactlyOnceWriter --controller tcp://localhost:9090 --stream myscope/mystream --exactlyonce false
+$ bin/exactlyOnceWriter --controller tcp://localhost:9090 --scope examples --stream mystream --exactlyonce false
 ```
 
 Snippets of output shown below:
@@ -79,7 +79,7 @@ The app will restore from different positions and the checker window should cont
 Now run the ExactlyOnceWriter in EXACTLY_ONCE mode.
 
 ```
-$ bin/exactlyOnceWriter --controller tcp://localhost:9090 --stream myscope/mystream --num-events 50  --exactlyonce true
+$ bin/exactlyOnceWriter --controller tcp://localhost:9090 --scope examples --stream mystream --num-events 50  --exactlyonce true
 ```
 
 The output should look like the followings:
