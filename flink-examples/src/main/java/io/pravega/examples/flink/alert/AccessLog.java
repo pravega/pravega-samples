@@ -15,6 +15,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonPro
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
+import io.pravega.shaded.com.google.gson.Gson;
 
 /**
  * Object to process Apache access log
@@ -102,11 +103,7 @@ public class AccessLog {
 
     @Override
     public String toString() {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "AccessLog: Timestamp=" + getTimestampStr() +", ClientIP=" + getClientIP() + ", Verb=" + getVerb() + ", Status=" + getStatus();
-        }
+        Gson gson = new Gson();
+        return gson.toJson(this);
     }
 }
