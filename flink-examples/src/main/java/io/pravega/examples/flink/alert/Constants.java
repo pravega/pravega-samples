@@ -16,9 +16,8 @@ package io.pravega.examples.flink.alert;
  */
 public class Constants {
     protected static final String STREAM_PARAM = "stream";
-    protected static final String DEFAULT_STREAM = "myscope/apacheaccess";
-    protected static final String CONTROLLER_PARAM = "controller";
-    protected static final String DEFAULT_CONTROLLER = "tcp://127.0.0.1:9090";
+    protected static final String DEFAULT_SCOPE = "examples";
+    protected static final String DEFAULT_STREAM = "apacheaccess";
     protected static final Integer ALERT_THRESHOLD = 6;
     protected static final Integer ALERT_WINDOW = 30;
     protected static final Integer ALERT_INTERVAL = 2;

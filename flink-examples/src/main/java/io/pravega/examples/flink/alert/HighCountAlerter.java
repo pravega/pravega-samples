@@ -10,9 +10,11 @@
  */
 package io.pravega.examples.flink.alert;
 
+import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaReader;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.connectors.flink.PravegaConfig;
+import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.examples.flink.Utils;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -54,22 +56,24 @@ public class HighCountAlerter {
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
 
-        // create Pravega helper utility for Flink using the input paramaters
-        FlinkPravegaParams helper = new FlinkPravegaParams(params);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withDefaultScope(Constants.DEFAULT_SCOPE);
 
-        // get the Pravega stream from the input parameters
-        StreamId streamId = helper.getStreamFromParam(Constants.STREAM_PARAM,
-                                                      Constants.DEFAULT_STREAM);
+        // create the Pravega input stream (if necessary)
+        Stream stream = Utils.createStream(
+                pravegaConfig,
+                params.get(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM));
 
-        // create the Pravega stream is not exists.
-        helper.createStream(streamId);
-
-        // initialize Flink execution environment
+        // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // create the Pravega stream reader
-        long startTime = 0;
-        FlinkPravegaReader<String> reader = helper.newReader(streamId, startTime, String.class);
+        // create the Pravega source to read a stream of text
+        FlinkPravegaReader<String> reader = FlinkPravegaReader.<String>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(stream)
+                .withDeserializationSchema(PravegaSerialization.deserializationFor(String.class))
+                .build();
 
         // add the Pravega reader as the data source
         DataStream<String> inputStream = env.addSource(reader);

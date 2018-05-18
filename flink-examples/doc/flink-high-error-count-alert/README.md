@@ -30,7 +30,7 @@ output {
     pravega {
         pravega_endpoint => "tcp://127.0.0.1:9090"   <- update to point to your Pravega controller
         stream_name => "apacheaccess"
-        scope => "myscope"
+        scope => "examples"
     }
 }
 ```
@@ -82,7 +82,7 @@ More details can be found on github [pravega docker](https://github.com/hldnova/
 Run the alerter. Adjust the controller and scope/stream if necessary.
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ bin/highCountAlerter [--controller tcp://127.0.0.1:9090] [--stream myscope/apacheaccess]
+$ bin/highCountAlerter [--controller tcp://127.0.0.1:9090] [--stream examples] [--stream apacheaccess]
 ```
 
 ## Input Data ##
