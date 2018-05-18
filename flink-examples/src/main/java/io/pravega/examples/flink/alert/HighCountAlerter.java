@@ -10,12 +10,9 @@
  */
 package io.pravega.examples.flink.alert;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.util.FlinkPravegaParams;
 import io.pravega.connectors.flink.util.StreamId;
-import io.pravega.shaded.com.google.gson.Gson;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -25,11 +22,11 @@ import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +91,7 @@ public class HighCountAlerter {
                     out.collect(new ResponseCount(value.getStatus(), 1));
                 }
             }).filter((FilterFunction<ResponseCount>) count -> {
-                  return !count.response.equals("500");
+                  return count.response.equals("500");
               }).keyBy("response")
               .timeWindow(Time.seconds(Constants.ALERT_WINDOW), Time.seconds(Constants.ALERT_INTERVAL))
               .sum("count");
@@ -134,31 +131,9 @@ public class HighCountAlerter {
 
     //Parse the incoming streams & convert into Java PoJos
     private static class ParseLogData implements MapFunction<String, AccessLog>{
-        public AccessLog map(String record) throws Exception {
-            // TODO: handle exceptions
-            Gson gson = new Gson();
-            AccessLog accessLog = new AccessLog();
-            JsonParser parser = new JsonParser();
-            JsonObject obj = parser.parse(record).getAsJsonObject();
-            if (obj.has("verb")) {
-                String verb = obj.get("verb").getAsString();
-                accessLog.setVerb(verb);
-            }
-            if (obj.has("response")) {
-                String response = obj.get("response").getAsString();
-                accessLog.setStatus(response);
-            }
-            if (obj.has("@timestamp")) {
-                String timestamp = obj.get("@timestamp").getAsString();
-
-                DateTime dateTime = new DateTime(timestamp);
-                accessLog.setTimestamp(dateTime.getMillis());
-            }
-            if (obj.has("clientip")) {
-                String client = obj.get("clientip").getAsString();
-                accessLog.setClientIP(client);
-            }
-            return accessLog;
+        public AccessLog map(String value) throws Exception {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(value, AccessLog.class);
         }
     }
 
