@@ -53,7 +53,8 @@ public class HelloWorldWriter {
         final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-             EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName, new JavaSerializer<>(),
+             EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
+                                                                                new JavaSerializer<>(),
                                                                                 EventWriterConfig.builder().build())) {
             
             System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
