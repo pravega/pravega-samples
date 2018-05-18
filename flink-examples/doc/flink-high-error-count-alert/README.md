@@ -82,7 +82,7 @@ More details can be found on github [pravega docker](https://github.com/hldnova/
 Run the alerter. Adjust the controller and scope/stream if necessary.
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ bin/highCountAlerter [--controller tcp://127.0.0.1:9090] [--stream examples] [--stream apacheaccess]
+$ bin/highCountAlerter [--controller tcp://127.0.0.1:9090] [--scope examples] [--stream apacheaccess]
 ```
 
 ## Input Data ##
