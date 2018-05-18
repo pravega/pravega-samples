@@ -20,23 +20,25 @@ $ nc -lk 9999
 
 Then start the WordCountWriter
 ```
-$ bin/wordCountWriter [-host localhost] [-port 9999] [-stream myscope/wordcount] [-collector tcp://localhost:9090]
+$ bin/wordCountWriter [-host localhost] [-port 9999] [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
 ```
 
 All args are optional, if not specified, the defaults are:
 
  * host - "localhost"
  * port - "9999"
- * stream - "myscope/wordcount"
+ * scope - "examples" 
+ * stream - "wordcount"
  * controller - "tcp://localhost:9090"
 
 ### Start WordCountReader
 The application reads data from a Pravega stream and prints the data.
 ```
-$ bin/wordCountReader [-stream myscope/wordcount] [-collector tcp://localhost:9090]
+$ bin/wordCountReader [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
 ```
 All args are optional, if not included, the defaults are:
- * stream - "myscop/wordcount"
+ * scope - "examples"
+ * stream - "wordcount"
  * controller - "tcp://localhost:9090"
 
 Now in the windows where netcat is running, enter some text, for example,
@@ -134,3 +136,7 @@ Repeat the steps above except
 - Run Configuration for WordCountWriter
 ![](image/flink-wordcount-intellij-04.png)
 
+
+## Contributors ##
+* [Kartik Vandra](https://github.com/kvandra)   <img src="https://avatars3.githubusercontent.com/u/5042709?s=460&v=4" width="30" height="30">
+* [Lida He](https://github.com/hldnova)   <img src="https://avatars0.githubusercontent.com/u/11613034?s=460&v=4" width="30" height="30">

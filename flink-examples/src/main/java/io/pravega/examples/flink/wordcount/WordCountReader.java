@@ -10,9 +10,11 @@
  */
 package io.pravega.examples.flink.wordcount;
 
+import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaReader;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.connectors.flink.PravegaConfig;
+import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.examples.flink.Utils;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -28,9 +30,9 @@ import org.slf4j.LoggerFactory;
  * a simple Flink application that reads streaming data from Pravega.
  *
  * This application has the following input parameters
- *     stream - Pravega stream name to write to
+ *     stream - Pravega stream name to read from
  *     controller - the Pravega controller URI, e.g., tcp://localhost:9090
- *                  Note that this parameter is processed in pravega flink connector
+ *                  Note that this parameter is automatically used by the PravegaConfig class
  */
 public class WordCountReader {
 
@@ -41,7 +43,7 @@ public class WordCountReader {
     // prints the distinct words and counts from the previous 10 seconds.
 
     // Application parameters
-    //   stream - default myscope/wordcount
+    //   stream - default examples/wordcount
     //   controller - default tcp://127.0.0.1:9090
 
     public static void main(String[] args) throws Exception {
@@ -49,32 +51,27 @@ public class WordCountReader {
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
+        PravegaConfig pravegaConfig = PravegaConfig
+                .fromParams(params)
+                .withDefaultScope(Constants.DEFAULT_SCOPE);
 
-        // create pravega helper utility for Flink using the input paramaters
-        // the controller param is processed in FlinkPravegaParams
-        FlinkPravegaParams pravega = new FlinkPravegaParams(params);
+        // create the Pravega input stream (if necessary)
+        Stream stream = Utils.createStream(
+                pravegaConfig,
+                params.get(Constants.STREAM_PARAM, Constants.DEFAULT_STREAM));
 
-        // get the Pravega stream from the input parameters
-        StreamId streamId = pravega.getStreamFromParam(Constants.STREAM_PARAM,
-                                                       Constants.DEFAULT_STREAM);
-
-        // create the Pravega stream is not exists.
-        pravega.createStream(streamId);
-
-        // initialize Flink execution environment
+        // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // create the Pravega stream reader
-        long startTime = 0;
-        FlinkPravegaReader<String> reader = pravega.newReader(streamId, startTime, String.class);
+        // create the Pravega source to read a stream of text
+        FlinkPravegaReader<String> source = FlinkPravegaReader.<String>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(stream)
+                .withDeserializationSchema(PravegaSerialization.deserializationFor(String.class))
+                .build();
 
-        // If needed - add the below for example on creating checkpoint
-        // long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
-        // env.enableCheckpointing(checkpointInterval, CheckpointingMode.EXACTLY_ONCE);
-        //
-
-        // add the Pravega reader as the data source
-        DataStream<WordCount> dataStream = env.addSource(reader)
+        // count each word over a 10 second time period
+        DataStream<WordCount> dataStream = env.addSource(source).name("Pravega Stream")
                 .flatMap(new WordCountReader.Splitter())
                 .keyBy("word")
                 .timeWindow(Time.seconds(10))

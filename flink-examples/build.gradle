@@ -9,7 +9,7 @@
  *
  */
 plugins {
-    id 'com.github.johnrengelman.shadow' version '1.2.4'
+    id 'com.github.johnrengelman.shadow' version '2.0.3'
 }
 
 apply plugin: "java"
@@ -30,7 +30,7 @@ dependencies {
     compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
-    compile "org.slf4j:slf4j-log4j12:1.7.14"
+    compile "org.slf4j:slf4j-log4j12:1.7.25"
 }
 
 shadowJar {

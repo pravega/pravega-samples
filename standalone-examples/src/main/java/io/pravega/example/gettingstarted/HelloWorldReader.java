@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.UUID;
 
+import io.pravega.client.stream.Stream;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -60,9 +61,10 @@ public class HelloWorldReader {
 
         final String readerGroup = UUID.randomUUID().toString().replace("-", "");
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
+                .stream(Stream.of(scope, streamName))
                 .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
-            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig, Collections.singleton(streamName));
+            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         }
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
