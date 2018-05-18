@@ -15,6 +15,7 @@ import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
 import io.pravega.common.concurrent.ExecutorServiceHelpers;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -24,18 +25,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
@@ -53,14 +57,17 @@ import io.pravega.client.stream.impl.JavaSerializer;
  * has two main objectives: i) Reads from a configured {@link Stream} until interrupted; ii) It allows developers to
  * have an easy first-time interaction with {@link StreamCut} API.
  */
-public class ConsoleReader {
+@Slf4j
+public class ConsoleReader implements Closeable {
     
     private final String scope;
     private final String streamName;
     private final URI controllerURI;
-    private final MyReader reader;
 
     private Map<Stream, StreamCut> streamCut;
+
+    private ExecutorService executor;
+    private BackgroundReader backgroundReader;
 
     private static final String[] MENU_TEXT = {
             "Enter one of the following commands at the command line prompt:",
@@ -78,7 +85,8 @@ public class ConsoleReader {
         this.scope = scope;
         this.streamName = streamName;
         this.controllerURI = controllerURI;
-        this.reader = new MyReader(scope, streamName, controllerURI);
+        this.backgroundReader = new BackgroundReader(scope, streamName, controllerURI);
+        executor = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -89,10 +97,8 @@ public class ConsoleReader {
 
         outputHelp();
 
-        // Start reader thread to display events being written from ConsoleWriter.
-        Thread readerThread = new Thread(reader);
-        readerThread.start();
-
+        // Start backgroundReader thread to display events being written from ConsoleWriter.
+        executor.submit(backgroundReader);
         while(!done){
             String commandLine = readLine("%s >", scope + "/" + streamName).trim();
             if (! commandLine.equals("")) {
@@ -100,9 +106,15 @@ public class ConsoleReader {
             }
         }
 
-        reader.close();
-        output("Waiting for reader thread to finish...");
-        readerThread.join();
+        // Closing threads and resources.
+        backgroundReader.close();
+        log.info("Waiting for backgroundReader thread to finish...");
+        executor.awaitTermination(2, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void close() {
+        ExecutorServiceHelpers.shutdown(executor);
     }
 
     /**
@@ -112,9 +124,8 @@ public class ConsoleReader {
         if (System.console() != null) {
             return System.console().readLine(format, args);
         }
-        System.out.print(String.format(format, args));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                System.in));
+        System.out.println(String.format(format, args));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         return reader.readLine();
     }
 
@@ -155,7 +166,7 @@ public class ConsoleReader {
                 output("Exiting...%n");
                 break;
             default :
-                warn("Wrong option. Please, select a valid one...%n");
+                output("Wrong option. Please, select a valid one...%n");
                 break;
         }
         sc.close();
@@ -167,7 +178,7 @@ public class ConsoleReader {
      * further calls that use {@link StreamCut}s for bounded processing.
      */
     private void doCreateStreamCut() {
-        streamCut = reader.getLastStreamCut();
+        streamCut = backgroundReader.getLastStreamCut();
         output("New StreamCut: %s%n", streamCut.get(Stream.of(scope, streamName)).toString());
     }
 
@@ -178,7 +189,7 @@ public class ConsoleReader {
      */
     private void doReadFromStreamCut() {
         if (streamCut == null) {
-            warn("Please, create a StreamCut before trying to read from its position!%n");
+            output("Please, create a StreamCut before trying to read from its position!%n");
             return;
         }
         ReaderGroupConfig config = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName))
@@ -193,7 +204,7 @@ public class ConsoleReader {
      */
     private void doReadUpToStreamCut() {
         if (streamCut == null) {
-            warn("Please, create a StreamCut before trying to read up to its position!%n");
+            output("Please, create a StreamCut before trying to read up to its position!%n");
             return;
         }
         ReaderGroupConfig config = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName))
@@ -228,20 +239,20 @@ public class ConsoleReader {
                     config.getEndingStreamCuts().get(Stream.of(scope, streamName)));
 
             EventRead<String> event;
-            try {
-                do {
-                    event = reader.readNextEvent(1000);
-                    if (event.getEvent() != null) {
-                        System.out.format("'%s'\n", event.getEvent());
-                    }
-                } while (event.getEvent() != null);
-
-            } catch (ReinitializationRequiredException e) {
-                // There are certain circumstances where the reader needs to be reinitialized.
-                e.printStackTrace();
-            }
+            do {
+                event = reader.readNextEvent(1000);
+                if (event.getEvent() != null) {
+                    // TODO: Delete this output when issue #87 is solved to let the user see the output
+                    output("[StreamCut read from/up to] Read event: %s%n", event.getEvent());
+                    log.info("[StreamCut read from/up to] Read event: {}.", event.getEvent());
+                }
+            } while (event.getEvent() != null);
+        } catch (ReinitializationRequiredException e) {
+            // We do not expect this Exception from the reader in this situation, so we leave.
+            log.error("Non-expected reader re-initialization.");
         } catch (IllegalArgumentException e) {
-            warn("Nothing to read! Maybe your StreamCut is void or at the head of the Stream.%n");
+            log.warn("Nothing to read! Maybe your StreamCut is empty or at the head of the Stream and you are trying to" +
+                    "read events up to it.");
         }
     }
 
@@ -255,15 +266,10 @@ public class ConsoleReader {
         System.out.format(format, args);
     }
 
-    private void warn(String format, Object... args){
-        System.out.format("!!!! ");
-        System.out.format(format, args);
-    }
-
     private void doHelp(List<String> parms) {
         outputHelp();
         if (parms.size() > 0) {
-            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
+            output("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
 
@@ -273,7 +279,7 @@ public class ConsoleReader {
         try {
             cmd = parseCommandLineArgs(options, args);
         } catch (ParseException e) {
-            System.out.format("%s.%n", e.getMessage());
+            log.info("Exception parsing: {}.", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("ConsoleReader", options);
             System.exit(1);
@@ -314,7 +320,8 @@ public class ConsoleReader {
 /**
  * This class aims at continuously reading from the {@link Stream} and creating {@link StreamCut}s in a separate thread.
  */
-class MyReader implements Runnable {
+@Slf4j
+class BackgroundReader implements Closeable, Runnable {
 
     private static final int READER_TIMEOUT_MS = 1000;
 
@@ -325,12 +332,13 @@ class MyReader implements Runnable {
     private AtomicReference<Map<Stream, StreamCut>> lastStreamCut = new AtomicReference<>();
 
     private final AtomicBoolean end = new AtomicBoolean(false);
-    private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+    private final ScheduledExecutorService executor;
 
-    MyReader(String scope, String streamName, URI controllerURI) {
+    BackgroundReader(String scope, String streamName, URI controllerURI) {
         this.scope = scope;
         this.streamName = streamName;
         this.controllerURI = controllerURI;
+        executor = new ScheduledThreadPoolExecutor(1);
     }
 
     /**
@@ -348,34 +356,32 @@ class MyReader implements Runnable {
 
             // Create the ReaderGroup to which readers will belong to.
             readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
+            @Cleanup
             ReaderGroup readerGroup = readerGroupManager.getReaderGroup(readerGroupName);
 
-            EventStreamReader<String> reader = clientFactory.createReader("reader", readerGroupName,
+            EventStreamReader<String> reader = clientFactory.createReader("backgroundReader", readerGroupName,
                     new JavaSerializer<>(), ReaderConfig.builder().build());
             EventRead<String> event;
 
             // Start main loop to continuously read and display events written to the scope/stream.
-            System.out.format("%n******** Reading events from %s/%s%n", scope, streamName);
+            log.info("Start reading events from {}/{}.", scope, streamName);
             do {
-                try {
-                    event = reader.readNextEvent(READER_TIMEOUT_MS);
-                    if (event.getEvent() != null) {
-                        System.out.format("'%s'%n", event.getEvent());
-                    }
+                event = reader.readNextEvent(READER_TIMEOUT_MS);
+                if (event.getEvent() != null) {
+                    // TODO: Delete this output when issue #87 is solved to let the user see the output
+                    System.out.println("[BackgroundReader] Read event: " + event.getEvent());
+                    log.info("[BackgroundReader] Read event: {}.", event.getEvent());
+                }
 
-                    // Update the StreamCut after every event read, just in case the user wants to use it.
-                    if (!event.isCheckpoint()) {
-                        readerGroup.initiateCheckpoint("myCheckpoint" + System.nanoTime(), executor)
-                                   .thenAccept(checkpoint -> lastStreamCut.set(checkpoint.asImpl().getPositions()));
-                    }
-                } catch (ReinitializationRequiredException e) {
-                    // There are certain circumstances where the reader needs to be reinitialized.
-                    e.printStackTrace();
+                // Update the StreamCut after every event read, just in case the user wants to use it.
+                if (!event.isCheckpoint()) {
+                    readerGroup.initiateCheckpoint("myCheckpoint" + System.nanoTime(), executor)
+                               .thenAccept(checkpoint -> lastStreamCut.set(checkpoint.asImpl().getPositions()));
                 }
             } while (!end.get());
-
-        } finally {
-            ExecutorServiceHelpers.shutdown(executor);
+        } catch (ReinitializationRequiredException e) {
+            // We do not expect this Exception from the reader in this situation, so we leave.
+            log.error("Non-expected reader re-initialization.");
         }
     }
 
@@ -383,7 +389,10 @@ class MyReader implements Runnable {
         return lastStreamCut.get();
     }
 
-    void close() {
+    @Override
+    public void close() {
+        log.info("Closing background thread.");
         end.set(true);
+        ExecutorServiceHelpers.shutdown(executor);
     }
 }

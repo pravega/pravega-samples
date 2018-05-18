@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.streamcuts;
 
 import io.pravega.client.stream.ReaderGroupConfig;
@@ -14,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -21,6 +32,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+@Slf4j
 public class StreamCutsCli {
 
     private static final int exampleMaxStreams = 5;
@@ -105,7 +117,7 @@ public class StreamCutsCli {
                 output("Exiting...%n");
                 break;
             default :
-                warn("Wrong option. Please, select a valid one...%n");
+                output("Wrong option. Please, select a valid one...%n");
                 break;
         }
         sc.close();
@@ -140,7 +152,7 @@ public class StreamCutsCli {
             output("Do you want to repeat? (Y)%n");
         } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
 
-        output("Sealing and deleting streams.%n");
+        log.info("Sealing and deleting streams.");
         example.deleteStreams();
         example.close();
     }
@@ -153,26 +165,20 @@ public class StreamCutsCli {
         for (char id = streamId; id < streamId + numStreams; id++) {
             final String streamName = String.valueOf(id);
             output("[Stream %s]  StreamCut start event number.%n", streamName);
-            int iniEventIndex = askForIntInput(prefix, 0, exampleNumEvents);
+            int iniEventIndex = askForIntInput(prefix, 0, exampleNumEvents - 1);
             output("[Stream %s] StreamCut end event number.%n", streamName);
-            int endEventIndex = askForIntInput(prefix, iniEventIndex+1, exampleNumEvents);
+            int endEventIndex = askForIntInput(prefix, iniEventIndex + 1, exampleNumEvents);
             final List<StreamCut> myStreamCuts = example.createStreamCutsByIndexFor(streamName, iniEventIndex, endEventIndex);
             startStreamCuts.put(Stream.of(scope, streamName), myStreamCuts.get(0));
             endStreamCuts.put(Stream.of(scope, streamName), myStreamCuts.get(1));
         }
 
-        // Next, we demonstrate the capabilities of StreamCuts by enabling readers to perform bounded reads.
-        ReaderGroupConfig.ReaderGroupConfigBuilder configBuilder = ReaderGroupConfig.builder();
-        for (Stream myStream: startStreamCuts.keySet()) {
-            configBuilder = configBuilder.stream(myStream);
-        }
-
         // Here we enforce the boundaries for all the streams to be read, which enables bounded processing.
-        ReaderGroupConfig config = configBuilder.startFromStreamCuts(startStreamCuts)
-                                                .endingStreamCuts(endStreamCuts)
-                                                .build();
+        ReaderGroupConfig config = ReaderGroupConfig.builder().startFromStreamCuts(startStreamCuts)
+                                                              .endingStreamCuts(endStreamCuts)
+                                                              .build();
         output("Now, look! We can print bounded slices of multiple Streams:%n%n");
-        System.out.println(example.printBoundedStreams(config));
+        output(example.printBoundedStreams(config));
     }
 
     private void doTimeSeriesExample() throws IOException {
@@ -203,7 +209,7 @@ public class StreamCutsCli {
             output("Do you want to repeat? (Y)%n");
         } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
 
-        output("Sealing and deleting streams.%n");
+        log.info("Sealing and deleting streams.");
         example.deleteStreams();
         example.close();
     }
@@ -222,7 +228,7 @@ public class StreamCutsCli {
             if (eventIndexesForDay == null){
                 continue;
             }
-            output("Indexes to bound day%s events: %s%n", dayNumber, eventIndexesForDay.toString());
+            output("[Stream %s] Indexes to bound day%s events: %s%n", streamName, dayNumber, eventIndexesForDay.toString());
 
             // Get the StreamCuts that define the event boundaries for the given day in this stream.
             final List<StreamCut> myStreamCuts = example.createStreamCutsByIndexFor(streamName, eventIndexesForDay.getKey(),
@@ -249,10 +255,10 @@ public class StreamCutsCli {
                 if (firstAttempt) {
                     firstAttempt = false;
                 } else {
-                    warn("Please, numbers should be between [%s, %s] %n", minVal, maxVal);
+                    output("Please, numbers should be between [%s, %s] %n", minVal, maxVal);
                 }
             } catch (NumberFormatException e) {
-                warn("Please, introduce a correct number%n");
+                output("Please, introduce a correct number%n");
             }
         } while (result < minVal || result > maxVal);
         return result;
@@ -268,15 +274,10 @@ public class StreamCutsCli {
         System.out.format(format, args);
     }
 
-    private void warn(String format, Object... args){
-        System.out.format("!!!! ");
-        System.out.format(format, args);
-    }
-
     private void doHelp(List<String> parms) {
         outputHelp();
         if (parms.size() > 0) {
-            warn("Ignoring parameters: '%s'%n", String.join(",", parms));
+            output("Ignoring parameters: '%s'%n", String.join(",", parms));
         }
     }
 
@@ -288,7 +289,7 @@ public class StreamCutsCli {
         try {
             cmd = parseCommandLineArgs(options, args);
         } catch (ParseException e) {
-            System.out.format("%s.%n", e.getMessage());
+            log.info("Exception parsing: {}.", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("StreamCuts", options);
             System.exit(1);

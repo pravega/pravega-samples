@@ -47,7 +47,9 @@ public class HelloWorldWriter {
         StreamManager streamManager = StreamManager.create(controllerURI);
         final boolean scopeIsNew = streamManager.createScope(scope);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build();
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
+                .scalingPolicy(ScalingPolicy.fixed(1))
+                .build();
         final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);

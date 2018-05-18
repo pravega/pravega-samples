@@ -99,7 +99,8 @@ public class TurbineHeatSensor {
                     .scalingPolicy(policy)
                     .build();
             streamManager.createStream(scopeName, streamName, config);
-        } catch (URISyntaxException e) {
+        }
+        catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
 

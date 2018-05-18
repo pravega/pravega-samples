@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.streamcuts;
 
 import com.google.common.collect.Lists;
@@ -33,7 +43,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.function.Consumer;
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StreamCutsExample implements Closeable {
 
     public static final char streamBaseId = 'a';
@@ -94,7 +106,7 @@ public class StreamCutsExample implements Closeable {
             // Read streams and create the StreamCuts during the read process.
             Checkpoint checkpoint;
             int eventIndex = 0;
-            EventRead<String> event = null;
+            EventRead<String> event;
             do {
                 // Here is where we create a StreamCut that points to the event indicated by the user.
                 if (eventIndex == iniEventIndex || eventIndex == endEventIndex) {
@@ -105,12 +117,7 @@ public class StreamCutsExample implements Closeable {
                             new JavaSerializer<>(), ReaderConfig.builder().build());
                 }
 
-                try {
-                    event = reader.readNextEvent(1000);
-                } catch (ReinitializationRequiredException e) {
-                    e.printStackTrace();
-                }
-
+                event = reader.readNextEvent(1000);
                 eventIndex++;
             } while (event.isCheckpoint() || event.getEvent() != null);
 
@@ -118,6 +125,9 @@ public class StreamCutsExample implements Closeable {
             if (streamCuts.size() == 1) {
                 streamCuts.add(StreamCut.UNBOUNDED);
             }
+        } catch (ReinitializationRequiredException e) {
+            // We do not expect this Exception from the reader in this situation, so we leave.
+            log.error("Non-expected reader re-initialization.");
         }
         return streamCuts;
     }
@@ -147,18 +157,19 @@ public class StreamCutsExample implements Closeable {
                     new JavaSerializer<>(), ReaderConfig.builder().build());
 
             // Write dummy events that identify each Stream.
-            EventRead<String> event = null;
+            EventRead<String> event;
             do {
-                try {
-                    event = reader.readNextEvent(1000);
-                    if (event.getEvent() != null) {
-                        result = result.append(event.getEvent()).append('|');
-                    }
-                } catch (ReinitializationRequiredException e) {
-                    e.printStackTrace();
+                event = reader.readNextEvent(1000);
+                if (event.getEvent() != null) {
+                    result = result.append(event.getEvent()).append('|');
                 }
+
             } while (event.isCheckpoint() || event.getEvent() != null);
+
             result = result.append('\n');
+        } catch (ReinitializationRequiredException e) {
+            // We do not expect this Exception from the reader in this situation, so we leave.
+            log.error("Non-expected reader re-initialization.");
         }
         return result.toString();
     }
@@ -225,7 +236,7 @@ public class StreamCutsExample implements Closeable {
         for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
             String streamName = String.valueOf(id);
             StreamConfiguration streamConfig = StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build();
-            System.out.println("Stream " + id + " is new? " + streamManager.createStream(scope, streamName, streamConfig));
+            log.info("Stream {} is new? {}.", id, streamManager.createStream(scope, streamName, streamConfig));
 
             // Note that we use the try-with-resources statement for those classes that should be closed after usage.
             try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
@@ -284,6 +295,7 @@ public class StreamCutsExample implements Closeable {
             ReaderGroupConfig config = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName)).build();
             result = result.append(printBoundedStreams(config));
         }
+
         return result.toString();
     }
 
@@ -301,7 +313,7 @@ public class StreamCutsExample implements Closeable {
                 streamManager.deleteStream(scope, String.valueOf(id));
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error("Problem while sleeping current Thread in deleteStreams: {}.", e);
             }
         }
     }
