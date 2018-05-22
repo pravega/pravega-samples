@@ -8,7 +8,8 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *   
  */
- buildscript {
+
+buildscript {
     repositories {
         jcenter()
     }
@@ -21,6 +22,7 @@ plugins {
 allprojects {
     apply plugin: "idea"
     apply plugin: "eclipse"
+    apply plugin: "distribution"
 }
 
 subprojects {

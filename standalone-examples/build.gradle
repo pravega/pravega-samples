@@ -35,6 +35,8 @@ dependencies {
     compile "ch.qos.logback:logback-classic:1.1.7"
 }
 
+// Build examples
+
 task scriptHelloWorldWriter(type: CreateStartScripts) {
   outputDir = file('build/scripts')
   mainClassName = 'io.pravega.example.gettingstarted.HelloWorldWriter'
@@ -64,22 +66,6 @@ task startHelloWorldReader(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
       args System.getProperty("exec.args").split()
-    }
-}
-
-task scriptTurbineSensor(type: CreateStartScripts) {
-  outputDir = file('build/scripts')
-  mainClassName = 'io.pravega.example.iot.TurbineHeatSensor'
-  applicationName = 'turbineSensor'
-  defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
-  classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task startTurbineSensor(type: JavaExec) {
-    main = "io.pravega.example.iot.TurbineHeatSensor"
-    classpath = sourceSets.main.runtimeClasspath
-    if(System.getProperty("exec.args") != null) {
-        args System.getProperty("exec.args").split()
     }
 }
 
@@ -154,7 +140,6 @@ distributions {
             into('bin') {
                 from project.scriptHelloWorldWriter
                 from project.scriptHelloWorldReader
-                from project.scriptTurbineSensor
                 from project.scriptConsoleWriter
                 from project.scriptConsoleReader
                 from project.scriptSharedConfigCli

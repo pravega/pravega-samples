@@ -39,37 +39,3 @@ shadowJar {
         include dependency("io.pravega:pravega-connectors-flink_2.11")
     }
 }
-
-// Build examples
-
-task scriptWordCountWriter(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.example.flink.wordcount.WordCountWriter'
-    applicationName = 'wordCountWriter'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task scriptWordCountReader(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.example.flink.wordcount.WordCountReader'
-    applicationName = 'wordCountReader'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-distributions {
-    main {
-        baseName = archivesBaseName
-        contents {
-            into('lib') {
-                from shadowJar
-                from(project.configurations.shadow)
-                from(jar)
-                from(project.configurations.runtime)
-            }
-            into('bin') {
-                from project.scriptWordCountWriter
-                from project.scriptWordCountReader
-            }
-        }
-    }
-}
