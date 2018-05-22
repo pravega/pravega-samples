@@ -10,64 +10,76 @@
  */
 package io.pravega.examples.flink.alert;
 
+import io.pravega.shaded.com.google.type.Date;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
-import io.pravega.shaded.com.google.gson.Gson;
+
+import java.io.IOException;
 
 /**
  * Object to process Apache access log
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AccessLog {
-    private String ClientIP;
-
-    private String Status;
-
-    private String Verb;
-
-    private String TimestampStr;
-
-    public AccessLog(){
-        Status=Verb=ClientIP="";
-    }
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @JsonProperty("clientip")
-    public String getClientIP() {
-        return ClientIP;
-    }
-
-    public void setClientIP(String clientIP) {
-        ClientIP = clientIP;
-    }
+    private String clientIp;
 
     @JsonProperty("response")
-    public String getStatus() {
-        return Status;
-    }
-
-    public void setStatus(String status) {
-        Status = status;
-    }
-
-    @JsonProperty("@timestamp")
-    public String getTimestampStr() { return TimestampStr; }
-
-    public void setTimestampStr(String timestampStr) { TimestampStr = timestampStr; }
-
-    public long getTimestampMillis() {
-        return new DateTime(getTimestampStr()).getMillis();
-    }
+    private String status;
 
     @JsonProperty("verb")
-    public String getVerb() {
-        return Verb;
+    private String verb;
+
+    @JsonProperty("@timestamp")
+    private String timestamp;
+
+    public static AccessLog toAccessLog(String value) throws IOException {
+        return mapper.readValue(value, AccessLog.class);
     }
 
-    public void setVerb(String verb) {
-        Verb = verb;
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
+    public String getStatus()
+    {
+        return status;
+    }
+
+    public void setStatus(String status)
+    {
+        this.status = status;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestampStr) {
+        this.timestamp = timestampStr;
+    }
+
+    public long getTimestampMillis()
+    {
+        return new DateTime(getTimestamp()).getMillis();
+    }
+
+    public String getVerb()
+    {
+        return verb;
+    }
+
+    public void setVerb(String verb)
+    {
+        this.verb = verb;
     }
 
     /** 
@@ -84,26 +96,25 @@ public class AccessLog {
             return false;
         }
         AccessLog accessLog =(AccessLog)obj;
-        return accessLog.Verb.equals(Verb) &&
-               accessLog.Status.equals(Status) &&
-               accessLog.TimestampStr.equals(TimestampStr) &&
-               accessLog.ClientIP.equals(ClientIP);
+        return accessLog.verb.equals(verb) &&
+               accessLog.status.equals(status) &&
+               accessLog.timestamp.equals(timestamp) &&
+               accessLog.clientIp.equals(clientIp);
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((Status == null) ? 0 : Status.hashCode());
-        result = prime * result + ((ClientIP == null) ? 0 : ClientIP.hashCode());
-        result = prime * result + ((TimestampStr == null) ? 0 : TimestampStr.hashCode());
-        result = prime * result + ((Verb == null) ? 0 : Verb.hashCode());
+        result = prime * result + ((status == null) ? 0 : status.hashCode());
+        result = prime * result + ((clientIp == null) ? 0 : clientIp.hashCode());
+        result = prime * result + ((timestamp == null) ? 0 : timestamp.hashCode());
+        result = prime * result + ((verb == null) ? 0 : verb.hashCode());
         return result;
     }
 
     @Override
     public String toString() {
-        Gson gson = new Gson();
-        return gson.toJson(this);
+        return "AccessLog [timestamp = "+timestamp+", verb = "+verb+", status = "+status+", clientIp = "+clientIp+"]";
     }
 }

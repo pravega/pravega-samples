@@ -32,6 +32,7 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +59,7 @@ public class HighCountAlerter {
 
         PravegaConfig pravegaConfig = PravegaConfig
                 .fromParams(params)
-                .withDefaultScope(Constants.DEFAULT_SCOPE);
+                .withDefaultScope(params.get(Constants.SCOPE_PARAM, Constants.DEFAULT_SCOPE));
 
         // create the Pravega input stream (if necessary)
         Stream stream = Utils.createStream(
@@ -136,8 +137,7 @@ public class HighCountAlerter {
     //Parse the incoming streams & convert into Java PoJos
     private static class ParseLogData implements MapFunction<String, AccessLog>{
         public AccessLog map(String value) throws Exception {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(value, AccessLog.class);
+            return AccessLog.toAccessLog(value);
         }
     }
 
