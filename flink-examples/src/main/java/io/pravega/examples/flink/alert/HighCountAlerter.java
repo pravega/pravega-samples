@@ -11,6 +11,7 @@
 package io.pravega.examples.flink.alert;
 
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.impl.DefaultCredentials;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaSerialization;
@@ -57,8 +58,12 @@ public class HighCountAlerter {
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
 
+        String username = params.get(Constants.USERNAME_PARAM, "");
+        String password = params.get(Constants.PASSWORD_PARAM, "");
+
         PravegaConfig pravegaConfig = PravegaConfig
                 .fromParams(params)
+                .withCredentials(new DefaultCredentials(password, username))
                 .withDefaultScope(params.get(Constants.SCOPE_PARAM, Constants.DEFAULT_SCOPE));
 
         // create the Pravega input stream (if necessary)

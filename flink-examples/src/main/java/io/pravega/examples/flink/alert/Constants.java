@@ -19,6 +19,8 @@ public class Constants {
     protected static final String DEFAULT_SCOPE = "examples";
     protected static final String STREAM_PARAM = "stream";
     protected static final String DEFAULT_STREAM = "apacheaccess";
+    protected static final String USERNAME_PARAM = "username";
+    protected static final String PASSWORD_PARAM = "password";
     protected static final Integer ALERT_THRESHOLD = 6;
     protected static final Integer ALERT_WINDOW = 30;
     protected static final Integer ALERT_INTERVAL = 2;
