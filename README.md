@@ -26,6 +26,8 @@ more complex applications, which show use-cases exploiting one or multiple compo
 | `statesynchronizer` | Application that allows users to work with `StateSynchronizer` API via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/statesynchronizer)
 | `streamcuts` | Application examples demonstrating the use of `StreamCut`s via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/streamcuts) 
 
+> Hint: Have a look to the [terminology and concepts](http://pravega.io/docs/latest/terminology/) in Pravega.
+
 ## Flink-connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
