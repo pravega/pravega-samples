@@ -31,7 +31,13 @@ more complex applications, which show use-cases exploiting one or multiple compo
 ## Flink-connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/wordcount)
+| `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/wordcount)
+
+## Hadoop-connector Examples
+| Example Name  | Description  | Language |
+| ------------- |:-----| :-----|
+| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/wordcount)
+
 
 ## Scenarios
 | Example Name   | Description  | Language |
@@ -51,12 +57,14 @@ more complex applications, which show use-cases exploiting one or multiple compo
 
 ## Pravega Build Instructions (Optional)
 
-For release builds of Pravega, the artifacts will already be in Maven Central and you will 
-not need to run this step. Conversely, if you have downloaded a nightly build of Pravega, 
-you may need to generate the latest Pravega `jar` files and publish them to your local Maven 
-repository. 
+For [release builds](https://github.com/pravega/pravega/releases) of Pravega, 
+the artifacts will already be in Maven Central and you will not need to run this step. 
+In this sense, you also have the option to download the Pravega `master` snapshots published 
+in our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/).
 
-To install the Pravega libraries to your local Maven repository:
+Conversely, if you want to build Pravega from source, you may need to generate the 
+latest Pravega `jar` files and install them to your local Maven repository. To this end,
+please run the following commands:
 
 ```
 $ git clone https://github.com/pravega/pravega.git
@@ -67,7 +75,8 @@ $ ./gradlew install
 The above command should generate the required `jar` files into your local Maven repository.
 For more information, please visit [Pravega](https://github.com/pravega/pravega). 
 
-> Hint: If you use a different version of Pravega, please check the gradle.properties file.
+> Hint: If you use a different version of Pravega, please check the `pravegaVersion` property 
+in `gradle.properties` file.
 
 ## Flink Connector Build Instructions
 
@@ -107,12 +116,13 @@ There is a Linux/Mac script and a Windows (.bat) script for each separate execut
 We propose a roadmap to proceed with the execution of examples based on their complexity:
 1. [Pravega examples](https://github.com/pravega/pravega-samples/tree/master/standalone-examples): 
 First step to understand the basics of Pravega and exercise the concepts presented in the documentation. 
-2. [Pravega scenarios](https://github.com/pravega/pravega-samples/tree/master/standalone-examples): 
-Applications to demonstrate/show how applications can exploit Pravega once the developer is familiar with the main APIs.
-3. [Flink-connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-examples): 
+2. [Flink-connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-examples): 
 These examples show the basic functionality of the Flink connector for Pravega.
-4. [Flink-connector scenarios](https://github.com/pravega/pravega-samples/tree/master/flink-examples): 
-Applications that go beyond the basic the interaction between Pravega and Flink to demonstrate complex analytics use cases.
+3. [Hadoop-connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-examples): 
+These examples show the basic functionality of the Hadoop connector for Pravega.
+4. [Scenarios](https://github.com/pravega/pravega-samples/tree/master/scenarios): 
+Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
+between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.
 
 # Where to find help
 
