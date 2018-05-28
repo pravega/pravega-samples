@@ -48,10 +48,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StreamCutsExample implements Closeable {
 
-    public static final char streamBaseId = 'a';
     public static final int maxEventsPerDay = 3;
-
     private static final String eventSeparator = ":";
+    private static final String streamSeparator = "-";
 
     private int numStreams;
     private int numEvents;
@@ -59,7 +58,7 @@ public class StreamCutsExample implements Closeable {
     private String scope;
     private ScheduledExecutorService executor;
     private StreamManager streamManager;
-
+    private List<String> myStreamNames = new ArrayList<>();
     private Map<String, SimpleEntry<Integer, Integer>> perDayEventIndex = new LinkedHashMap<>();
 
     public StreamCutsExample(int numStreams, int numEvents, String scope, URI controllerURI) {
@@ -196,7 +195,7 @@ public class StreamCutsExample implements Closeable {
                 final StreamCut endStreamCut = streamCuts.get(myStream).get(1);
 
                 // Then, we get the segment ranges according to the StreamCuts.
-                StreamSegmentsIterator segments = batchClient.getSegments(myStream, startStreamCut ,endStreamCut);
+                StreamSegmentsIterator segments = batchClient.getSegments(myStream, startStreamCut, endStreamCut);
                 List<SegmentRange> ranges = Lists.newArrayList(segments.getIterator());
 
                 // We basically sum up all the values of events within the ranges.
@@ -233,10 +232,11 @@ public class StreamCutsExample implements Closeable {
         streamManager.createScope(scope);
 
         // Create Streams and write dummy events in them.
-        for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
-            String streamName = String.valueOf(id);
+        for (char streamId = 'a'; streamId < 'a' + numStreams; streamId++) {
+            String streamName = String.valueOf(streamId) + streamSeparator + System.nanoTime();
+            myStreamNames.add(streamName);
             StreamConfiguration streamConfig = StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build();
-            log.info("Stream {} is new? {}.", id, streamManager.createStream(scope, streamName, streamConfig));
+            streamManager.createStream(scope, streamName, streamConfig);
 
             // Note that we use the try-with-resources statement for those classes that should be closed after usage.
             try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
@@ -253,8 +253,9 @@ public class StreamCutsExample implements Closeable {
     public void numericDataEvents(SimpleEntry<EventStreamWriter<String>, String> writerAndStreamName) {
         // Write dummy events that identify each Stream.
         StringBuilder sb = new StringBuilder();
+        char streamBaseId = writerAndStreamName.getValue().charAt(0);
         for (int j = 0; j < numEvents; j++) {
-            writerAndStreamName.getKey().writeEvent(sb.append(writerAndStreamName.getValue()).append(j).toString()).join();
+            writerAndStreamName.getKey().writeEvent(sb.append(streamBaseId).append(j).toString()).join();
             sb.setLength(0);
         }
     }
@@ -263,21 +264,25 @@ public class StreamCutsExample implements Closeable {
         StringBuilder sb = new StringBuilder();
         Random random = new Random();
         int totalEventsSoFar = 0;
+        char streamBaseId = writerAndStreamName.getValue().charAt(0);
         for (int i = 0; i < numEvents; i++) {
-            final String streamAndDayKey = writerAndStreamName.getValue() + eventSeparator + "day" + i;
+            final String daySuffix = eventSeparator + "day" + i;
             int eventsPerDay = random.nextInt(maxEventsPerDay);
             int lastDayEventIndex;
 
             // Write events specifying the day they belong to and the value in their content.
             for (lastDayEventIndex = 0; lastDayEventIndex < eventsPerDay; lastDayEventIndex++) {
-                writerAndStreamName.getKey().writeEvent(sb.append(streamAndDayKey).append(eventSeparator)
+                writerAndStreamName.getKey().writeEvent(sb.append(streamBaseId)
+                                                          .append(daySuffix)
+                                                          .append(eventSeparator)
                                                           .append(random.nextInt(20)).toString()).join();
                 sb.setLength(0);
             }
 
             // Record the event indexes of events for day currentDayNumber
             if (lastDayEventIndex > 0) {
-                perDayEventIndex.put(streamAndDayKey, new SimpleEntry<>(totalEventsSoFar, totalEventsSoFar + lastDayEventIndex));
+                perDayEventIndex.put(writerAndStreamName.getValue() + daySuffix,
+                        new SimpleEntry<>(totalEventsSoFar, totalEventsSoFar + lastDayEventIndex));
                 totalEventsSoFar += lastDayEventIndex;
             }
         }
@@ -290,8 +295,7 @@ public class StreamCutsExample implements Closeable {
      */
     public String printStreams() {
         StringBuilder result = new StringBuilder();
-        for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
-            final String streamName = String.valueOf(id);
+        for (String streamName: myStreamNames) {
             ReaderGroupConfig config = ReaderGroupConfig.builder().stream(Stream.of(scope, streamName)).build();
             result = result.append(printBoundedStreams(config));
         }
@@ -304,18 +308,18 @@ public class StreamCutsExample implements Closeable {
      */
     public void deleteStreams() {
         // Delete the streams for next execution.
-        for (char id = streamBaseId; id < streamBaseId + numStreams; id++) {
-            // FIXME: The second time the example is executed, it fails as it cannot work on already deleted streams
-            // (we need to restart Pravega to make it work)
+        for (String streamName: myStreamNames) {
             try {
-                streamManager.sealStream(scope, String.valueOf(id));
+                streamManager.sealStream(scope, streamName);
                 Thread.sleep(500);
-                streamManager.deleteStream(scope, String.valueOf(id));
+                streamManager.deleteStream(scope, streamName);
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 log.error("Problem while sleeping current Thread in deleteStreams: {}.", e);
             }
         }
+        myStreamNames.clear();
+        perDayEventIndex.clear();
     }
 
     // End region stream utils
@@ -326,6 +330,10 @@ public class StreamCutsExample implements Closeable {
     public void close() {
         streamManager.close();
         executor.shutdown();
+    }
+
+    public List<String> getMyStreamNames() {
+        return myStreamNames;
     }
 
     private String getStreamDayKey (String streamName, int day) {

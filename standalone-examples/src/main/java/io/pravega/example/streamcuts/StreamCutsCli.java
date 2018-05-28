@@ -158,12 +158,10 @@ public class StreamCutsCli {
     }
 
     private void doBoundedPrinting(String prefix, int numStreams, int exampleNumEvents, StreamCutsExample example) throws IOException {
-        final char streamId = StreamCutsExample.streamBaseId;
         Map<Stream, StreamCut> startStreamCuts = new LinkedHashMap<>();
         Map<Stream, StreamCut> endStreamCuts = new LinkedHashMap<>();
 
-        for (char id = streamId; id < streamId + numStreams; id++) {
-            final String streamName = String.valueOf(id);
+        for (String streamName: example.getMyStreamNames()) {
             output("[Stream %s]  StreamCut start event number.%n", streamName);
             int iniEventIndex = askForIntInput(prefix, 0, exampleNumEvents - 1);
             output("[Stream %s] StreamCut end event number.%n", streamName);
@@ -205,7 +203,7 @@ public class StreamCutsCli {
         output("The example consists of summing up all the values from events belonging to the same day (e.g., day1).%n%n");
 
         do {
-            doBoundedSummingOfStreamValues(prefix, numStreams, exampleNumDays, example);
+            doBoundedSummingOfStreamValues(prefix, exampleNumDays, example);
             output("Do you want to repeat? (Y)%n");
         } while(readLine("%s", prefix).trim().equalsIgnoreCase("Y"));
 
@@ -214,14 +212,12 @@ public class StreamCutsCli {
         example.close();
     }
 
-    private void doBoundedSummingOfStreamValues(String prefix, int numStreams, int exampleNumDays, StreamCutsExample example) throws IOException {
-        final char streamId = StreamCutsExample.streamBaseId;
+    private void doBoundedSummingOfStreamValues(String prefix,int exampleNumDays, StreamCutsExample example) throws IOException {
         output("For which day number do you want to sum up values?.%n");
         int dayNumber = askForIntInput(prefix, 0, exampleNumDays);
 
         Map<Stream, List<StreamCut>> streamDayStreamCuts = new LinkedHashMap<>();
-        for (char id = streamId; id < streamId + numStreams; id++) {
-            final String streamName = String.valueOf(id);
+        for (String streamName: example.getMyStreamNames()) {
             final SimpleEntry<Integer, Integer> eventIndexesForDay = example.getStreamEventIndexesForDay(streamName, dayNumber);
 
             // Due to randomization, there could be streams with no events for a given day.
