@@ -20,7 +20,7 @@ more complex applications, which show use-cases exploiting one or multiple compo
 ## Pravega Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `gettingstarted` | Simple example of how to read/write from/toa Pravega `Stream`. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/gettingstarted)
+| `gettingstarted` | Simple example of how to read/write from/to a Pravega `Stream`. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/gettingstarted)
 | `consolerw` | Application that allows users to work with `Stream`, `Transaction` and `StreamCut` APIs via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/consolerw)
 | `noop` | Example of how to add a simple callback executed upon a read event. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/noop)
 | `statesynchronizer` | Application that allows users to work with `StateSynchronizer` API via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/statesynchronizer)
@@ -36,13 +36,13 @@ more complex applications, which show use-cases exploiting one or multiple compo
 ## Hadoop-connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/wordcount)
+| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-examples/src/main/java/io/pravega/examples/hadoop)
 
 
 ## Scenarios
 | Example Name   | Description  | Language |
 | ------------- |:-----| :-----|
-| `turbineheatsensor` | It emulates parallel sensors producing temperature values (writers) and parallel consumers performing real-time statistics (readers) via Pravega client. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/turbineheatsensor)
+| `turbineheatsensor` | It emulates parallel sensors producing temperature values (writers) and parallel consumers performing real-time statistics (readers) via Pravega client. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/iot)
 | `turbineheatprocessor` | A Flink streaming application for processing temperature data from a Pravega stream produced by the `turbineheatsensor` app. The application computes a daily summary of the temperature range observed on that day by each sensor. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/iot), [Scala](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/scala/io/pravega/examples/flink/iot)
 | `anomaly-detection` | A Flink streaming application for detecting anomalous input patterns using a finite-state machine. | [Java](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection)
 
@@ -120,8 +120,7 @@ First step to understand the basics of Pravega and exercise the concepts present
 These examples show the basic functionality of the Flink connector for Pravega.
 3. [Hadoop-connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-examples): 
 These examples show the basic functionality of the Hadoop connector for Pravega.
-4. [Scenarios](https://github.com/pravega/pravega-samples/tree/master/scenarios): 
-Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
+4. Scenarios: Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
 between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.
 
 # Where to find help

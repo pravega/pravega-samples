@@ -44,9 +44,9 @@ $ ./gradlew upload
 
 ---
 
-# Feature Examples Catalog
+# Examples Catalog
 
-## Word Count Sample
+## Word Count
 
 This example demonstrates how to use the Pravega Flink Connectors to write data collected
 from an external network stream into a Pravega `Stream` and read the data from the Pravega `Stream`.
@@ -54,7 +54,7 @@ _See [wordcount](doc/flink-wordcount/README.md) for more information and executi
 
 ---
 
-# Scenario Examples Catalog
+# Scenarios Catalog
 
 ## Turbine Heat Processor
 A Flink streaming application for processing temperature data from a Pravega `Stream`. 

@@ -1,5 +1,5 @@
 # Pravega Examples 
-Set of example applications to demonstrate the features of Pravega and potential use-case scenarios.
+Set of example applications to demonstrate the features and APIs of Pravega as well as potential use-case scenarios.
 
 
 ## Pre-requisites
@@ -8,11 +8,11 @@ Set of example applications to demonstrate the features of Pravega and potential
 
 ---
 
-# Feature Examples Catalog
+# Examples Catalog
 
 ## `gettingstarted`
-This example consists of two applications, a `HelloWorldReader` that reads from a `Stream` and a 
-`HelloWorldWriter`, that writes to a `Stream`.  
+This example consists of two applications, a `HelloWorldReader` that reads from a `Stream`, and a 
+`HelloWorldWriter` that writes to a `Stream`.  
 
 ### Execution
 
@@ -135,7 +135,7 @@ $ bin/streamCutsCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090
 
 ---
 
-# Scenario Examples Catalog
+# Scenarios Catalog
 
 ## `turbineheatsensor`
 

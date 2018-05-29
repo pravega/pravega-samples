@@ -1,4 +1,3 @@
-
 # Event pattern detection with Apache Flink and Pravega
 Sample application which simulates network anomaly intrusion and detection using Apache Flink 
 and Pravega.
