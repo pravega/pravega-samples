@@ -55,7 +55,7 @@ public class ExactlyOnceWriter {
         ParameterTool params = ParameterTool.fromArgs(args);
 
         boolean exactlyOnce = Boolean.parseBoolean(params.get("exactlyonce", "true"));
-        int numEvents = Integer.parseInt(params.get("num-events", String.valueOf(defaultNumEvents)));
+        int numEvents = params.getInt("num-events", defaultNumEvents);
 
         PravegaConfig pravegaConfig = PravegaConfig
                 .fromParams(params)

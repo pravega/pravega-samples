@@ -29,7 +29,6 @@ public class ThrottledIntegerEventProducer
         extends RichParallelSourceFunction<IntegerEvent>
         implements ListCheckpointed<Long>, CheckpointListener {
 
-
     private static final Logger LOG = LoggerFactory.getLogger(ThrottledIntegerEventProducer.class);
 
     /**
@@ -38,11 +37,10 @@ public class ThrottledIntegerEventProducer
      */
     private final Object blocker = new SerializableObject();
 
-
     // The total number of events to generate
     private final int numEventsTotal;
 
-    // The
+    // The position to have at least one checkpoint
     private final int latestPosForCheckpoint;
 
     // The current position in the sequence of numbers
@@ -60,18 +58,13 @@ public class ThrottledIntegerEventProducer
     // Set to true after restore
     private boolean restored = false;
 
-
-    /**
-     * Flag to cancel the source. Must be volatile, because modified asynchronously
-     */
+    //Flag to cancel the source. Must be volatile, because modified asynchronously
     private volatile boolean running = true;
-
 
     public ThrottledIntegerEventProducer(final int numEventsTotal)
     {
         this(numEventsTotal, numEventsTotal / 3);
     }
-
 
     public ThrottledIntegerEventProducer(final int numEventsTotal, final int latestPosForCheckpoint) {
         Preconditions.checkArgument(numEventsTotal > 0);
@@ -189,9 +182,7 @@ public class ThrottledIntegerEventProducer
         this.restored = true;
         System.out.println("Restore from checkpoint at position " + this.currentPosition);
     }
-    /*
-     * Simulate data a client sent to apache web server.
-     */
+
     @Override
     public void notifyCheckpointComplete(long checkpointId) throws Exception {
 
