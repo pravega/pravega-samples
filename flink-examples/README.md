@@ -1,4 +1,4 @@
-# Pravega Flink Connector Examples
+# Flink Connector Examples for Pravega
 Battery of code examples to demonstrate the capabilities of Pravega as a data stream storage 
 system for Apache Flink. 
 
