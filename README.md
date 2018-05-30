@@ -91,15 +91,15 @@ $ ./gradlew clean install
 
 For more information, please visit [Flink Connectors](https://github.com/pravega/flink-connectors). 
 
-### Hadoop Connector Build Instructions
+## Hadoop Connector Build Instructions
 
 To execute Hadoop connector examples, follow the below steps to build and publish artifacts from 
 source to local Maven repository:
 
 ```
-git clone --recurse-submodules https://github.com/pravega/hadoop-connectors.git
-cd hadoop-connectors
-gradle install
+$ git clone --recurse-submodules https://github.com/pravega/hadoop-connectors.git
+$ cd hadoop-connectors
+$ gradle install
 ```
 
 For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
