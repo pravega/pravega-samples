@@ -368,7 +368,7 @@ class BackgroundReader implements Closeable, Runnable {
             do {
                 event = reader.readNextEvent(READER_TIMEOUT_MS);
                 if (event.getEvent() != null) {
-                    // TODO: Delete this output when issue #87 is solved to let the user see the output
+                    // TODO: Problem finding logback.xml in Pravega example applications (Issue #87).
                     System.out.println("[BackgroundReader] Read event: " + event.getEvent());
                     log.info("[BackgroundReader] Read event: {}.", event.getEvent());
                 }
