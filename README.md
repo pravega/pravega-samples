@@ -51,9 +51,7 @@ more complex applications, which show use-cases exploiting one or multiple compo
 
 ## Pre-requisites
 
-* Java 8
-
-* Maven 2
+* Java 8+
 
 ## Pravega Build Instructions (Optional)
 
@@ -63,8 +61,8 @@ In this sense, you also have the option to download the Pravega `master` snapsho
 in our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/).
 
 Conversely, if you want to build Pravega from source, you may need to generate the 
-latest Pravega `jar` files and install them to your local Maven repository. To this end,
-please run the following commands:
+latest Pravega `jar` files and install them to your local Maven repository. 
+To this end, please run the following commands:
 
 ```
 $ git clone https://github.com/pravega/pravega.git
@@ -106,8 +104,9 @@ For more information, please visit [Hadoop Connectors](https://github.com/praveg
 
 ## Pravega Samples Build Instructions
 
-Finally, we need to build the code of the examples. To this end, use the built-in gradle wrapper 
-to build the samples as follows:
+Finally, we need to build the code of the examples. Note that the `master` branch points to release 
+artifacts of Pravega and connectors, whereas the `develop` branch works with snapshot artifacts.
+To build `pravega-samples` from source, use the built-in gradle wrapper as follows:
 
 ```
 $ git clone https://github.com/pravega/pravega-samples.git
