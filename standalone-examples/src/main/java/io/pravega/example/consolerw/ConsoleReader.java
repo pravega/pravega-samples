@@ -242,7 +242,7 @@ public class ConsoleReader implements Closeable {
             do {
                 event = reader.readNextEvent(1000);
                 if (event.getEvent() != null) {
-                    // TODO: Delete this output when issue #87 is solved to let the user see the output
+                    // TODO: Problem finding logback.xml in Pravega example applications (Issue #87).
                     output("[StreamCut read from/up to] Read event: %s%n", event.getEvent());
                     log.info("[StreamCut read from/up to] Read event: {}.", event.getEvent());
                 }
