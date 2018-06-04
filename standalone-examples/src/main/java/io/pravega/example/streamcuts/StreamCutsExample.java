@@ -74,8 +74,8 @@ public class StreamCutsExample implements Closeable {
      * A {@link StreamCut} is a collection of offsets, one for each open segment of the {@link Stream}, which indicates
      * an event boundary. With a {@link StreamCut}, users can instruct readers to read from and/or up to a particular
      * event boundary (e.g., read events from 100 to 200, events created since Tuesday) on multiple {@link Stream}s. To
-     * this end, Pravega allows us to create {@link StreamCut}s while readers are processing a stream (e.g., via a
-     * {@link Checkpoint}) that can be used in the future to bound the processing of a set of {@link Stream}s. In this
+     * this end, Pravega allows us to create {@link StreamCut}s while readers are processing a {@link Stream} (e.g., via
+     * a {@link Checkpoint}) that can be used in the future to bound the processing of a set of {@link Stream}s. In this
      * method, we read create two {@link StreamCut}s for a {@link Stream} according to the initial and final event
      * indexes passed by parameter.
      *
