@@ -71,12 +71,13 @@ public class StreamCutsExample implements Closeable {
     }
 
     /**
-     * A {@link StreamCut} is an offset that indicates an event boundary. With a {@link StreamCut}, users can instruct
-     * readers to read from and/or up to a particular boundary (e.g., read events from 100 to 200, events created since
-     * Tuesday). To this end, Pravega allows us to create {@link StreamCut}s while readers are processing a stream
-     * (e.g., via a {@link Checkpoint}) that can be used in the future to bound the processing of a set of
-     * {@link Stream}s. In this method, we read create two {@link StreamCut}s for a {@link Stream} according to the
-     * initial and final event indexes passed by parameter.
+     * A {@link StreamCut} is a collection of offsets, one for each open segment of the {@link Stream}, which indicates
+     * an event boundary. With a {@link StreamCut}, users can instruct readers to read from and/or up to a particular
+     * event boundary (e.g., read events from 100 to 200, events created since Tuesday) on multiple {@link Stream}s. To
+     * this end, Pravega allows us to create {@link StreamCut}s while readers are processing a stream (e.g., via a
+     * {@link Checkpoint}) that can be used in the future to bound the processing of a set of {@link Stream}s. In this
+     * method, we read create two {@link StreamCut}s for a {@link Stream} according to the initial and final event
+     * indexes passed by parameter.
      *
      * @param streamName Name of the {@link Stream} from which {@link StreamCut}s will be created.
      * @param iniEventIndex Index of the initial boundary for the {@link Stream} slice to process.
@@ -176,10 +177,10 @@ public class StreamCutsExample implements Closeable {
     /**
      * A good use-case for {@link StreamCut}s is to allow efficient batch processing of data events within specific
      * boundaries (e.g., perform a mean on the temperature values in 1986). Instead of ingesting all the data and force
-     * the reader to discard useless events, {@link StreamCut}s help readers to only read the events that are important
-     * for a particular task. In this sense, this method enables the Pravega {@link BatchClient} to read from various
-     * {@link Stream}s within the specific ranges passed as input, and the sum up all the values contained in read
-     * events.
+     * the reader to discard irrelevant events, {@link StreamCut}s help readers to only read the events that are
+     * important for a particular task. In this sense, this method enables the Pravega {@link BatchClient} to read from
+     * various {@link Stream}s within the specific ranges passed as input, and the sum up all the values contained in
+     * read events.
      *
      * @param streamCuts Map that defines the slices to read of a set of {@link Stream}s.
      * @return Sum of all the values of time series data belonging to {@link Stream}s and bounded by {@link StreamCut}s.
