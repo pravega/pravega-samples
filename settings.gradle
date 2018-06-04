@@ -11,10 +11,16 @@
 // Build examples
 include 'standalone-examples'
 include 'flink-examples'
+<<<<<<< 502f5909fb29de3dd82e4675614560a75e35891c
 include 'hadoop-examples'
 
 // Build scenarios
 include 'scenarios/turbine-heat-sensor'
 include 'scenarios/turbine-heat-processor'
+=======
+
+// Build scenarios
+include 'scenarios/turbine-heat-sensor'
+>>>>>>> Issue 83: Re-factoring the project according to the new structure proposed in the Wiki page.
 include 'scenarios/anomaly-detection'
 
