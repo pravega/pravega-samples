@@ -132,7 +132,7 @@ First step to understand the basics of Pravega and exercise the concepts present
 These examples show the basic functionality of the Flink connector for Pravega.
 3. [Hadoop-connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-examples): 
 These examples show the basic functionality of the Hadoop connector for Pravega.
-4. Scenarios: Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
+4. [Scenarios](https://github.com/pravega/pravega-samples/tree/master/scenarios): Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
 between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.
 
 # Where to find help
