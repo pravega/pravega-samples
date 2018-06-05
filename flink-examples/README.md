@@ -37,3 +37,9 @@ This example demonstrates how to use the Pravega Flink connectors to read and
 parse Apache access logs from logstash via the [logstash pravega output plugin](https://github.com/pravega/logstash-output-pravega),
 and how to generate alert when error count is high within a time frame. 
 See [High Error Count Alert](doc/flink-high-error-count-alert/README.md) for instructions.
+
+## Exactly Once Sample
+
+This sample demonstrates Pravega EXACTLY_ONCE feature in conjuction with Flink checkpointing and exactly-once mode.
+See [Exactly Once Sample](doc/exactly-once/README.md) for instructions.
+
