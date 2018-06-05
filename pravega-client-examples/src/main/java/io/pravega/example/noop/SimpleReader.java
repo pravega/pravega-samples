@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package example.noop;
+package io.pravega.example.noop;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;

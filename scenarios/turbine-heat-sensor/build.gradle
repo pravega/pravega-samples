@@ -22,7 +22,7 @@ resources
 ext {
   junitVersion = '4.11'
   commonsCLIVersion = '1.4'
-  pravegaVersion = '0.2.1'
+  pravegaVersion = '0.3.0-50.f56b52d-SNAPSHOT'
 }
 
 dependencies {

@@ -8,14 +8,12 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *   
  */
-package example.consolerw;
+package io.pravega.example.streamcuts;
 
 /**
  * Defines a handful of constants shared by classes in this package.
- *
  */
 public class Constants {
-    protected static final String DEFAULT_SCOPE = "examples";
-    protected static final String DEFAULT_STREAM_NAME = "someStream";
-    protected static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
+    static final String DEFAULT_SCOPE = "streamCutsExamples";
+    static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
 }

@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *   
  */
-package example.consolerw;
+package io.pravega.example.consolerw;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;

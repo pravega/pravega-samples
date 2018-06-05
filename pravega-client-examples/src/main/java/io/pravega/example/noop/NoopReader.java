@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package example.noop;
+package io.pravega.example.noop;
 
 import java.net.URI;
 import java.nio.ByteBuffer;

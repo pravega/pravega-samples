@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package example.streamcuts;
+package io.pravega.example.streamcuts;
 
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.Stream;

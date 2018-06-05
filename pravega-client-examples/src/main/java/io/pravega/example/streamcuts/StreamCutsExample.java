@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package example.streamcuts;
+package io.pravega.example.streamcuts;
 
 import com.google.common.collect.Lists;
 import io.pravega.client.ClientFactory;

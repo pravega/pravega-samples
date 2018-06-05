@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /*
  * At a high level, WordCountReader reads from a Pravega stream, and prints 
- * the word count summary to the output. This class provides an example for 
+ * the word count summary to the output. This class provides an example for
  * a simple Flink application that reads streaming data from Pravega.
  *
  * This application has the following input parameters
