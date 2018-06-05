@@ -1,31 +1,19 @@
 /*
  * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ *   
  */
-### clusters
-dcosAddress=master.mesos
+package example.streamcuts;
 
-### dependencies
-pravegaVersion=0.3.0-50.f56b52d-SNAPSHOT
-connectorVersion=0.2.1
-
-### outputs
-samplesVersion=0.3.0-SNAPSHOT
-
-### Flink
-flinkVersion=1.4.0
-
-### Hadoop
-hadoopVersion=2.8.1
-
-### Scala
-scalaVersion=2.11.8
-
-### Spark
-sparkVersion=2.2.0
+/**
+ * Defines a handful of constants shared by classes in this package.
+ */
+public class Constants {
+    static final String DEFAULT_SCOPE = "streamCutsExamples";
+    static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
+}

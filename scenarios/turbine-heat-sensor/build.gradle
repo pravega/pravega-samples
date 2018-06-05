@@ -15,7 +15,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 sourceCompatibility = 1.8
-archivesBaseName = 'pravega-standalone-turbineheatsensor'
+archivesBaseName = 'pravega-client-turbineheatsensor'
 
 resources
 

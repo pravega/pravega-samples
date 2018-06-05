@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *   
+ *
  */
 package io.pravega.turbineheatsensor;
 
@@ -94,10 +94,10 @@ public class TurbineHeatSensor {
 
             ScalingPolicy policy = ScalingPolicy.fixed(producerCount);
             StreamConfiguration config = StreamConfiguration.builder()
-                    .scope(scopeName)
-                    .streamName(streamName)
-                    .scalingPolicy(policy)
-                    .build();
+                                                            .scope(scopeName)
+                                                            .streamName(streamName)
+                                                            .scalingPolicy(policy)
+                                                            .build();
             streamManager.createStream(scopeName, streamName, config);
         }
         catch (URISyntaxException e) {
@@ -300,9 +300,9 @@ public class TurbineHeatSensor {
             this.isTransaction = isTransaction;
 
             EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
-                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                    .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
-                    .build();
+                                                                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                                                                    .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
+                                                                    .build();
             this.producer = factory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
         }
 
@@ -348,7 +348,7 @@ public class TurbineHeatSensor {
                     // event ingestion
                     long now = System.currentTimeMillis();
                     retFuture = produceStats.runAndRecordTime(() ->
-                                    this.makeCompletableFuture(fn.apply(Integer.toString(producerId), payload)), now, payload.length());
+                            this.makeCompletableFuture(fn.apply(Integer.toString(producerId), payload)), now, payload.length());
                     //If it is a blocking call, wait for the ack
                     if ( blocking ) {
                         try {
