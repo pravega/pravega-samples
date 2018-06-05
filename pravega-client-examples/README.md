@@ -123,14 +123,6 @@ Use the simple DSL to GET, PUT, REMOVE keys from the SharedConfig object identif
 It is worthwhile to launch two or more separate CLIs in separate windows using the same settings and observe how changes in one
 CLI process are not visible in another CLI process until that other CLI process invokes REFRESH.
 
-## TurbineHeatSensor
-
-An example of a lightweight IOT application that writes simulated sensor events to a Pravega stream.
-
-```
-$ bin/turbineSensor [--stream <stream name>]
-```
-
 ## NoopReader
 
 An example of a simple reader that continually reads the contents of any stream. A binary serializer is used so it works against any event types. The sample emits basic information about number of events/bytes read every 30 seconds. 

@@ -5,7 +5,6 @@ An example of a lightweight IOT application that writes simulated sensor events 
 1. Java 8
 2. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 
-
 # Execution
 
 ```
