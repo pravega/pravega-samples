@@ -40,7 +40,7 @@ Please, find the related documentation and instructions [here](https://github.co
 ## Hadoop Connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop)
+| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
 
 Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples).
 

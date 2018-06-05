@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package io.pravega.example.hadoop;
+package io.pravega.example.hadoop.wordcount;
 
 import java.io.BufferedReader;
 import java.io.IOException;
