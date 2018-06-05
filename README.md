@@ -140,7 +140,7 @@ These examples show the basic functionality of the Hadoop connector for Pravega.
 4. [Scenarios](https://github.com/pravega/pravega-samples/tree/master/scenarios): Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
 between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.
 
-# Where to find help
+# Where to Find Help
 
 Documentation on Pravega and Analytics Connectors:
 * [Pravega.io](http://pravega.io/), [Pravega Wiki](https://github.com/pravega/pravega/wiki).
