@@ -30,14 +30,14 @@ more complex applications, which show use-cases exploiting one or multiple compo
 
 Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples).
 
-## Flink-connector Examples
+## Flink Connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples/src/main/java/io/pravega/example/flink/wordcount)
 
 Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples).
 
-## Hadoop-connector Examples
+## Hadoop Connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop)
@@ -133,9 +133,9 @@ There is a Linux/Mac script and a Windows (.bat) script for each separate execut
 We propose a roadmap to proceed with the execution of examples based on their complexity:
 1. [Pravega examples](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples): 
 First step to understand the basics of Pravega and exercise the concepts presented in the documentation. 
-2. [Flink-connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples): 
+2. [Flink connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples): 
 These examples show the basic functionality of the Flink connector for Pravega.
-3. [Hadoop-connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples): 
+3. [Hadoop connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples): 
 These examples show the basic functionality of the Hadoop connector for Pravega.
 4. [Scenarios](https://github.com/pravega/pravega-samples/tree/master/scenarios): Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
 between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.
