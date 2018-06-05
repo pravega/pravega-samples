@@ -59,8 +59,8 @@ Run script below to start container from prebuilt image. Adjust parameters to yo
 #!/bin/sh
 set -u
 
-PRAVEGA_SCOPE=${PRAVEGA_SCOPE:examples}
-PRAVEGA_STREAM=${PRAVEGA_STREAM:apacheaccess}
+PRAVEGA_SCOPE=${PRAVEGA_SCOPE:-examples}
+PRAVEGA_STREAM=${PRAVEGA_STREAM:-apacheaccess}
 CONTAINER_NAME=pravega
 IMAGE_NAME=emccorp/pravega-demo
 

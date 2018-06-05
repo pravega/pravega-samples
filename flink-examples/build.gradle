@@ -61,6 +61,8 @@ task scriptFlinkAlerter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.examples.flink.alert.HighCountAlerter'
     applicationName = 'highCountAlerter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
 
 task scriptExactlyOnceWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
