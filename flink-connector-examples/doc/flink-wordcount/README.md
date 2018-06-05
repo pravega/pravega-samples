@@ -3,9 +3,9 @@ This example consists of two applications, a WordCountWriter that reads data fro
 network stream, transforms the data, and writes the data to a Pravega stream; and a
 WordCountReader that reads from a Pravega stream and prints the word counts summary.
 
-The scripts can be found under the flink-examples directory in:
+The scripts can be found under the `flink-connector-examples` directory in:
 ```
-flink-examples/build/install/pravega-flink-examples/bin
+flink-connector-examples/build/install/pravega-flink-examples/bin
 ```
 You might want to run WordCountWriter in one window and WordCountReader in another.
 
@@ -69,7 +69,7 @@ Point your browser to http://<your_flink_host>:8081 to make sure Flink is runnin
 
 ### Start WordCountWriter
 ```
-$ cd flink-examples/build/install/pravega-flink-examples
+$ cd flink-connector-examples/build/install/flink-connector-examples
 $ flink run -m localhost:6123 -c io.pravega.examples.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
 ```
 The WordCountWriter job should show up on the Flink UI as a running job.

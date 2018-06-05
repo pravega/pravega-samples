@@ -1,4 +1,4 @@
-# Standalone Examples of Pravega Applications
+# Pravega Client Example Applications
 These applications only need a running Pravega to execute against.
 
 ## Pre requisites
@@ -31,7 +31,7 @@ $ ./gradlew installDist
 The scripts can be found under the pravega-samples directory in:
 
 ```
-standalone-examples/build/install/pravega-standalone-examples/bin
+pravega-client-examples/build/install/pravega-client-examples/bin
 ```
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.

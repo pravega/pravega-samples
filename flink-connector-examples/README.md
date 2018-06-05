@@ -17,13 +17,13 @@ uber-jar called `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`:
 ```
 $ ./gradlew installDist
 ...
-$ ls -R flink-examples/build/install/pravega-flink-examples
+$ ls -R flink-connector-examples/build/install/pravega-flink-examples
 bin	lib
 
-flink-examples/build/install/pravega-flink-examples/bin:
+flink-connector-examples/build/install/pravega-flink-examples/bin:
 run-example
 
-flink-examples/build/install/pravega-flink-examples/lib:
+flink-connector-examples/build/install/pravega-flink-examples/lib:
 pravega-flink-examples-0.1.0-SNAPSHOT-all.jar
 ```
 
@@ -58,10 +58,10 @@ word counts.
 
 ### Execution
 
-The execution scripts can be found under the flink-examples directory in:
+The execution scripts can be found under the `flink-connector-examples` directory in:
 
 ```
-flink-examples/build/install/pravega-flink-examples/bin
+flink-connector-examples/build/install/pravega-flink-examples/bin
 ```
 You might want to run `WordCountWriter` in one window and `WordCountReader` in another.
 
@@ -116,14 +116,14 @@ then click "Running Jobs". By default, Flink job manager runs on port 6123.
 
 Now, let's start `WordCountWriter` with the following commands:
 ```
-$ cd flink-examples/build/install/pravega-flink-examples
+$ cd flink-connector-examples/build/install/pravega-flink-examples
 $ flink run -m localhost:6123 -c io.pravega.examples.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
 ```
 The `WordCountWriter` job should show up on the Flink UI as a running job.
 
 In a different window, we start `WordCountReader`:
 ```
-$ cd flink-examples/build/install/pravega-flink-examples
+$ cd flink-connector-examples/build/install/pravega-flink-examples
 $ flink run -m localhost:6123 -c io.pravega.examples.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
 ```
 The `WordCountReader` job should show up on the Flink UI as a running job.

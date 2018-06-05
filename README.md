@@ -11,40 +11,45 @@ developer guide](http://pravega.io).
 
 # Repository Structure
 
-This repository is divided into sub-projects (`standalone-examples`, `flink-examples`
-and `hadoop-examples`) addressed to demonstrate a specific component. In these sub-projects, 
+This repository is divided into sub-projects (`pravega-client-examples`, `flink-connector-examples`
+and `hadoop-connector-examples`) addressed to demonstrate a specific component. In these sub-projects, 
 we provide a battery of simple code examples aimed at demonstrating how a particular 
 feature or API works. Moreover, we also include a `scenarios` sub-project that contains 
 more complex applications, which show use-cases exploiting one or multiple components.
 
+> Hint: Have a look to the [terminology and concepts](http://pravega.io/docs/latest/terminology/) in Pravega.
+
 ## Pravega Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `gettingstarted` | Simple example of how to read/write from/to a Pravega `Stream`. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/gettingstarted)
-| `consolerw` | Application that allows users to work with `Stream`, `Transaction` and `StreamCut` APIs via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/consolerw)
-| `noop` | Example of how to add a simple callback executed upon a read event. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/noop)
-| `statesynchronizer` | Application that allows users to work with `StateSynchronizer` API via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/statesynchronizer)
-| `streamcuts` | Application examples demonstrating the use of `StreamCut`s via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/streamcuts) 
+| `gettingstarted` | Simple example of how to read/write from/to a Pravega `Stream`. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/gettingstarted)
+| `consolerw` | Application that allows users to work with `Stream`, `Transaction` and `StreamCut` APIs via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/consolerw)
+| `noop` | Example of how to add a simple callback executed upon a read event. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/noop)
+| `statesynchronizer` | Application that allows users to work with `StateSynchronizer` API via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/statesynchronizer)
+| `streamcuts` | Application examples demonstrating the use of `StreamCut`s via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/streamcuts) 
 
-> Hint: Have a look to the [terminology and concepts](http://pravega.io/docs/latest/terminology/) in Pravega.
+Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples).
 
 ## Flink-connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/wordcount)
+| `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples/src/main/java/io/pravega/example/flink/wordcount)
+
+Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples).
 
 ## Hadoop-connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-examples/src/main/java/io/pravega/examples/hadoop)
+| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop)
 
+Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples).
 
 ## Scenarios
 | Example Name   | Description  | Language |
 | ------------- |:-----| :-----|
-| `turbineheatsensor` | It emulates parallel sensors producing temperature values (writers) and parallel consumers performing real-time statistics (readers) via Pravega client. | [Java](https://github.com/pravega/pravega-samples/tree/master/standalone-examples/src/main/java/io/pravega/example/iot)
-| `turbineheatprocessor` | A Flink streaming application for processing temperature data from a Pravega stream produced by the `turbineheatsensor` app. The application computes a daily summary of the temperature range observed on that day by each sensor. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/java/io/pravega/examples/flink/iot), [Scala](https://github.com/pravega/pravega-samples/tree/master/flink-examples/src/main/scala/io/pravega/examples/flink/iot)
-| `anomaly-detection` | A Flink streaming application for detecting anomalous input patterns using a finite-state machine. | [Java](https://github.com/pravega/pravega-samples/tree/master/anomaly-detection)
+| [`turbineheatsensor`](https://github.com/pravega/pravega-samples/tree/master/scenarios/turbine-heat-sensor) | It emulates parallel sensors producing temperature values (writers) and parallel consumers performing real-time statistics (readers) via Pravega client. | [Java](https://github.com/pravega/pravega-samples/tree/master/scenarios/turbine-heat-sensor/src/main/java/io/pravega/turbineheatsensor)
+| [`turbineheatprocessor`](https://github.com/pravega/pravega-samples/tree/master/scenarios/turbine-heat-processor) | A Flink streaming application for processing temperature data from a Pravega stream produced by the `turbineheatsensor` app. The application computes a daily summary of the temperature range observed on that day by each sensor. | [Java](https://github.com/pravega/pravega-samples/tree/master/scenarios/turbine-heat-processor/src/main/java/io/pravega/example/flink/turbineheatprocessor), [Scala](https://github.com/pravega/pravega-samples/tree/master/scenarios/turbine-heat-processor/src/main/scala/io/pravega/example/flink/turbineheatprocessor)
+| [`anomaly-detection`](https://github.com/pravega/pravega-samples/tree/master/scenarios/anomaly-detection) | A Flink streaming application for detecting anomalous input patterns using a finite-state machine. | [Java](https://github.com/pravega/pravega-samples/tree/master/scenarios/anomaly-detection/src/main/java/io/pravega/anomalydetection)
 
 
 # Build Instructions
@@ -118,7 +123,7 @@ scripts. The above gradle command automatically creates the execution scripts th
 under:
 
 ```
-pravega-samples/standalone-examples/build/install/pravega-standalone-examples/bin
+pravega-samples/pravega-client-examples/build/install/pravega-client-examples/bin
 ```
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
@@ -126,11 +131,11 @@ There is a Linux/Mac script and a Windows (.bat) script for each separate execut
 # Proposed Roadmap
 
 We propose a roadmap to proceed with the execution of examples based on their complexity:
-1. [Pravega examples](https://github.com/pravega/pravega-samples/tree/master/standalone-examples): 
+1. [Pravega examples](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples): 
 First step to understand the basics of Pravega and exercise the concepts presented in the documentation. 
-2. [Flink-connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-examples): 
+2. [Flink-connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples): 
 These examples show the basic functionality of the Flink connector for Pravega.
-3. [Hadoop-connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-examples): 
+3. [Hadoop-connector examples](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples): 
 These examples show the basic functionality of the Hadoop connector for Pravega.
 4. [Scenarios](https://github.com/pravega/pravega-samples/tree/master/scenarios): Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
 between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.

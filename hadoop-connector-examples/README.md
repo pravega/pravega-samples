@@ -68,7 +68,7 @@ Additionally, you can run WordCount program (more will be coming soon) on top of
    ./HiBench/bin/workloads/micro/wordcount/hadoop/run.sh
 
 4. check report
-   file:///<full_path_of_pravega-samples>/hadoop-examples/HiBench/report/wordcount/hadoop/monitor.html
+   file:///<full_path_of_pravega-samples>/hadoop-connector-examples/HiBench/report/wordcount/hadoop/monitor.html
 ```
 
 
