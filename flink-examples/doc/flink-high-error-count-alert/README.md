@@ -15,11 +15,11 @@ Otherwise proceed to set up Logstash and Pravega
 
 ## Start Logstash with Pravega Output Plugin ##
 
-On the Logstash host, download the plugin gem file from [Logstash Pravega output plugin](https://github.com/pravega/logstash-output-pravega/releases), for example, `logstash-output-pravega-0.2.0.gem`.
+On the Logstash host, download the plugin gem file from [Logstash Pravega output plugin](https://github.com/pravega/logstash-output-pravega/releases), for example, `logstash-output-pravega-0.3.0.gem`.
 
 Install the plugin, assuming Logstash is installed at `/usr/share/logstash/`
 ```
-$ /usr/share/logstash/bin/logstash-plugin install logstash-output-pravega-0.2.0.gem
+$ /usr/share/logstash/bin/logstash-plugin install logstash-output-pravega-0.3.0.gem
 ```
 
 Copy the contents under flink-examples/doc/flink-high-error-count-alert/filters/ to the Logstash host, e.g., in directory ~/pravega.
@@ -59,21 +59,39 @@ Run script below to start container from prebuilt image. Adjust parameters to yo
 #!/bin/sh
 set -u
 
-PRAVEGA_SCOPE=myscope
-PRAVEGA_STREAM=apacheaccess
+PRAVEGA_SCOPE=${PRAVEGA_SCOPE:examples}
+PRAVEGA_STREAM=${PRAVEGA_STREAM:apacheaccess}
 CONTAINER_NAME=pravega
 IMAGE_NAME=emccorp/pravega-demo
 
 docker run -d --name $CONTAINER_NAME \
     -p 9090:9090 \
     -p 9091:9091 \
+    -p 9600:9600 \
     -v /tmp/access.log:/opt/data/access.log \
-    -v /tmp/logs/:/var/log/pravega/ \
-    -e PRAVEGA_ENDPOINT=${PRAVEGA_ENDPOINT} \
+    -v $PWD/logs/:/var/log/pravega/ \
     -e PRAVEGA_SCOPE=${PRAVEGA_SCOPE} \
     -e PRAVEGA_STREAM=${PRAVEGA_STREAM} \
     ${IMAGE_NAME} 
 ```
+
+You can skip **PRAVEGA_SCOPE** and **PRAVEGA_STREAM** if you want to use the defaults.
+
+To check Pravega
+```
+$ curl localhost:9091/v1/scopes
+```
+
+To check Logstash and output plugin for Pravega via Logstash monitoring API running on port 9600. Logstash may take one or two minutes to start as a delay is introduced to wait for Pravega to start.
+```
+# The output should contain the name and the version (your version may differ) of the plugin  
+#    "name" : "logstash-output-pravega",
+#    "version" : "0.3.0.pre.SNAPSHOT"
+
+$ curl localhost:9600/_node/plugins?pretty
+```
+
+The log files for Pravega and Logstash should be in the **logs** directory under current directory if you the script above to start the container.
 
 More details can be found on github [pravega docker](https://github.com/hldnova/pravega-docker) and on dockerhub [pravega docker image](https://hub.docker.com/r/emccorp/pravega-demo/) 
 
