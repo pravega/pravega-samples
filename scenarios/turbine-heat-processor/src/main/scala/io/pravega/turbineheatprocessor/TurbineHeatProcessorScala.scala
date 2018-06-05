@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.example.flink.turbineheatprocessor
+package io.pravega.turbineheatprocessor
 
 import io.pravega.connectors.flink.util.FlinkPravegaParams
 import org.apache.flink.api.java.utils.ParameterTool

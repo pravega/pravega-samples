@@ -1,4 +1,4 @@
-package io.pravega.example.flink.turbineheatprocessor;
+package io.pravega.turbineheatprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.util.FlinkPravegaParams;

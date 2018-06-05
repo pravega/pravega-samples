@@ -1,4 +1,4 @@
-package io.pravega.example.flink.turbineheatprocessor;
+package io.pravega.turbineheatprocessor;
 
 public class SensorAggregate {
     private long startTime;
