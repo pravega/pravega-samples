@@ -18,11 +18,6 @@ repositories {
     mavenCentral()
 }
 
-ext {
-    connectorVersion = '0.2.1'
-    flinkVersion = '1.4.0'
-}
-
 apply plugin: "java"
 apply plugin: "distribution"
 apply plugin: 'application'
@@ -35,7 +30,7 @@ archivesBaseName = 'pravega-flink-scenario-anomaly-detection'
 
 dependencies {
     compile "org.slf4j:slf4j-log4j12:1.7.14"
-    compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
+    compile "io.pravega:pravega-connectors-flink_2.11:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-connector-elasticsearch5_2.11:${flinkVersion}"
 }

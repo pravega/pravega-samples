@@ -17,7 +17,7 @@ apply plugin: "distribution"
 
 sourceCompatibility = 1.8
 archivesBaseName = 'pravega-hadoop-examples'
-version = connectorVersion
+version = hadoopConnectorVersion
 
 repositories {
     mavenLocal()
