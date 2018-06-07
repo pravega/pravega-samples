@@ -54,18 +54,23 @@ Please, find the related documentation and instructions [here](https://github.co
 
 # Build Instructions
 
+
+The `pravega-samples` project is prepared for working with [release artifacts](https://github.com/pravega/pravega/releases) of Pravega components, 
+which are already available in Maven central. Moreover, you also have the option to configure `pravega-samples`
+to work with `master` snapshots artifacts published in our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/).
+You can easily do this by specifying the desired artifact version (`pravegaVersion`, `flinkConnectorVersion`,
+`hadoopConnectorVersion`) in the `gradle.properties` file. Thus, if you look for a quick start 
+you may skip the _optional_ sections; otherwise, if you want to have fun building the different projects from source,
+please read the next sections. 
+
+
 ## Pre-requisites
 
 * Java 8+
 
 ## Pravega Build Instructions (Optional)
 
-For [release builds](https://github.com/pravega/pravega/releases) of Pravega, 
-the artifacts will already be in Maven Central and you will not need to run this step. 
-In this sense, you also have the option to download the Pravega `master` snapshots published 
-in our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/).
-
-Conversely, if you want to build Pravega from source, you may need to generate the 
+If you want to build Pravega from source, you may need to generate the 
 latest Pravega `jar` files and install them to your local Maven repository. 
 To this end, please run the following commands:
 
@@ -76,14 +81,15 @@ $ ./gradlew install
 ```
 
 The above command should generate the required `jar` files into your local Maven repository.
-For more information, please visit [Pravega](https://github.com/pravega/pravega). 
 
 > Hint: If you use a different version of Pravega, please check the `pravegaVersion` property 
 in `gradle.properties` file.
 
-## Flink Connector Build Instructions
+For more information, please visit [Pravega](https://github.com/pravega/pravega).
 
-To execute Flink connector examples, follow the below steps to build and publish artifacts from 
+## Flink Connector Build Instructions (Optional)
+
+To build the Flink connector from source, follow the below steps to build and publish artifacts from 
 source to local Maven repository:
 
 ```
@@ -92,11 +98,14 @@ $ cd flink-connectors
 $ ./gradlew clean install
 ```
 
+> Hint: If you use a different version of Flink connector, please check the `flinkConnectorVersion` property 
+in `gradle.properties` file.
+
 For more information, please visit [Flink Connectors](https://github.com/pravega/flink-connectors). 
 
-## Hadoop Connector Build Instructions
+## Hadoop Connector Build Instructions (Optional)
 
-To execute Hadoop connector examples, follow the below steps to build and publish artifacts from 
+To build the Hadoop connector from source, follow the below steps to build and publish artifacts from 
 source to local Maven repository:
 
 ```
@@ -104,6 +113,9 @@ $ git clone --recurse-submodules https://github.com/pravega/hadoop-connectors.gi
 $ cd hadoop-connectors
 $ gradle install
 ```
+
+> Hint: If you use a different version of Hadoop connector, please check the `hadoopConnectorVersion` property 
+in `gradle.properties` file.
 
 For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
 
