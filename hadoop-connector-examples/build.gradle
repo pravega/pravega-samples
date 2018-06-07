@@ -31,11 +31,12 @@ repositories {
         mavenCentral()
         maven { url "https://repository.apache.org/snapshots" }
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+        maven { url "https://oss.jfrog.org/artifactory/jfrog-dependencies" }
     }
 }
 
 dependencies {
-    compile     "io.pravega:hadoop-connectors:${connectorVersion}"
+    compile     "io.pravega:pravega-connectors-hadoop:${hadoopConnectorVersion}"
     compileOnly "org.apache.hadoop:hadoop-common:${hadoopVersion}"
     compileOnly "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
     compileOnly "org.apache.spark:spark-core_2.11:${sparkVersion}"
