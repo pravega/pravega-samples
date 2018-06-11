@@ -48,8 +48,7 @@ import io.pravega.client.stream.impl.JavaSerializer;
 public class ConsoleWriter implements AutoCloseable {
     private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
     private static final long DEFAULT_TXN_MAX_EXECUTION_TIME_MS = 30000L;
-    private static final long DEFAULT_TXN_SCALE_GRACE_PERIOD_MS = 30000L;
-    
+
     private static final long DEFAULT_PING_LEASE_MS = 30000L;
     
     private static final String[] HELP_TEXT = {
@@ -423,7 +422,6 @@ public class ConsoleWriter implements AutoCloseable {
                     new JavaSerializer<String>(),
                     EventWriterConfig.builder()
                             .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                            .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
                             .build());
 
             ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);

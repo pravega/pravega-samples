@@ -39,7 +39,6 @@ import java.net.URI;
 public class ExactlyOnceWriter {
     private static final long checkpointIntervalMillis = 100;
     private static final Time txnTimeoutMillis = Time.milliseconds(30 * 1000);
-    private static final Time txnGracePeriodMillis = Time.milliseconds(30 * 1000);
     private static final int defaultNumEvents = 50;
 
     // read data from the time when the program starts
@@ -83,7 +82,6 @@ public class ExactlyOnceWriter {
                 .forStream(stream)
                 .withEventRouter( new EventRouter())
                 .withTxnTimeout(txnTimeoutMillis)
-                .withTxnGracePeriod(txnGracePeriodMillis)
                 .withWriterMode( exactlyOnce ? PravegaWriterMode.EXACTLY_ONCE : PravegaWriterMode.ATLEAST_ONCE )
                 .withSerializationSchema(PravegaSerialization.serializationFor(IntegerEvent.class))
                 .build();

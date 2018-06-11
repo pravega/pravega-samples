@@ -55,7 +55,6 @@ public class TurbineHeatSensor {
     private static int reportingInterval = 200;
 
     private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
-    private static final long DEFAULT_TXN_SCALE_GRACE_PERIOD_MS = 30000L;
 
 
     public static void main(String[] args) throws Exception {
@@ -303,7 +302,6 @@ public class TurbineHeatSensor {
 
             EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
                     .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                    .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
                     .build();
             this.producer = clientFactory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
 
