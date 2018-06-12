@@ -14,12 +14,12 @@ developer guide](http://pravega.io).
 This repository is divided into sub-projects (`pravega-client-examples`, `flink-connector-examples`
 and `hadoop-connector-examples`) addressed to demonstrate a specific component. In these sub-projects, 
 we provide a battery of simple code examples aimed at demonstrating how a particular 
-feature or API works. Moreover, we also include a `scenarios` sub-project that contains 
-more complex applications, which show use-cases exploiting one or multiple components.
+feature or API works. Moreover, we also include a `scenarios` folder that contains 
+more complex applications as sub-projects, which show use-cases exploiting one or multiple components.
 
 > Hint: Have a look to the [terminology and concepts](http://pravega.io/docs/latest/terminology/) in Pravega.
 
-## Pravega Examples
+## Pravega Client Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `gettingstarted` | Simple example of how to read/write from/to a Pravega `Stream`. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/gettingstarted)
@@ -82,8 +82,8 @@ $ ./gradlew install
 
 The above command should generate the required `jar` files into your local Maven repository.
 
-> Hint: If you use a different version of Pravega, please check the `pravegaVersion` property 
-in `gradle.properties` file.
+> Hint: If you are using a different version of Pravega, you need to update the `pravegaVersion=<your_version>` property in 
+`gradle.properties`.
 
 For more information, please visit [Pravega](https://github.com/pravega/pravega).
 
@@ -98,8 +98,8 @@ $ cd flink-connectors
 $ ./gradlew clean install
 ```
 
-> Hint: If you use a different version of Flink connector, please check the `flinkConnectorVersion` property 
-in `gradle.properties` file.
+> Hint: If you are using a different version of Flink connector, you need to update the `flinkConnectorVersion=<your_version>` 
+property in `gradle.properties` file.
 
 For more information, please visit [Flink Connectors](https://github.com/pravega/flink-connectors). 
 
@@ -114,8 +114,8 @@ $ cd hadoop-connectors
 $ gradle install
 ```
 
-> Hint: If you use a different version of Hadoop connector, please check the `hadoopConnectorVersion` property 
-in `gradle.properties` file.
+> Hint: If you are using a different version of Hadoop connector, you need to update the `hadoopConnectorVersion=<your_version>` 
+property in `gradle.properties` file.
 
 For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
 
@@ -143,7 +143,7 @@ There is a Linux/Mac script and a Windows (.bat) script for each separate execut
 # Proposed Roadmap
 
 We propose a roadmap to proceed with the execution of examples based on their complexity:
-1. [Pravega examples](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples): 
+1. [Pravega client examples](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples): 
 First step to understand the basics of Pravega and exercise the concepts presented in the documentation. 
 2. [Flink connector examples](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples): 
 These examples show the basic functionality of the Flink connector for Pravega.

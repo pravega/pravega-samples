@@ -37,7 +37,7 @@ $ cat ~/.gradle/gradle.properties
 dcosAddress=10.240.124.164
 ```
 
-Then, upload the samples to the cluster.  They'll be copied to `/home/centos` on the target node.
+Then, upload the samples to the cluster. They will be copied to `/home/centos` on the target node.
 ```
 $ ./gradlew upload
 ```
@@ -50,7 +50,7 @@ $ ./gradlew upload
 
 This example consists of two applications, a `WordCountWriter` that reads data from a 
 network stream, transforms the data, and writes the data to a Pravega stream; and a
-`WordCountReader` that reads from a Pravega stream and prints the word counts summary.
+`WordCountReader` that reads from a Pravega stream and prints the summary of word count.
 
 The application reads text from a socket, once every 5 seconds prints the distinct words and 
 counts from the previous 5 seconds, and writes the word counts to a Pravega stream and prints 
