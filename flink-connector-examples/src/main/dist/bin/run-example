@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-flink run -c io.pravega.example.flink.turbineheatprocessor.TurbineHeatProcessor lib/pravega-flink-examples-0.1.0-SNAPSHOT-all.jar $*
