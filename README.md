@@ -93,7 +93,7 @@ source to local Maven repository:
 ```
 $ git clone --recursive https://github.com/pravega/flink-connectors.git
 $ cd flink-connectors
-$ ./gradlew clean install
+$ ./gradlew install
 ```
 
 > Hint: For using in the sample applications the Flink connector version you just built, you need to update the 
@@ -111,7 +111,7 @@ source to local Maven repository:
 ```
 $ git clone --recurse-submodules https://github.com/pravega/hadoop-connectors.git
 $ cd hadoop-connectors
-$ gradle install
+$ ./gradlew install
 ```
 
 > Hint: For using in the sample applications the Hadoop connector version you just built, you need to update the 
@@ -120,6 +120,24 @@ of `pravega-samples`.
 
 
 For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
+
+### Configuring Pravega Samples for Running with Source Builds
+
+In the previous instructions, we noted that you will need to change the `gradle.properties` file in
+`pravega-samples` for using the Pravega components built from source. Here we provide an example of how to do so:
+
+1) Imagine that we want to build Pravega from source. Let us assume that we 
+executed `git clone https://github.com/pravega/pravega.git` and the last commit of 
+`master` branch is `299019360xxx`. 
+
+2) After executing `./gradlew install`, we will see in our local Maven repository 
+(e.g., `~/.m2/repository/io/pravega/*`) artifacts that contain in their names that commit version 
+such as `0.3.0-1889.2990193-SNAPSHOT`. These artifacts are the result from building Pravega from source. 
+
+3) The only thing you have to do is to set `pravegaVersion=0.3.0-1889.2990193-SNAPSHOT` in the `gradle.properties`
+file of `pravega-samples` (including sub-projects within the `scenarios` folder).
+
+While this example is for Pravega, the same procedure applies for Flink and Hadoop connectors.
 
 
 ## Pravega Samples Build Instructions
