@@ -28,21 +28,21 @@ more complex applications as sub-projects, which show use-cases exploiting one o
 | `statesynchronizer` | Application that allows users to work with `StateSynchronizer` API via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/statesynchronizer)
 | `streamcuts` | Application examples demonstrating the use of `StreamCut`s via CLI. | [Java](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples/src/main/java/io/pravega/example/streamcuts) 
 
-Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples).
+The related documentation and instructions are [here](https://github.com/pravega/pravega-samples/tree/master/pravega-client-examples).
 
 ## Flink Connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples/src/main/java/io/pravega/example/flink/wordcount)
 
-Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples).
+The related documentation and instructions are [here](https://github.com/pravega/pravega-samples/tree/master/flink-connector-examples).
 
 ## Hadoop Connector Examples
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
 
-Please, find the related documentation and instructions [here](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples).
+The related documentation and instructions are [here](https://github.com/pravega/pravega-samples/tree/master/hadoop-connector-examples).
 
 ## Scenarios
 | Example Name   | Description  | Language |
@@ -54,25 +54,22 @@ Please, find the related documentation and instructions [here](https://github.co
 
 # Build Instructions
 
-
-The `pravega-samples` project is prepared for working with [release artifacts](https://github.com/pravega/pravega/releases) of Pravega components, 
-which are already available in Maven central. Moreover, you also have the option to configure `pravega-samples`
-to work with `master` snapshots artifacts published in our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/).
-You can easily do this by specifying the desired artifact version (`pravegaVersion`, `flinkConnectorVersion`,
-`hadoopConnectorVersion`) in the `gradle.properties` file. Thus, if you look for a quick start 
-you may skip the _optional_ sections; otherwise, if you want to have fun building the different projects from source,
-please read the next sections. 
-
+Next, we provide instructions for building the `pravega-samples` repository. There are two main options: 
+- _Out-of-the-box_: If you want a quick start, run the samples by building `pravega-samples` out-of-the-box
+(go straight to section `Pravega Samples Build Instructions`). 
+- _Build from source_: If you want to have fun building the different projects from source, please read
+section `Building Pravega Components from Source (Optional)` before building `pravega-samples`. 
 
 ## Pre-requisites
 
-* Java 8+
+* Java 8
 
-## Pravega Build Instructions (Optional)
+## Building Pravega Components from Source (Optional)
 
-If you want to build Pravega from source, you may need to generate the 
-latest Pravega `jar` files and install them to your local Maven repository. 
-To this end, please run the following commands:
+### Pravega Build Instructions 
+
+If you want to build Pravega from source, you may need to generate the latest Pravega `jar` files and install them to 
+your local Maven repository. To build Pravega from sources and use it here, please run the following commands:
 
 ```
 $ git clone https://github.com/pravega/pravega.git
@@ -82,12 +79,13 @@ $ ./gradlew install
 
 The above command should generate the required `jar` files into your local Maven repository.
 
-> Hint: If you are using a different version of Pravega, you need to update the `pravegaVersion=<your_version>` property in 
-`gradle.properties`.
+> Hint: For using in the sample applications the Pravega version you just built, you need to update the 
+`pravegaVersion=<local_maven_pravega_version>` property in `gradle.properties` file 
+of `pravega-samples`.
 
 For more information, please visit [Pravega](https://github.com/pravega/pravega).
 
-## Flink Connector Build Instructions (Optional)
+### Flink Connector Build Instructions
 
 To build the Flink connector from source, follow the below steps to build and publish artifacts from 
 source to local Maven repository:
@@ -98,12 +96,14 @@ $ cd flink-connectors
 $ ./gradlew clean install
 ```
 
-> Hint: If you are using a different version of Flink connector, you need to update the `flinkConnectorVersion=<your_version>` 
-property in `gradle.properties` file.
+> Hint: For using in the sample applications the Flink connector version you just built, you need to update the 
+`flinkConnectorVersion=<local_maven_flink_connector_version>` property in `gradle.properties` file 
+of `pravega-samples`.
+
 
 For more information, please visit [Flink Connectors](https://github.com/pravega/flink-connectors). 
 
-## Hadoop Connector Build Instructions (Optional)
+### Hadoop Connector Build Instructions
 
 To build the Hadoop connector from source, follow the below steps to build and publish artifacts from 
 source to local Maven repository:
@@ -114,31 +114,48 @@ $ cd hadoop-connectors
 $ gradle install
 ```
 
-> Hint: If you are using a different version of Hadoop connector, you need to update the `hadoopConnectorVersion=<your_version>` 
-property in `gradle.properties` file.
+> Hint: For using in the sample applications the Hadoop connector version you just built, you need to update the 
+`hadoopConnectorVersion=<local_maven_hadoop_connector_version>` property in `gradle.properties` file 
+of `pravega-samples`.
+
 
 For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
 
+
 ## Pravega Samples Build Instructions
 
-Finally, we need to build the code of the examples. Note that the `master` branch points to release 
-artifacts of Pravega and connectors, whereas the `develop` branch works with snapshot artifacts.
-To build `pravega-samples` from source, use the built-in gradle wrapper as follows:
+The `pravega-samples` project is prepared for working out-of-the-box with 
+[release artifacts](https://github.com/pravega/pravega/releases) of Pravega components, which are already 
+available in Maven central. To build `pravega-samples` from source, use the built-in gradle wrapper as follows:
 
 ```
 $ git clone https://github.com/pravega/pravega-samples.git
 $ cd pravega-samples
 $ ./gradlew clean installDist
 ```
-To ease their execution, most examples can be run either using the gradle wrapper (gradlew) or 
-scripts. The above gradle command automatically creates the execution scripts that can be found
-under:
+That's it! You are good to go and execute the examples :) 
+
+To ease their execution, most examples can be run either using the gradle wrapper (gradlew) or scripts. 
+The above gradle command automatically creates the execution scripts that can be found under:
 
 ```
 pravega-samples/pravega-client-examples/build/install/pravega-client-examples/bin
 ```
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
+
+_Working with `develop` branch_: If you are curious about the most recent sample applications, 
+you may like to try the `develop` version of `pravega-samples` as well. To do so, just clone the 
+`develop` branch instead of `master` (default): 
+
+```
+$ git clone -b develop https://github.com/pravega/pravega-samples.git
+```
+
+The `develop` branch works with Pravega snapshots artifacts published in 
+our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/) instead of 
+using release versions.
+
 
 # Proposed Roadmap
 
@@ -166,8 +183,4 @@ Do you want to contribute a new example application?
 * Follow the [guidelines for contributors](https://github.com/pravega/pravega/wiki/Contributing).
 
 Have fun!!
-
-
-
-
 

@@ -91,6 +91,8 @@ All args are optional, if not included, the defaults are:
  An example of a simple reader that continually reads the contents of any `Stream`. A binary serializer is used so it 
  works against any event types. The sample emits basic information about number of events/bytes read every 30 seconds. 
  
+### Execution
+
  ```
  $ bin/noopReader [--uri tcp://127.0.0.1:9090] [--stream <SCOPE>/<STREAM>]
  ```
@@ -115,10 +117,10 @@ the same settings and observe how changes in one CLI process are not visible in 
 process until that other CLI process invokes `REFRESH`.
 
 ## `streamcuts`
-This application aims at demonstrating the use of `StreamCut`s four bounded processing
+This application aims at demonstrating the use of `StreamCut`s for bounded processing
 on multiple `Stream`s. At the moment, the application contains two examples accessible via
 command line interface: i) Simple example: The user decides which `Stream` slices s/he wants 
-to read from all the st`Stream`reams by specifying indexes, and the application prints these slices 
+to read from all the `Stream`s by specifying indexes, and the application prints these slices 
 using `ReaderGroupConfig` methods for bounded processing. ii) Time series example: `Stream`s are 
 filled with events that are supposed to belong to a certain day with a given value: "_day1:5_". 
 There is a variable number of events per day in each `Stream`. The user selects a day number, 
