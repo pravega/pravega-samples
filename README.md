@@ -150,6 +150,8 @@ you may like to try the `develop` version of `pravega-samples` as well. To do so
 
 ```
 $ git clone -b develop https://github.com/pravega/pravega-samples.git
+$ cd pravega-samples
+$ ./gradlew clean installDist
 ```
 
 The `develop` branch works with Pravega snapshots artifacts published in 
