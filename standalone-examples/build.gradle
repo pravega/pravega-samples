@@ -131,6 +131,22 @@ task startNoopReader(type: JavaExec) {
     }
 }
 
+task scriptStreamCutsCli(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.streamcuts.StreamCutsCli'
+    applicationName = 'streamCutsCli'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startStreamCutsCli(type: JavaExec) {
+    main = "io.pravega.example.streamcuts.StreamCutsCli"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -143,6 +159,7 @@ distributions {
                 from project.scriptConsoleReader
                 from project.scriptSharedConfigCli
                 from project.scriptNoopReader
+                from project.scriptStreamCutsCli
             }
             into('lib') {
                 from(jar)
