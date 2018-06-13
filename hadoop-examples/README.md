@@ -7,40 +7,25 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 -->
+# Hadoop Connector Examples for Pravega
+Code examples toe give you some basic ideas how to use hadoop-connectors for Pravega.
 
-# hadoop-connectors examples
-Examples of Hadoop Connectors for Pravega.
+## Pre-requisites
+1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
+2. Build [hadoop-connectors](https://github.com/pravega/hadoop-connectors) repository
+3. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
+4. Apache Hadoop running
 
-Description
------------
-These examples give you some basic ideas how to use hadoop-connectors for pravega.
-
-Build
--------
-(Most of these steps will be removed when GAed)
-### build hadoop connectors
-```
-git clone --recurse-submodules https://github.com/pravega/hadoop-connectors.git
-cd hadoop-connectors
-gradle install
-
-# start pravega whose version matches hadoop-connectors
-cd pravega
-./gradlew startStandalone
-```
-
-## build hadoop connectors examples
-```
-open another terminal and goto ~/pravega-samples
-cd hadoop-examples
-gradle build
-```
-
-Run Examples on Local Machine
 ---
 
+# Examples Catalog
+
+## Word Count
 
 Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
+
+### Execution
+
 ```
 1. setup and start hdfs
 
