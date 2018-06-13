@@ -49,7 +49,7 @@ $ ./gradlew upload
 
 This example demonstrates how to use the Pravega Flink Connectors to write data collected
 from an external network stream into a Pravega `Stream` and read the data from the Pravega `Stream`.
-_See [wordcount](doc/flink-wordcount/README.md) for more information and execution instructions_.
+See [wordcount](doc/flink-wordcount/README.md) for more information and execution instructions.
 
 
 ## Exactly Once Sample
