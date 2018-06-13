@@ -8,9 +8,8 @@ Automatically creates a scope (default: `examples`) and stream (default: `turbin
 
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
-2. Build [flink-connectors](https://github.com/pravega/flink-connectors) repository
-3. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-4. Apache Flink running
+2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
+3. Apache Flink running
 
 
 ## Execution

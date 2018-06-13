@@ -12,9 +12,8 @@ Code examples toe give you some basic ideas how to use hadoop-connectors for Pra
 
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
-2. Build [hadoop-connectors](https://github.com/pravega/hadoop-connectors) repository
-3. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-4. Apache Hadoop running
+2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
+3. Apache Hadoop running
 
 ---
 
