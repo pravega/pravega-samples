@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
+
+apply plugin: 'java'
+apply plugin: 'distribution'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.8
+archivesBaseName = 'pravega-client-scenario-turbineheatsensor'
+
+resources
+
+dependencies {
+    testCompile "junit:junit:${junitVersion}"
+
+    compile "io.pravega:pravega-client:${pravegaVersion}",
+            "io.pravega:pravega-common:${pravegaVersion}",
+            "commons-cli:commons-cli:${commonsCLIVersion}"
+
+    compile "org.slf4j:slf4j-api:1.7.14"
+    compile "ch.qos.logback:logback-classic:1.1.7"
+}
+
+task scriptTurbineSensor(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.turbineheatsensor.TurbineHeatSensor'
+    applicationName = 'turbineSensor'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startTurbineSensor(type: JavaExec) {
+    main = "io.pravega.turbineheatsensor.TurbineHeatSensor"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('bin') {
+                from project.scriptTurbineSensor
+            }
+            into('lib') {
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/resources/logback.xml'))
+            }
+        }
+    }
+}

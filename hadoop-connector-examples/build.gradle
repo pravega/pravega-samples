@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
+}
+
+apply plugin: "java"
+apply plugin: "distribution"
+
+sourceCompatibility = 1.8
+archivesBaseName = 'pravega-hadoop-examples'
+version = hadoopConnectorVersion
+
+repositories {
+    mavenLocal()
+    if (findProperty("repositoryUrl")) {
+        maven {
+            url findProperty("repositoryUrl")
+        }
+    }
+    else {
+        jcenter()
+        mavenCentral()
+        maven { url "https://repository.apache.org/snapshots" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+        maven { url "https://oss.jfrog.org/artifactory/jfrog-dependencies" }
+    }
+}
+
+dependencies {
+    compile     "io.pravega:pravega-connectors-hadoop:${hadoopConnectorVersion}"
+    compileOnly "org.apache.hadoop:hadoop-common:${hadoopVersion}"
+    compileOnly "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
+    compileOnly "org.apache.spark:spark-core_2.11:${sparkVersion}"
+}
+
+shadowJar {
+    version = version
+    dependencies {
+        include dependency("io.pravega:hadoop-connectors")
+    }
+    manifest {
+        attributes(
+                'Main-Class': 'io.pravega.example.hadoop.wordcount.ExampleDriver',
+        )
+    }
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+            }
+        }
+    }
+}
+
+task cleanHiBench(type: Delete) {
+    delete 'HiBench'
+}
+
+task fetchHiBench (type: Exec) {
+    commandLine "git", "clone", "https://github.com/intel-hadoop/HiBench"
+}
+
+task buildHiBench (dependsOn: fetchHiBench, type: Exec) {
+    workingDir 'HiBench'
+    commandLine "mvn", "-Dspark=2.1", "-Dscala=2.11", "clean", "package"
+}
+
+task genHiBenchConfig (dependsOn: buildHiBench, type: Copy) {
+    from 'HiBench/conf'
+    into 'HiBench/conf'
+    include 'hadoop.conf.template'
+    rename('hadoop.conf.template', 'hadoop.conf')
+
+    doLast {
+        def file = new File('./HiBench/conf/hadoop.conf')
+        def newConfig = file.text
+                .replace('/PATH/TO/YOUR/HADOOP/ROOT', System.getenv("HADOOP_HOME"))
+                .replace('hdfs://localhost:8020', System.getenv("HDFS"))
+        file.text = newConfig
+    }
+}
+
+task wcHiBench (dependsOn: genHiBenchConfig) {
+    doLast {
+        def file = new File('./HiBench/conf/workloads/micro/wordcount.conf')
+        def newConfig = file.text.replace('hibench.workload.input', '#hibench.workload.input')
+        file.text = newConfig
+    }
+}
