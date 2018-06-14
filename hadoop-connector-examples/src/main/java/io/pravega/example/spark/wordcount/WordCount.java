@@ -8,11 +8,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package io.pravega.example.spark;
+package io.pravega.example.spark.wordcount;
 
 import io.pravega.connectors.hadoop.EventKey;
 import io.pravega.connectors.hadoop.PravegaInputFormat;
-import io.pravega.example.hadoop.TextSerializer;
+import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.GenericOptionsParser;
