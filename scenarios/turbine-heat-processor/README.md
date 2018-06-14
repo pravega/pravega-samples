@@ -19,7 +19,7 @@ $ bin/run-example [--controller <URI>] [--input <scope>/<stream>] [--startTime <
 ```
 
 Alternately, run the sample from the Flink UI.
-- JAR: `pravega-flink-examples-0.1.0-SNAPSHOT-all.jar`
+- JAR: `pravega-flink-examples-<VERSION>-all.jar`
 - Main class: `io.pravega.turbineheatprocessor.TurbineHeatProcessor` or `io.pravega.turbineheatprocessor.TurbineHeatProcessorScala`
 
 ## Outputs

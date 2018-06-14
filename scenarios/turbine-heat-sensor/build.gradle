@@ -19,6 +19,11 @@ archivesBaseName = 'pravega-client-scenario-turbineheatsensor'
 
 resources
 
+ext {
+    junitVersion = '4.11'
+    commonsCLIVersion = '1.4'
+}
+
 dependencies {
     testCompile "junit:junit:${junitVersion}"
 

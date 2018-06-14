@@ -39,3 +39,27 @@ shadowJar {
         include dependency("io.pravega:pravega-connectors-flink_2.11")
     }
 }
+
+task scriptTrubineHeatProcessor(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.turbineheatprocessor.TurbineHeatProcessor'
+    applicationName = 'turbineHeatProcessor'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('bin') {
+                from project.scriptTrubineHeatProcessor
+            }
+        }
+    }
+}

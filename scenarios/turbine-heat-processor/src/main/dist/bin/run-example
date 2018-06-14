@@ -9,4 +9,4 @@
 #
 #!/usr/bin/env bash
 
-flink run -c io.pravega.turbineheatprocessor.TurbineHeatProcessor lib/pravega-flink-examples-0.1.0-SNAPSHOT-all.jar $*
+flink run -c io.pravega.turbineheatprocessor.TurbineHeatProcessor lib/pravega-flink-scenario-turbineheatprocessor-0.3.0-SNAPSHOT-all.jar $*
