@@ -136,7 +136,7 @@ executed `git clone https://github.com/pravega/pravega.git` and the last commit 
 such as `0.3.0-1889.2990193-SNAPSHOT`. These artifacts are the result from building Pravega from source. 
 
 3) The only thing you have to do is to set `pravegaVersion=0.3.0-1889.2990193-SNAPSHOT` in the `gradle.properties`
-file of `pravega-samples` (including sub-projects within the `scenarios` folder).
+file of `pravega-samples`.
 
 While this example is for Pravega, the same procedure applies for Flink and Hadoop connectors.
 
