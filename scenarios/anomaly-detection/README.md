@@ -109,7 +109,7 @@ $ bin/anomaly-detection --configDir conf/ --mode 3
 
 - To run on a cluster:
 ```
-$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-anomaly-detection-0.1.0-SNAPSHOT-all.jar --configDir conf/ --mode 3
+$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-scenario-anomaly-detection-0.1.0-SNAPSHOT-all.jar --configDir conf/ --mode 3
 ```
 
 _Ensure that `$FLINK_HOME/bin` is on your path to use the `flink` command shown above._
