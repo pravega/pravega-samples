@@ -242,7 +242,6 @@ public class ConsoleReader implements Closeable {
             do {
                 event = reader.readNextEvent(1000);
                 if (event.getEvent() != null) {
-                    // TODO: Problem finding logback.xml in Pravega example applications (Issue #87).
                     output("[StreamCut read from/up to] Read event: %s%n", event.getEvent());
                     log.info("[StreamCut read from/up to] Read event: {}.", event.getEvent());
                 }
@@ -368,7 +367,6 @@ class BackgroundReader implements Closeable, Runnable {
             do {
                 event = reader.readNextEvent(READER_TIMEOUT_MS);
                 if (event.getEvent() != null) {
-                    // TODO: Problem finding logback.xml in Pravega example applications (Issue #87).
                     System.out.println("[BackgroundReader] Read event: " + event.getEvent());
                     log.info("[BackgroundReader] Read event: {}.", event.getEvent());
                 }
