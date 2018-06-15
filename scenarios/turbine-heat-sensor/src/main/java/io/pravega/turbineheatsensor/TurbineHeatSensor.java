@@ -303,7 +303,7 @@ public class TurbineHeatSensor {
             EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
                     .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
                     .build();
-            this.producer = clientFactory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
+            this.producer = factory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
 
         }
 
