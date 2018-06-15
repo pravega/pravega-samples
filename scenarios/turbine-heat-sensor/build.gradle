@@ -39,7 +39,7 @@ task scriptTurbineSensor(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.turbineheatsensor.TurbineHeatSensor'
     applicationName = 'turbineSensor'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 

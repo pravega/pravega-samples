@@ -41,7 +41,7 @@ task scriptHelloWorldWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.gettingstarted.HelloWorldWriter'
     applicationName = 'helloWorldWriter'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -49,7 +49,7 @@ task scriptHelloWorldReader(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.gettingstarted.HelloWorldReader'
     applicationName = 'helloWorldReader'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -73,7 +73,7 @@ task scriptConsoleWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.consolerw.ConsoleWriter'
     applicationName = 'consoleWriter'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -81,7 +81,7 @@ task scriptConsoleReader(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.consolerw.ConsoleReader'
     applicationName = 'consoleReader'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -97,7 +97,7 @@ task scriptSharedConfigCli(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.statesynchronizer.SharedConfigCli'
     applicationName = 'sharedConfigCli'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -105,7 +105,7 @@ task scriptNoopReader(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.noop.NoopReader'
     applicationName = 'noopReader'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -121,7 +121,7 @@ task scriptStreamCutsCli(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.streamcuts.StreamCutsCli'
     applicationName = 'streamCutsCli'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    defaultJvmOpts = ["-Dlogback.configurationFile=conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
