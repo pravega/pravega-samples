@@ -8,7 +8,13 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *   
  */
-include 'standalone-examples'
-include 'flink-examples'
-include 'hadoop-examples'
-include 'anomaly-detection'
+// Build examples
+include 'pravega-client-examples'
+include 'flink-connector-examples'
+include 'hadoop-connector-examples'
+
+// Build scenarios
+include 'scenarios/turbine-heat-sensor'
+include 'scenarios/turbine-heat-processor'
+include 'scenarios/anomaly-detection'
+
