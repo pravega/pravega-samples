@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
+}
+
+apply plugin: "java"
+apply plugin: "scala"
+apply plugin: "distribution"
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+sourceCompatibility = "1.8"
+archivesBaseName = 'pravega-flink-scenario-turbineheatprocessor'
+
+ext {
+    scalaJava8CompatVersion = '0.7.0'
+}
+
+dependencies {
+    compile "org.scala-lang.modules:scala-java8-compat_2.11:${scalaJava8CompatVersion}"
+    compile "io.pravega:pravega-connectors-flink_2.11:${flinkConnectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
+    compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
+    compile "org.slf4j:slf4j-log4j12:1.7.14"
+}
+
+shadowJar {
+    dependencies {
+        include dependency("org.scala-lang.modules:scala-java8-compat_2.11")
+        include dependency("io.pravega:pravega-connectors-flink_2.11")
+    }
+}
+
+task scriptTrubineHeatProcessor(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.turbineheatprocessor.TurbineHeatProcessor'
+    applicationName = 'turbineHeatProcessor'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('bin') {
+                from project.scriptTrubineHeatProcessor
+            }
+        }
+    }
+}
