@@ -142,6 +142,7 @@ public class TurbineHeatSensor {
         if ( !onlyWrite ) {
             consumeStats.printTotal();
         }
+        clientFactory.close();
 //        ZipKinTracer.getTracer().close();
         System.exit(0);
     }
@@ -292,6 +293,7 @@ public class TurbineHeatSensor {
         private final int eventsPerSec;
         private final int secondsToRun;
         private final boolean isTransaction;
+        private final ClientFactory factory;
 
         TemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean isTransaction,
                            ClientFactory factory) {
@@ -299,6 +301,7 @@ public class TurbineHeatSensor {
             this.eventsPerSec = eventsPerSec;
             this.secondsToRun = secondsToRun;
             this.isTransaction = isTransaction;
+            this.factory = factory;
 
             EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
                     .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
@@ -386,6 +389,7 @@ public class TurbineHeatSensor {
             } catch (InterruptedException | ExecutionException e ) {
                 e.printStackTrace();
             }
+            factory.close();
         }
 
         @Override
