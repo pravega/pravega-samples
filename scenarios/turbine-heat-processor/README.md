@@ -1,7 +1,7 @@
 # Turbine Heat Processor
 A Flink streaming application for processing temperature data from a Pravega `Stream`. 
 Complements the Turbine Heat Sensor app 
-([`turbineheatsensor`](https://github.com/pravega/pravega-samples/scenarios/turbine-heat-sensor)). 
+([`turbineheatsensor`](../turbine-heat-sensor)). 
 The application computes a daily summary of the temperature range observed on that day by each sensor.
 
 Automatically creates a scope (default: `examples`) and stream (default: `turbineHeatTest`) as necessary.
