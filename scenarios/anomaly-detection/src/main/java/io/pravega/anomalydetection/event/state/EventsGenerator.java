@@ -5,17 +5,18 @@
  */
 package io.pravega.anomalydetection.event.state;
 
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.api.java.tuple.Tuple2;
 
+@Slf4j
 public class EventsGenerator {
-
-	private static final Logger LOG = LoggerFactory.getLogger(EventsGenerator.class);
 
 	//private double errorProb = 0.0000001;
 
@@ -84,7 +85,7 @@ public class EventsGenerator {
 				Event.EventType event = currentState.randomInvalidTransition(rnd);
 				String networkId = getNetworkId();
 				returnEvent = new Event(address, event, getCurrentTime(), networkId,getLatLon(networkId));
-				LOG.info("**** Emitting invalid event: [{}], ", returnEvent);
+				log.info("**** Emitting invalid event: [{}], ", returnEvent);
 			}
 			else {
 				Tuple2<Event.EventType, EventStateMachine.State> stateTransitionTuple = currentState.randomTransition(rnd);

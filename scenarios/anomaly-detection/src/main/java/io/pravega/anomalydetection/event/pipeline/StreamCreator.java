@@ -16,11 +16,10 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.connectors.flink.PravegaConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StreamCreator extends AbstractPipeline {
-	private static final Logger LOG = LoggerFactory.getLogger(StreamCreator.class);
 
 	public StreamCreator(AppConfiguration appConfiguration, PravegaConfig pravegaConfig, Stream stream) {
 		super(appConfiguration, pravegaConfig, stream);
@@ -40,6 +39,6 @@ public class StreamCreator extends AbstractPipeline {
 			streamManager.createStream(stream.getScope(), stream.getStreamName(), streamConfig);
 		}
 
-		LOG.info("Successfully created stream: {}", streamId);
+		log.info("Successfully created stream: {}", streamId);
 	}
 }
