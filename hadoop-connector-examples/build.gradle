@@ -17,7 +17,6 @@ apply plugin: "distribution"
 
 sourceCompatibility = 1.8
 archivesBaseName = 'pravega-hadoop-examples'
-version = hadoopConnectorVersion
 
 repositories {
     mavenLocal()
@@ -45,7 +44,7 @@ dependencies {
 shadowJar {
     version = version
     dependencies {
-        include dependency("io.pravega:hadoop-connectors")
+        include dependency("io.pravega:pravega-connectors-hadoop")
     }
     manifest {
         attributes(
