@@ -10,5 +10,4 @@
  */
 include 'standalone-examples'
 include 'flink-examples'
-include 'hadoop-examples'
 include 'anomaly-detection'

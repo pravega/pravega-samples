@@ -34,9 +34,6 @@ subprojects {
         maven {
             url "https://oss.sonatype.org/content/repositories/snapshots"
         }
-        maven {
-            url "https://oss.jfrog.org/artifactory/jfrog-dependencies"
-        }
     }
     
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
