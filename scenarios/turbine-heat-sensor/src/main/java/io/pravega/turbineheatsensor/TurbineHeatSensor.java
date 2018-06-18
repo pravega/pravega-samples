@@ -438,13 +438,16 @@ public class TurbineHeatSensor {
                 do {
                     try {
                         final EventRead<String> result = reader.readNextEvent(0);
-                        produceStats.runAndRecordTime(() -> {
-                            return CompletableFuture.completedFuture(null);
-                        }, Long.parseLong(result.getEvent().split(",")[0]), 100);
+                        if (result.getEvent() != null) {
+                            consumeStats.runAndRecordTime(() -> {
+                                return CompletableFuture.completedFuture(null);
+                            }, Long.parseLong(result.getEvent().split(",")[0]), 100);
+                            totalEvents--;
+                        }
                     } catch (ReinitializationRequiredException e) {
                         e.printStackTrace();
                     }
-                } while ( totalEvents-- > 0 );
+                } while (totalEvents > 0);
             }
             finally {
                 reader.close();
