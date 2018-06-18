@@ -96,6 +96,10 @@ depending on the configuration:
 1. Automatically, with some probability (as configured by `errorProbFactor`)
 2. Manually, by pressing ENTER on the console (if  `controlledEnv` is `true`)
 
+> Hint: To run the application on Flink, set the property `controlledEnv: false` in `app.json` configuration file 
+(as there is no user input). Moreover, the input parameter `--configDir` should contain the absolute path of the 
+configuration directory.
+
 ### Run the Anomaly Detector
 The anomaly detector is another Flink program. The program groups events by 
 source IP address, and maintains a state machine for each address as described above.
