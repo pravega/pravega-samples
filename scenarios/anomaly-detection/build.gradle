@@ -13,12 +13,12 @@ plugins {
 }
 
 apply plugin: "java"
+apply plugin: "scala"
 apply plugin: "distribution"
-apply plugin: 'application'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 sourceCompatibility = "1.8"
-mainClassName = "io.pravega.anomalydetection.ApplicationMain"
-applicationDefaultJvmArgs = ["-Dlog4j.configuration=conf/log4j.properties"]
 
 archivesBaseName = 'pravega-flink-scenario-anomaly-detection'
 
@@ -105,25 +105,19 @@ distributions {
     main {
         baseName = archivesBaseName
         contents {
+            into('bin') {
+                from project.scriptAnomalyDetection
+            }
             into('lib') {
                 from shadowJar
                 from(project.configurations.shadow)
-            }
-            into('bin') {
-                from project.scriptAnomalyDetection
+                from(jar)
+                from(project.configurations.runtime)
             }
             into('conf') {
                 from(project.file('src/main/resources/logback.xml'))
                 from(project.file('src/main/resources/app.json'))
             }
         }
-    }
-}
-
-run {
-    standardInput = System.in
-
-    if (project.hasProperty("argsList")) {
-        args(argsList.split(' '))
     }
 }
