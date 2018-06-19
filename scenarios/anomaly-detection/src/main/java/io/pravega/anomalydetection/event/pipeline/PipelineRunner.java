@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
 
 public class PipelineRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(PipelineRunner.class);
+	private static final Logger log = LoggerFactory.getLogger(PipelineRunner.class);
 
-    public static final String STREAM_PARAMETER = "stream";
+	public static final String STREAM_PARAMETER = "stream";
 	public static final String DEFAULT_SCOPE = "examples";
 	public static final String DEFAULT_STREAM = "NetworkPacket";
 

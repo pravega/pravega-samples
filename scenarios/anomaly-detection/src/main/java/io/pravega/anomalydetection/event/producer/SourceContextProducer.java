@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
 
 public class SourceContextProducer extends RichParallelSourceFunction<Event> {
 
-    private static final Logger log = LoggerFactory.getLogger(SourceContextProducer.class);
+	private static final Logger log = LoggerFactory.getLogger(SourceContextProducer.class);
 
-    private int count = 0;
+	private int count = 0;
 	private boolean running = true;
 	private final long latency;
 	private final int capacity;
