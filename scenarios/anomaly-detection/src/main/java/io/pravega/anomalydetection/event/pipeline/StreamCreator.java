@@ -16,10 +16,12 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.connectors.flink.PravegaConfig;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class StreamCreator extends AbstractPipeline {
+
+	private static final Logger log = LoggerFactory.getLogger(StreamCreator.class);
 
 	public StreamCreator(AppConfiguration appConfiguration, PravegaConfig pravegaConfig, Stream stream) {
 		super(appConfiguration, pravegaConfig, stream);

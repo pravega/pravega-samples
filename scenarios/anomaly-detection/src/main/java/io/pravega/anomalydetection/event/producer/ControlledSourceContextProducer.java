@@ -14,14 +14,16 @@ import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.anomalydetection.event.state.EventsGenerator;
 import java.util.Optional;
 import java.util.Scanner;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An interactive event producer that produces valid and invalid events based on user input.
  */
-@Slf4j
 public class ControlledSourceContextProducer extends RichParallelSourceFunction<Event> {
+
+	private static final Logger log = LoggerFactory.getLogger(ControlledSourceContextProducer.class);
 
 	private boolean running = true;
 	private final int capacity;

@@ -11,10 +11,12 @@
 package io.pravega.anomalydetection;
 
 import io.pravega.anomalydetection.event.pipeline.PipelineRunner;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class ApplicationMain {
+
+	private static final Logger log = LoggerFactory.getLogger(ApplicationMain.class);
 
 	public static void main(String[] args) {
 		log.info("Starting Application Main...");

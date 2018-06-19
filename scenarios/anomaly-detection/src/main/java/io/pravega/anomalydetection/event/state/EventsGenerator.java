@@ -12,11 +12,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class EventsGenerator {
+
+	private static final Logger log = LoggerFactory.getLogger(EventsGenerator.class);
 
 	//private double errorProb = 0.0000001;
 

@@ -19,13 +19,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class PipelineRunner {
 
-	public static final String STREAM_PARAMETER = "stream";
+    private static final Logger log = LoggerFactory.getLogger(PipelineRunner.class);
+
+    public static final String STREAM_PARAMETER = "stream";
 	public static final String DEFAULT_SCOPE = "examples";
 	public static final String DEFAULT_STREAM = "NetworkPacket";
 
