@@ -83,8 +83,8 @@ public class TurbineHeatSensor {
         // Initialize executor
         ExecutorService executor = Executors.newFixedThreadPool(producerCount + 10);
 
-		URI controllerUri;
-		ClientFactory clientFactory;
+        URI controllerUri;
+        ClientFactory clientFactory;
         try {
             controllerUri = new URI(TurbineHeatSensor.controllerUri);
             clientFactory = ClientFactory.withScope(scopeName, controllerUri);
@@ -115,20 +115,20 @@ public class TurbineHeatSensor {
         /* Create producerCount number of threads to simulate sensors. */
         Instant startEventTime = Instant.EPOCH.plus(8, ChronoUnit.HOURS); // sunrise
 
-		for (int i = 0; i < producerCount; i++) {
-			double baseTemperature = locations[i % locations.length].length() * 10;
-			TemperatureSensor sensor =
-					new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
-			TemperatureSensors worker;
-			if (isTransaction) {
-				worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
-						isTransaction, clientFactory);
-			} else {
-				worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
-						isTransaction, clientFactory);
-			}
-			executor.execute(worker);
-		}
+	    for (int i = 0; i < producerCount; i++) {
+	    	double baseTemperature = locations[i % locations.length].length() * 10;
+	    	TemperatureSensor sensor =
+				    new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
+	    	TemperatureSensors worker;
+	    	if (isTransaction) {
+	    		worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
+					    isTransaction, clientFactory);
+	    	} else {
+	    		worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
+					    isTransaction, clientFactory);
+	    	}
+	    	executor.execute(worker);
+	    }
 
         executor.shutdown();
         // Wait until all threads are finished.
@@ -422,7 +422,7 @@ public class TurbineHeatSensor {
     private static class SensorReader implements Runnable {
 
         private final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
-		final EventStreamReader<String> reader;
+        final EventStreamReader<String> reader;
         private int totalEvents;
 
         public SensorReader(int totalEvents, ClientFactory clientFactory) {
