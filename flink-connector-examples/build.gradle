@@ -92,6 +92,7 @@ distributions {
                 from project.scriptWordCountReader
                 from project.scriptExactlyOnceWriter
                 from project.scriptExactlyOnceChecker
+                from project.scriptOurboros
             }
         }
     }
