@@ -8,8 +8,7 @@ system for Apache Flink.
 3. Apache Flink running
 
 
-### Distributing Flink Samples
-#### Assemble
+## Distributing Flink Samples
 Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy 
 uber-jar called `pravega-flink-examples-<VERSION>-all.jar`:
 
@@ -23,22 +22,7 @@ flink-connector-examples/build/install/pravega-flink-examples/bin:
 run-example
 
 flink-connector-examples/build/install/pravega-flink-examples/lib:
-pravega-flink-examples-<VERSION>-all.jar
-```
-
-#### Upload
-The `upload` task makes it easy to upload the sample binaries to your cluster. First, configure 
-Gradle with the address of a node in your cluster.   Edit `~/.gradle/gradle.properties` to 
-specify a value for `dcosAddress`.
-
-```
-$ cat ~/.gradle/gradle.properties
-dcosAddress=10.240.124.164
-```
-
-Then, upload the samples to the cluster. They will be copied to `/home/centos` on the target node.
-```
-$ ./gradlew upload
+pravega-flink-examples-VERSION-all.jar
 ```
 
 ---
