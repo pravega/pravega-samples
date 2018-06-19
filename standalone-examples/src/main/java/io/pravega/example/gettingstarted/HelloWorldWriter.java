@@ -54,8 +54,8 @@ public class HelloWorldWriter {
 
         try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
              EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                                                                                new JavaSerializer<>(),
-                                                                                EventWriterConfig.builder().build())) {
+                                                                                 new JavaSerializer<String>(),
+                                                                                 EventWriterConfig.builder().build())) {
             
             System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
