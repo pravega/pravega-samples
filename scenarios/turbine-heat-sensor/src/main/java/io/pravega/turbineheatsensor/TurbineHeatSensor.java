@@ -114,21 +114,20 @@ public class TurbineHeatSensor {
         }
         /* Create producerCount number of threads to simulate sensors. */
         Instant startEventTime = Instant.EPOCH.plus(8, ChronoUnit.HOURS); // sunrise
-
-	    for (int i = 0; i < producerCount; i++) {
-		    double baseTemperature = locations[i % locations.length].length() * 10;
-		    TemperatureSensor sensor =
-				    new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
-		    TemperatureSensors worker;
-		    if (isTransaction) {
-			    worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
-					    isTransaction, clientFactory);
-		    } else {
-			    worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
-					    isTransaction, clientFactory);
-		    }
-		    executor.execute(worker);
-	    }
+        for (int i = 0; i < producerCount; i++) {
+            double baseTemperature = locations[i % locations.length].length() * 10;
+            TemperatureSensor sensor =
+                    new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
+            TemperatureSensors worker;
+            if ( isTransaction ) {
+                worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
+                        isTransaction, clientFactory);
+            } else {
+                worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
+                        isTransaction, clientFactory);
+            }
+            executor.execute(worker);
+        }
 
         executor.shutdown();
         // Wait until all threads are finished.
