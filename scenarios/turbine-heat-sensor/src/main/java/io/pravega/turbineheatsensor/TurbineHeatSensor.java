@@ -38,7 +38,6 @@ public class TurbineHeatSensor {
     private static String streamName = DEFAULT_STREAM_NAME;
     private static String scopeName = DEFAULT_SCOPE_NAME;
 
-    private static ClientFactory clientFactory;
     private static StreamManager streamManager;
     private static ReaderGroupManager readerGroupManager;
 
@@ -84,8 +83,10 @@ public class TurbineHeatSensor {
         // Initialize executor
         ExecutorService executor = Executors.newFixedThreadPool(producerCount + 10);
 
+		URI controllerUri;
+		ClientFactory clientFactory;
         try {
-            URI controllerUri = new URI(TurbineHeatSensor.controllerUri);
+            controllerUri = new URI(TurbineHeatSensor.controllerUri);
             clientFactory = ClientFactory.withScope(scopeName, controllerUri);
             streamManager = StreamManager.create(controllerUri);
             readerGroupManager = ReaderGroupManager.withScope(scopeName, controllerUri);
@@ -108,29 +109,26 @@ public class TurbineHeatSensor {
 
         if ( !onlyWrite ) {
             consumeStats = new PerfStats(producerCount * eventsPerSec * runtimeSec, reportingInterval, messageSize);
-            SensorReader reader = new SensorReader(producerCount * eventsPerSec * runtimeSec);
+            SensorReader reader = new SensorReader(producerCount * eventsPerSec * runtimeSec, clientFactory);
             executor.execute(reader);
         }
         /* Create producerCount number of threads to simulate sensors. */
         Instant startEventTime = Instant.EPOCH.plus(8, ChronoUnit.HOURS); // sunrise
-        for (int i = 0; i < producerCount; i++) {
-            URI controllerUri = new URI(TurbineHeatSensor.controllerUri);
-            ClientFactory factory = ClientFactory.withScope(scopeName, controllerUri);
 
-            double baseTemperature = locations[i % locations.length].length() * 10;
-            TemperatureSensor sensor =
-                    new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
-            TemperatureSensors worker;
-            if ( isTransaction ) {
-                worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
-                        isTransaction, factory);
-            } else {
-                worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
-                        isTransaction, factory);
-            }
-            executor.execute(worker);
-
-        }
+		for (int i = 0; i < producerCount; i++) {
+			double baseTemperature = locations[i % locations.length].length() * 10;
+			TemperatureSensor sensor =
+					new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
+			TemperatureSensors worker;
+			if (isTransaction) {
+				worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
+						isTransaction, clientFactory);
+			} else {
+				worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
+						isTransaction, clientFactory);
+			}
+			executor.execute(worker);
+		}
 
         executor.shutdown();
         // Wait until all threads are finished.
@@ -293,7 +291,6 @@ public class TurbineHeatSensor {
         private final int eventsPerSec;
         private final int secondsToRun;
         private final boolean isTransaction;
-        private final ClientFactory factory;
 
         TemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean isTransaction,
                            ClientFactory factory) {
@@ -301,7 +298,6 @@ public class TurbineHeatSensor {
             this.eventsPerSec = eventsPerSec;
             this.secondsToRun = secondsToRun;
             this.isTransaction = isTransaction;
-            this.factory = factory;
 
             EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
                     .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
@@ -388,7 +384,6 @@ public class TurbineHeatSensor {
             } catch (InterruptedException | ExecutionException e ) {
                 e.printStackTrace();
             }
-            factory.close();
         }
 
         @Override
@@ -427,16 +422,16 @@ public class TurbineHeatSensor {
     private static class SensorReader implements Runnable {
 
         private final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
-
+		final EventStreamReader<String> reader;
         private int totalEvents;
 
-        public SensorReader(int totalEvents) {
-            this.totalEvents = totalEvents;
+        public SensorReader(int totalEvents, ClientFactory clientFactory) {
+        	this.totalEvents = totalEvents;
+        	reader = createReader(clientFactory);
         }
 
         @Override
         public void run() {
-            EventStreamReader<String> reader = createReader();
             try {
                 do {
                     try {
@@ -457,7 +452,7 @@ public class TurbineHeatSensor {
             }
         }
 
-        public EventStreamReader<String> createReader() {
+        public EventStreamReader<String> createReader(ClientFactory clientFactory) {
             String readerName = "Reader";
 
             //reusing a reader group name doesn't work (probably because the sequence is already consumed)
@@ -471,6 +466,4 @@ public class TurbineHeatSensor {
             return clientFactory.createReader(readerName, readerGroup, SERIALIZER, readerConfig);
         }
     }
-
-
 }
