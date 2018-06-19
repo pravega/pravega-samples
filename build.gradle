@@ -43,21 +43,4 @@ subprojects {
         group "io.pravega"
         version samplesVersion
     }
-
-    remotes {
-        dcos {
-            host = dcosAddress
-            user = 'centos'
-            agent = true
-        }
-    }
-    ssh.settings {
-        knownHosts = allowAnyHosts
-    }
-
-    afterEvaluate {
-        task upload(type: Exec, dependsOn: installDist) {
-            commandLine 'rsync', '-az', project.installDist.destinationDir, "${remotes.dcos.user}@${remotes.dcos.host}:~"
-        }
-    }
 }

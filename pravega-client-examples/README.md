@@ -6,6 +6,11 @@ Set of example applications to demonstrate the features and APIs of Pravega as w
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build `pravega-samples` repository
 
+Please note that after building `pravega-samples`, all the executables used here are located in:
+```
+pravega-samples/pravega-client-examples/build/install/pravega-client-examples
+```
+
 ---
 
 # Examples Catalog
