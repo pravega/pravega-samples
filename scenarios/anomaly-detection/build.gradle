@@ -113,8 +113,8 @@ distributions {
                 from(project.configurations.runtime)
             }
             into('conf') {
-                from(project.file('src/main/resources/logback.xml'))
-                from(project.file('src/main/resources/app.json'))
+                from(project.file('src/main/dist/conf/logback.xml'))
+                from(project.file('src/main/dist/conf/app.json'))
             }
         }
     }
