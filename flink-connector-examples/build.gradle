@@ -55,6 +55,14 @@ task scriptWordCountReader(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+
+task scriptFlinkAlerter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.examples.flink.alert.HighCountAlerter'
+    applicationName = 'highCountAlerter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 task scriptExactlyOnceWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.flink.primer.process.ExactlyOnceWriter'
@@ -89,6 +97,7 @@ distributions {
             into('bin') {
                 from project.scriptWordCountWriter
                 from project.scriptWordCountReader
+                from project.scriptFlinkAlerter
                 from project.scriptExactlyOnceWriter
                 from project.scriptExactlyOnceChecker
                 from project.scriptHighCountAlerter
