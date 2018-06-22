@@ -31,6 +31,7 @@ dependencies {
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
     compile "org.slf4j:slf4j-log4j12:1.7.25"
+    compile "org.apache.flink:flink-cep_2.11:${flinkVersion}"
 }
 
 shadowJar {
@@ -68,6 +69,13 @@ task scriptExactlyOnceChecker(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+task scriptHighCountAlerter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.primer.process.HighCountAlerter'
+    applicationName = 'highCountAlerter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -83,6 +91,7 @@ distributions {
                 from project.scriptWordCountReader
                 from project.scriptExactlyOnceWriter
                 from project.scriptExactlyOnceChecker
+                from project.scriptHighCountAlerter
             }
         }
     }
