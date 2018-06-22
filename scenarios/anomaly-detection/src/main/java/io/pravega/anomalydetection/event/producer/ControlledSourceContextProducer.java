@@ -12,19 +12,18 @@ package io.pravega.anomalydetection.event.producer;
 
 import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.anomalydetection.event.state.EventsGenerator;
+import java.util.Optional;
+import java.util.Scanner;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.Scanner;
 
 /**
  * An interactive event producer that produces valid and invalid events based on user input.
  */
 public class ControlledSourceContextProducer extends RichParallelSourceFunction<Event> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ControlledSourceContextProducer.class);
+	private static final Logger log = LoggerFactory.getLogger(ControlledSourceContextProducer.class);
 
 	private boolean running = true;
 	private final int capacity;
@@ -68,7 +67,7 @@ public class ControlledSourceContextProducer extends RichParallelSourceFunction<
 			Thread.sleep(latency);
 		}
 		t.join();
-		LOG.info("Exiting EventPublisher thread...");
+		log.info("Exiting EventPublisher thread...");
 	}
 
 	@Override
@@ -108,7 +107,7 @@ public class ControlledSourceContextProducer extends RichParallelSourceFunction<
 
 			while(true) {
 				sc.next();
-				LOG.info("scheduled an invalid event");
+				log.info("scheduled an invalid event");
 				publisher.setInjectErrorRecord(true);
 			}
 		}

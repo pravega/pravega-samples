@@ -20,7 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StreamCreator extends AbstractPipeline {
-	private static final Logger LOG = LoggerFactory.getLogger(StreamCreator.class);
+
+	private static final Logger log = LoggerFactory.getLogger(StreamCreator.class);
 
 	public StreamCreator(AppConfiguration appConfiguration, PravegaConfig pravegaConfig, Stream stream) {
 		super(appConfiguration, pravegaConfig, stream);
@@ -40,6 +41,6 @@ public class StreamCreator extends AbstractPipeline {
 			streamManager.createStream(stream.getScope(), stream.getStreamName(), streamConfig);
 		}
 
-		LOG.info("Successfully created stream: {}", streamId);
+		log.info("Successfully created stream: {}", streamId);
 	}
 }
