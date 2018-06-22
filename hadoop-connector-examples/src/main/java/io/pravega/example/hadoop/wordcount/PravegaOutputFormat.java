@@ -52,7 +52,6 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
 
     private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
     private static final long DEFAULT_TXN_MAX_EXECUTION_TIME_MS = 30000L;
-    private static final long DEFAULT_TXN_SCALE_GRACE_PERIOD_MS = 30000L;
     private static final long DEFAULT_PING_LEASE_MS = 30000L;
 
     // client factory
@@ -100,7 +99,6 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
 
         EventStreamWriter<V> writer = clientFactory.createEventWriter(streamName, deserializer, EventWriterConfig.builder()
                 .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                .transactionTimeoutScaleGracePeriod(DEFAULT_TXN_SCALE_GRACE_PERIOD_MS)
                 .build());
 
         return new PravegaOutputRecordWriter<V>(writer);
