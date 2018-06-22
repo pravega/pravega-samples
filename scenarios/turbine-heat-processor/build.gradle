@@ -9,7 +9,7 @@
  *
  */
 plugins {
-    id 'com.github.johnrengelman.shadow' version '2.0.3'
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
 apply plugin: "java"
@@ -19,7 +19,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 sourceCompatibility = "1.8"
-archivesBaseName = 'pravega-flink-examples'
+archivesBaseName = 'pravega-flink-scenario-turbineheatprocessor'
 
 ext {
     scalaJava8CompatVersion = '0.7.0'
@@ -27,12 +27,10 @@ ext {
 
 dependencies {
     compile "org.scala-lang.modules:scala-java8-compat_2.11:${scalaJava8CompatVersion}"
-    compile "io.pravega:pravega-connectors-flink_2.11:${connectorVersion}"
+    compile "io.pravega:pravega-connectors-flink_2.11:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
-    compile "org.slf4j:slf4j-log4j12:1.7.25"
-    compile "org.apache.flink:flink-cep_2.11:${flinkVersion}"
-    compile "joda-time:joda-time:2.9.+"
+    compile "org.slf4j:slf4j-log4j12:1.7.14"
 }
 
 shadowJar {
@@ -42,39 +40,10 @@ shadowJar {
     }
 }
 
-task scriptWordCountWriter(type: CreateStartScripts) {
+task scriptTrubineHeatProcessor(type: CreateStartScripts) {
     outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountWriter'
-    applicationName = 'wordCountWriter'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task scriptWordCountReader(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.examples.flink.wordcount.WordCountReader'
-    applicationName = 'wordCountReader'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-
-task scriptFlinkAlerter(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.examples.flink.alert.HighCountAlerter'
-    applicationName = 'highCountAlerter'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task scriptExactlyOnceWriter(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.examples.flink.primer.process.ExactlyOnceWriter'
-    applicationName = 'exactlyOnceWriter'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task scriptExactlyOnceChecker(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.examples.flink.primer.process.ExactlyOnceChecker'
-    applicationName = 'exactlyOnceChecker'
+    mainClassName = 'io.pravega.turbineheatprocessor.TurbineHeatProcessor'
+    applicationName = 'turbineHeatProcessor'
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -89,11 +58,7 @@ distributions {
                 from(project.configurations.runtime)
             }
             into('bin') {
-                from project.scriptWordCountWriter
-                from project.scriptWordCountReader
-                from project.scriptFlinkAlerter
-                from project.scriptExactlyOnceWriter
-                from project.scriptExactlyOnceChecker
+                from project.scriptTrubineHeatProcessor
             }
         }
     }
