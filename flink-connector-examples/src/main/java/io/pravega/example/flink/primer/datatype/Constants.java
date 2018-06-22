@@ -21,4 +21,9 @@ public class Constants {
     public static final String DEFAULT_STREAM = "mystream";
     public static final String Default_URI_PARAM = "controller";
     public static final String Default_URI = "tcp://localhost:9090";
+    public static final String USERNAME_PARAM = "username";
+    public static final String PASSWORD_PARAM = "password";
+    public static final Integer ALERT_THRESHOLD = 6;
+    public static final Integer ALERT_WINDOW = 30;
+    public static final Integer ALERT_INTERVAL = 2;
 }
