@@ -40,3 +40,10 @@ See [wordcount](doc/flink-wordcount/README.md) for more information and executio
 
 This sample demonstrates Pravega EXACTLY_ONCE feature in conjuction with Flink checkpointing and exactly-once mode.
 See [Exactly Once Sample](doc/exactly-once/README.md) for instructions.
+
+## High Error Count Alert
+
+This example demonstrates how to use the Pravega Flink connectors to read and 
+parse Apache access logs from logstash via the [logstash pravega output plugin](https://github.com/pravega/logstash-output-pravega),
+and how to generate alert when error count is high within a time frame. 
+See [High Count Alerter](doc/high-count-alerter/README.md) for instructions.
