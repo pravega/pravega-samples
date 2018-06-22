@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 public class SourceContextProducer extends RichParallelSourceFunction<Event> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SourceContextProducer.class);
+	private static final Logger log = LoggerFactory.getLogger(SourceContextProducer.class);
 
 	private int count = 0;
 	private boolean running = true;
@@ -47,11 +47,11 @@ public class SourceContextProducer extends RichParallelSourceFunction<Event> {
 			if(event != null) {
 				ctx.collect(event);
 				count += 1;
-				LOG.info("Emitting event: [{}], total count so far: [{}] ", event, count);
+				log.info("Emitting event: [{}], total count so far: [{}] ", event, count);
 			}
 			Thread.sleep(latency);
 		}
-		LOG.info("Exiting SourceContextProducer...");
+		log.info("Exiting SourceContextProducer...");
 	}
 
 	/**

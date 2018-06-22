@@ -12,27 +12,21 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
-repositories {
-    mavenLocal()
-    jcenter()
-    mavenCentral()
-}
-
 apply plugin: "java"
+apply plugin: "scala"
 apply plugin: "distribution"
-apply plugin: 'application'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 sourceCompatibility = "1.8"
-mainClassName = "io.pravega.anomalydetection.ApplicationMain"
-applicationDefaultJvmArgs = ["-Dlog4j.configuration=file:conf/log4j.properties"]
 
 archivesBaseName = 'pravega-flink-scenario-anomaly-detection'
 
 dependencies {
-    compile "org.slf4j:slf4j-log4j12:1.7.14"
     compile "io.pravega:pravega-connectors-flink_2.11:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-connector-elasticsearch5_2.11:${flinkVersion}"
+    compile "ch.qos.logback:logback-classic:1.1.7"
 }
 
 shadowJar {
@@ -97,23 +91,31 @@ shadowJar {
     }
 }
 
+task scriptAnomalyDetection(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.anomalydetection.ApplicationMain'
+    applicationName = 'anomaly-detection'
+    defaultJvmOpts = ["-Dlog4j.configuration=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
         contents {
+            into('bin') {
+                from project.scriptAnomalyDetection
+            }
             into('lib') {
                 from shadowJar
                 from(project.configurations.shadow)
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/dist/conf/logback.xml'))
+                from(project.file('src/main/dist/conf/app.json'))
             }
         }
     }
-}
-
-run {
-    standardInput = System.in
-
-    if (project.hasProperty("argsList")) {
-        args(argsList.split(' '))
-    }
-
 }
