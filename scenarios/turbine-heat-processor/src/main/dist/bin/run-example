@@ -7,18 +7,6 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-### dependencies
-pravegaVersion=0.3.0
-flinkConnectorVersion=0.3.0
+#!/usr/bin/env bash
 
-### Pravega-samples output library
-samplesVersion=0.3.0
-
-### Flink-connector examples
-flinkVersion=1.4.0
-
-#hadoop connector
-hadoopVersion=2.8.1
-scalaVersion=2.11.8
-sparkVersion=2.2.0
-hadoopConnectorVersion=0.3.0
+flink run -c io.pravega.turbineheatprocessor.TurbineHeatProcessor lib/pravega-flink-scenario-turbineheatprocessor-0.3.0-SNAPSHOT-all.jar $*
