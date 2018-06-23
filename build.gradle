@@ -34,27 +34,13 @@ subprojects {
         maven {
             url "https://oss.sonatype.org/content/repositories/snapshots"
         }
+        maven {
+            url "https://oss.jfrog.org/jfrog-dependencies"
+        }
     }
     
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
         group "io.pravega"
         version samplesVersion
-    }
-
-    remotes {
-        dcos {
-            host = dcosAddress
-            user = 'centos'
-            agent = true
-        }
-    }
-    ssh.settings {
-        knownHosts = allowAnyHosts
-    }
-
-    afterEvaluate {
-        task upload(type: Exec, dependsOn: installDist) {
-            commandLine 'rsync', '-az', project.installDist.destinationDir, "${remotes.dcos.user}@${remotes.dcos.host}:~"
-        }
     }
 }
