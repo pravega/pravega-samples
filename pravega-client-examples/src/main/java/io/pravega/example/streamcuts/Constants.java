@@ -8,13 +8,12 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *   
  */
-// Build examples
-include 'pravega-client-examples'
-include 'flink-connector-examples'
-include 'hadoop-connector-examples'
+package io.pravega.example.streamcuts;
 
-// Build scenarios
-include 'scenarios/turbine-heat-sensor'
-include 'scenarios/turbine-heat-processor'
-include 'scenarios/anomaly-detection'
-
+/**
+ * Defines a handful of constants shared by classes in this package.
+ */
+public class Constants {
+    static final String DEFAULT_SCOPE = "streamCutsExamples";
+    static final String DEFAULT_CONTROLLER_URI = "tcp://127.0.0.1:9090";
+}
