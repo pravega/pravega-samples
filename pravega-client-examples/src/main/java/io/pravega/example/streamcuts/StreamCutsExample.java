@@ -17,7 +17,6 @@ import io.pravega.client.admin.StreamManager;
 import io.pravega.client.batch.BatchClient;
 import io.pravega.client.batch.SegmentRange;
 import io.pravega.client.batch.StreamSegmentsIterator;
-import io.pravega.client.stream.Checkpoint;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.EventStreamWriter;
@@ -71,11 +70,10 @@ public class StreamCutsExample implements Closeable {
     }
 
     /**
-     * A {@link StreamCut} is a collection of offsets, one for each open segment of the {@link Stream}, which indicates
-     * an event boundary. With a {@link StreamCut}, users can instruct readers to read from and/or up to a particular
-     * event boundary (e.g., read events from 100 to 200, events created since Tuesday) on multiple {@link Stream}s. To
-     * this end, Pravega allows us to create {@link StreamCut}s while readers are processing a {@link Stream} (e.g., via
-     * a {@link Checkpoint}) that can be used in the future to bound the processing of a set of {@link Stream}s. In this
+     * A {@link StreamCut} is a collection of offsets, one for each open segment of a set of {@link Stream}s, which
+     * indicates an event boundary. With a {@link StreamCut}, users can instruct readers to read from and/or up to a
+     * particular event boundary (e.g., read events from 100 to 200, events created since Tuesday) on multiple
+     * {@link Stream}s. To this end, Pravega allows us to create {@link StreamCut}s while readers are reading. In this
      * method, we read create two {@link StreamCut}s for a {@link Stream} according to the initial and final event
      * indexes passed by parameter.
      *
@@ -104,15 +102,13 @@ public class StreamCutsExample implements Closeable {
                     new JavaSerializer<>(), ReaderConfig.builder().build());
 
             // Read streams and create the StreamCuts during the read process.
-            Checkpoint checkpoint;
             int eventIndex = 0;
             EventRead<String> event;
             do {
                 // Here is where we create a StreamCut that points to the event indicated by the user.
                 if (eventIndex == iniEventIndex || eventIndex == endEventIndex) {
                     reader.close();
-                    checkpoint = readerGroup.initiateCheckpoint(randomId + eventIndex, executor).join();
-                    streamCuts.add(checkpoint.asImpl().getPositions().values().iterator().next());
+                    streamCuts.add(readerGroup.getStreamCuts().get(Stream.of(scope, streamName)));
                     reader = clientFactory.createReader(randomId, readerGroup.getGroupName(),
                             new JavaSerializer<>(), ReaderConfig.builder().build());
                 }
