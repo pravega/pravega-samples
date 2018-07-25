@@ -28,6 +28,9 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Charsets;
 
 
@@ -40,6 +43,8 @@ import com.google.common.base.Charsets;
  *
  */
 public class WordCount {
+
+    private static final Logger log = LoggerFactory.getLogger(WordCount.class);
 
     public static class TokenizerMapper
             extends Mapper<Object, Text, Text, IntWritable> {
@@ -111,7 +116,7 @@ public class WordCount {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
         if (otherArgs.length < 5) {
-            System.err.println("Usage: wordcount <dummy_hdfs> <uri> <scope> <stream> <out> <optional start positions> <optional end positions>");
+            System.err.println("Usage: wordcount <dummy_hdfs> <uri> <scope> <stream> <out> <optional start stream cut> <optional end stream cut>");
             System.exit(2);
         }
 
@@ -151,7 +156,7 @@ public class WordCount {
         boolean result = job.waitForCompletion(true);
         readAndPrint(outputpath, conf);
 
-        System.out.printf("End positions of stream cut %s/%s: '%s'\n", scope, stream, endPos);
+        log.info("End positions of stream cut {}/{}: '{}'\n", scope, stream, endPos);
 
         System.exit(result ? 0 : 1);
     }

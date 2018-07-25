@@ -50,10 +50,10 @@ Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
       hadoop fs -rmr ${HADOOP_EXAMPLES_OUTPUT}
       hadoop jar ${HADOOP_EXAMPLES_JAR} ${CMD} ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${HADOOP_EXAMPLES_OUTPUT}
 
-   4.2 to only process events in the stream cut
+   4.2 to only process events in the stream cut (http://pravega.io/docs/latest/streamcuts/)
       // find last line of output of last command, and assign positions to env variable
       //   e.g.
-      //   End positions of stream cut myScope/myStream: '[[{"scope":"myScope","streamName":"myStream","segmentId":0},48025],[{"scope":"myScope","streamName":"myStream","segmentId":2},41564]]'
+      //   18/07/25 14:04:39 INFO wordcount.WordCount: End positions of stream cut myScope/myStream: '[[{"scope":"myScope","streamName":"myStream","segmentId":0},48025],[{"scope":"myScope","streamName":"myStream","segmentId":2},41564]]'
       export POSITIONS_1='[[{"scope":"myScope","streamName":"myStream","segmentId":0},48025],[{"scope":"myScope","streamName":"myStream","segmentId":2},41564]]'
 
       // generate new events in pravega
