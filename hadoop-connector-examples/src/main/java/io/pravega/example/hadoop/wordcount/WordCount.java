@@ -111,14 +111,28 @@ public class WordCount {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
         if (otherArgs.length < 5) {
-            System.err.println("Usage: wordcount <dummy_hdfs> <uri> <scope> <stream> <out>");
+            System.err.println("Usage: wordcount <dummy_hdfs> <uri> <scope> <stream> <out> <optional start positions> <optional end positions>");
             System.exit(2);
         }
 
-        conf.setStrings("pravega.uri", otherArgs[1]);
-        conf.setStrings("pravega.scope", otherArgs[2]);
-        conf.setStrings("pravega.stream", otherArgs[3]);
+        String uri = otherArgs[1], scope = otherArgs[2], stream = otherArgs[3], out = otherArgs[4];
+
+        conf.setStrings("pravega.uri", uri);
+        conf.setStrings("pravega.scope", scope);
+        conf.setStrings("pravega.stream", stream);
         conf.setStrings("pravega.deserializer", TextSerializer.class.getName());
+
+        if (otherArgs.length >= 6) {
+            conf.setStrings("pravega.startpositions", otherArgs[5]);
+        }
+
+        String endPos = "";
+        if (otherArgs.length >= 7) {
+            endPos = otherArgs[6];
+        } else {
+            endPos = PravegaInputFormat.fetchLatestPositionsJson(uri, scope, stream);
+        }
+        conf.setStrings("pravega.endpositions", endPos);
 
         Job job = Job.getInstance(conf, "word count");
         job.setJarByClass(WordCount.class);
@@ -131,11 +145,14 @@ public class WordCount {
         job.setInputFormatClass(PravegaInputFormat.class);
 
         FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-        Path outputpath = new Path(otherArgs[4]);
+        Path outputpath = new Path(out);
         FileOutputFormat.setOutputPath(job, outputpath);
 
         boolean result = job.waitForCompletion(true);
         readAndPrint(outputpath, conf);
+
+        System.out.printf("End positions of stream cut %s/%s: '%s'\n", scope, stream, endPos);
+
         System.exit(result ? 0 : 1);
     }
 }

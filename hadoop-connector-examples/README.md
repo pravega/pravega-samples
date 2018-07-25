@@ -26,7 +26,7 @@ Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
 ### Execution
 
 ```
-1. setup and start hdfs
+1. setup and start hdfs as well as pravega
 
 2. set env variables
    export HDFS=hdfs://<hdfs_ip_and_port> # e.g. hdfs://192.168.0.188:9000
@@ -38,15 +38,40 @@ Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
    export PRAVEGA_STREAM=<stream_name> # e.g. myStream
    export CMD=wordcount # so far, can also try wordmean and wordmedian
 
-3. make sure below dirs are empty
+3. make sure input dir is empty
    hadoop fs -rmr ${HADOOP_EXAMPLES_INPUT_DUMMY}
-   hadoop fs -rmr ${HADOOP_EXAMPLES_OUTPUT}
 
-4. generate words into pravega
-   hadoop jar ${HADOOP_EXAMPLES_JAR} randomtextwriter -D mapreduce.randomtextwriter.totalbytes=32000 ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}
+4. run hadoop commands
 
-5. run hadoop command
-   hadoop jar ${HADOOP_EXAMPLES_JAR} ${CMD} ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${HADOOP_EXAMPLES_OUTPUT}
+   4.1 to process all events in the stream
+      // generate new events in pravega
+      hadoop jar ${HADOOP_EXAMPLES_JAR} randomtextwriter -D mapreduce.randomtextwriter.totalbytes=32000 ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}
+
+      hadoop fs -rmr ${HADOOP_EXAMPLES_OUTPUT}
+      hadoop jar ${HADOOP_EXAMPLES_JAR} ${CMD} ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${HADOOP_EXAMPLES_OUTPUT}
+
+   4.2 to only process events in the stream cut
+      // find last line of output of last command, and assign positions to env variable
+      //   e.g.
+      //   End positions of stream cut myScope/myStream: '[[{"scope":"myScope","streamName":"myStream","segmentId":0},48025],[{"scope":"myScope","streamName":"myStream","segmentId":2},41564]]'
+      export POSITIONS_1='[[{"scope":"myScope","streamName":"myStream","segmentId":0},48025],[{"scope":"myScope","streamName":"myStream","segmentId":2},41564]]'
+
+      // generate new events in pravega
+      hadoop jar ${HADOOP_EXAMPLES_JAR} randomtextwriter -D mapreduce.randomtextwriter.totalbytes=32000 ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}
+
+      // process new generated events: (POSITIONS_1, latest]
+      hadoop fs -rmr ${HADOOP_EXAMPLES_OUTPUT}
+      hadoop jar ${HADOOP_EXAMPLES_JAR} ${CMD} ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${HADOOP_EXAMPLES_OUTPUT} ${POSITIONS_1}
+
+      // similarly get current end positions from last line
+      export POSITIONS_2='[[{"scope":"myScope","streamName":"myStream","segmentId":0},63774],[{"scope":"myScope","streamName":"myStream","segmentId":2},53121]]'
+
+      // generate new events in pravega
+      hadoop jar ${HADOOP_EXAMPLES_JAR} randomtextwriter -D mapreduce.randomtextwriter.totalbytes=32000 ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}
+
+      // process the events between two positions: (POSITIONS_1, POSITIONS_2]
+      hadoop fs -rmr ${HADOOP_EXAMPLES_OUTPUT}
+      hadoop jar ${HADOOP_EXAMPLES_JAR} ${CMD} ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${HADOOP_EXAMPLES_OUTPUT} ${POSITIONS_1} ${POSITIONS_2}
 ```
 
 
