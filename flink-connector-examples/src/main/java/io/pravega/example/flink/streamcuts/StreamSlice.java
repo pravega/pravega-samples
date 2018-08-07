@@ -13,6 +13,9 @@ package io.pravega.example.flink.streamcuts;
 import io.pravega.client.stream.StreamCut;
 import java.io.Serializable;
 
+/**
+ * Class that contains a pair of StreamCut objects representing a slice of a stream.
+ */
 public class StreamSlice implements Serializable {
 
     private StreamCut start;

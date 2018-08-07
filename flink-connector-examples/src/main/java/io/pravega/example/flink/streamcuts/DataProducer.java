@@ -20,9 +20,18 @@ import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class is intended to produce suitable events for illustrating the Bookmarking service sample application. In
+ * particular, the writer writes to the stream values corresponding to the result of Math.sin. This will help us to
+ * show the ability to create stream cuts that are related to specific values of the sin function.
+ */
 public class DataProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataProducer.class);
+
+    private static final int NUM_EVENTS = 1000;
+    private static final double EVENT_VALUE_INCREMENT = 0.01; // Should be < 1
+    private static final int WRITER_SLEEP_MS = 100;
 
     public static void main(String[] args) throws InterruptedException {
         // The writer will contact with the Pravega controller to get information about segments.
@@ -50,10 +59,10 @@ public class DataProducer {
             EventStreamWriter<Double> writer = clientFactory.createEventWriter(Constants.PRODUCER_STREAM,
                     new JavaSerializer<>(), EventWriterConfig.builder().build());
 
-            for (double i = 0; i < 10; i += 0.01) {
+            for (double i = 0; i < NUM_EVENTS * EVENT_VALUE_INCREMENT; i += EVENT_VALUE_INCREMENT) {
                 writer.writeEvent(Math.sin(i)).join();
                 LOG.warn("Writing event: {}.", Math.sin(i));
-                Thread.sleep(100);
+                Thread.sleep(WRITER_SLEEP_MS);
             }
 
             writer.close();

@@ -31,12 +31,17 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class is intended to read events from DataProducer and produce stream cuts that bookmark sections of the stream
+ * with events exhibiting values of interest (e.g., event value < 0). Such stream cuts will we written to another stream
+ * so that we can execute batch jobs on these stream slices.
+ */
 public class StreamBookmarker {
-
-    static final String READER_GROUP_NAME = "bookmarkerReaderGroup" + System.currentTimeMillis();
 
     // The writer will contact with the Pravega controller to get information about segments.
     static final URI pravegaControllerURI = URI.create("tcp://" + Constants.CONTROLLER_HOST + ":" + Constants.CONTROLLER_PORT);
+
+    static final String READER_GROUP_NAME = "bookmarkerReaderGroup" + System.currentTimeMillis();
 
     private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
 
@@ -53,7 +58,7 @@ public class StreamBookmarker {
                 .withPravegaConfig(pravegaConfig)
                 .forStream(inputStream)
                 .withReaderGroupName(READER_GROUP_NAME)
-                .withReaderGroupRefreshTime(Time.milliseconds(10))
+                .withReaderGroupRefreshTime(Time.milliseconds(100))
                 .withDeserializationSchema(PravegaSerialization.deserializationFor(Double.class))
                 .build();
 
@@ -81,31 +86,38 @@ public class StreamBookmarker {
     }
 }
 
-class Bookmarker extends ProcessFunction<Double, StreamSlice> {
+/**
+ * This class processes the events read from the Pravega stream. Moreover, it also instantiates a reader group to check
+ * the state of the Flink reader. The main task of this class is to output StreamSlice objects that represent events
+ * created by DataProducer whose value is < 0.
+ */
+class Bookmarker extends ProcessFunction<Double, StreamSlice>{
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
 
     // We need the reader group of the Flink job to get the stream cut info.
-    private ReaderGroupManager groupManager;
-    private ReaderGroup readerGroup;
+    private ReaderGroupManager readerGroupManager;
 
     private StreamCut startStreamCut;
 
     @Override
     public void open(Configuration parameters) {
-        groupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, StreamBookmarker.pravegaControllerURI);
-        readerGroup = groupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
+        // We will provide Bookmarker with a pointer to see the state of the reader group.
+        this.readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, StreamBookmarker.pravegaControllerURI);
     }
 
     @Override
     public void processElement(Double value, Context ctx, Collector<StreamSlice> out) {
+        // FIXME: The reader group exists, but the readerGroup.getStreamCuts() call does not provide updated StreamCuts.
         if (value < 0 && startStreamCut == null) {
+            ReaderGroup readerGroup = readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
             startStreamCut = readerGroup.getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
-            LOG.info("Start bookmarking a stream slice at: {}.", startStreamCut);
+            LOG.warn("Start bookmarking a stream slice at: {}.", startStreamCut);
         } else if (value >= 0 && startStreamCut != null) {
+            ReaderGroup readerGroup = readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
             StreamSlice slice = new StreamSlice(startStreamCut,
                     readerGroup.getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
-            LOG.info("Finish bookmarking a stream slice at: {}.", slice);
+            LOG.warn("Finish bookmarking a stream slice at: {}.", slice);
             out.collect(slice);
             startStreamCut = null;
         }
@@ -114,7 +126,7 @@ class Bookmarker extends ProcessFunction<Double, StreamSlice> {
     @Override
     public void close() throws Exception {
         super.close();
-        groupManager.close();
+        readerGroupManager.close();
     }
 }
 
