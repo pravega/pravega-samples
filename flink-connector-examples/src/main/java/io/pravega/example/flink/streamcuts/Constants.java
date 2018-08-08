@@ -15,9 +15,9 @@ package io.pravega.example.flink.streamcuts;
  *
  */
 public class Constants {
-    protected static final String CONTROLLER_HOST = "localhost";
-    protected static final String CONTROLLER_PORT = "9090";
-    protected static final String DEFAULT_SCOPE = "examples";
-    protected static final String PRODUCER_STREAM = "streamcuts-producer";
-    protected static final String STREAMCUTS_STREAM = "streamcuts-results";
+    public static final String CONTROLLER_HOST = "localhost";
+    public static final String CONTROLLER_PORT = "9090";
+    public static final String DEFAULT_SCOPE = "examples";
+    public static final String PRODUCER_STREAM = "streamcuts-producer";
+    public static final String STREAMCUTS_STREAM = "streamcuts-results";
 }

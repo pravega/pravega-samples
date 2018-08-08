@@ -8,15 +8,18 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.example.flink.streamcuts;
+package io.pravega.example.flink.streamcuts.process;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.JavaSerializer;
+import io.pravega.example.flink.streamcuts.Constants;
 import java.net.URI;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +33,7 @@ public class DataProducer {
     private static final Logger LOG = LoggerFactory.getLogger(DataProducer.class);
 
     private static final int NUM_EVENTS = 1000;
+    private static final int NUM_SENSORS = 3;
     private static final double EVENT_VALUE_INCREMENT = 0.01; // Should be < 1
     private static final int WRITER_SLEEP_MS = 100;
 
@@ -47,6 +51,7 @@ public class DataProducer {
         StreamConfiguration streamConfiguration = StreamConfiguration.builder()
                                                                      .scope(Constants.DEFAULT_SCOPE)
                                                                      .streamName(Constants.PRODUCER_STREAM)
+                                                                     .scalingPolicy(ScalingPolicy.fixed(NUM_SENSORS))
                                                                      .build();
 
         // Create a Pravega stream to write data (if it does not exist yet).
@@ -56,12 +61,16 @@ public class DataProducer {
         try (ClientFactory clientFactory = ClientFactory.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI)) {
 
             // Create a writer to write events in the stream.
-            EventStreamWriter<Double> writer = clientFactory.createEventWriter(Constants.PRODUCER_STREAM,
+            EventStreamWriter<Tuple2<Integer, Double>> writer = clientFactory.createEventWriter(Constants.PRODUCER_STREAM,
                     new JavaSerializer<>(), EventWriterConfig.builder().build());
 
             for (double i = 0; i < NUM_EVENTS * EVENT_VALUE_INCREMENT; i += EVENT_VALUE_INCREMENT) {
-                writer.writeEvent(Math.sin(i)).join();
-                LOG.warn("Writing event: {}.", Math.sin(i));
+                // Write an event for each sensor.
+                for (int j = 0; j < NUM_SENSORS; j++) {
+                    writer.writeEvent(String.valueOf(j), new Tuple2<>(j, Math.sin(i))).join();
+                    LOG.warn("Writing event: {} (routing key {}).", Math.sin(i), j);
+                }
+
                 Thread.sleep(WRITER_SLEEP_MS);
             }
 

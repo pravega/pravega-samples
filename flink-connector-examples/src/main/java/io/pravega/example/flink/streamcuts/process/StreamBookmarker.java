@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.example.flink.streamcuts;
+package io.pravega.example.flink.streamcuts.process;
 
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.stream.ReaderGroup;
@@ -20,8 +20,17 @@ import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.PravegaEventRouter;
 import io.pravega.connectors.flink.serialization.PravegaSerialization;
 import io.pravega.example.flink.Utils;
+import io.pravega.example.flink.streamcuts.Constants;
+import io.pravega.example.flink.streamcuts.SensorStreamSlice;
+import io.pravega.example.flink.streamcuts.serialization.Tuple2DeserializationSchema;
+import java.io.IOException;
 import java.net.URI;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
@@ -54,20 +63,20 @@ public class StreamBookmarker {
 
         // Create the Pravega source to read from data produced by DataProducer.
         Stream inputStream = Utils.createStream(pravegaConfig, Constants.PRODUCER_STREAM);
-        FlinkPravegaReader<Double> reader = FlinkPravegaReader.<Double>builder()
+        FlinkPravegaReader<Tuple2<Integer, Double>> reader = FlinkPravegaReader.<Tuple2<Integer, Double>>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(inputStream)
                 .withReaderGroupName(READER_GROUP_NAME)
-                .withReaderGroupRefreshTime(Time.milliseconds(100))
-                .withDeserializationSchema(PravegaSerialization.deserializationFor(Double.class))
+                .withEventReadTimeout(Time.seconds(1))
+                .withDeserializationSchema(new Tuple2DeserializationSchema())
                 .build();
 
         // Create the Pravega sink to output the stream cuts representing slices to analyze.
         Stream outputStream = Utils.createStream(pravegaConfig, Constants.STREAMCUTS_STREAM);
-        FlinkPravegaWriter<StreamSlice> writer = FlinkPravegaWriter.<StreamSlice>builder()
+        FlinkPravegaWriter<SensorStreamSlice> writer = FlinkPravegaWriter.<SensorStreamSlice>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(outputStream)
-                .withSerializationSchema(PravegaSerialization.serializationFor(StreamSlice.class))
+                .withSerializationSchema(PravegaSerialization.serializationFor(SensorStreamSlice.class))
                 .withEventRouter(new EventRouter())
                 .build();
 
@@ -75,10 +84,11 @@ public class StreamBookmarker {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
-        DataStreamSink<StreamSlice> dataStreamSink = env.addSource(reader)
-                                                        .process(new Bookmarker())
-                                                        .setParallelism(1)
-                                                        .addSink(writer);
+        DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
+                                                              .setParallelism(3) // Num of parallel segments
+                                                              .keyBy(0)
+                                                              .process(new Bookmarker())
+                                                              .addSink(writer);
 
         // Execute within the Flink environment.
         env.execute("StreamBookmarker");
@@ -88,53 +98,50 @@ public class StreamBookmarker {
 
 /**
  * This class processes the events read from the Pravega stream. Moreover, it also instantiates a reader group to check
- * the state of the Flink reader. The main task of this class is to output StreamSlice objects that represent events
+ * the state of the Flink reader. The main task of this class is to output SensorStreamSlice objects that represent events
  * created by DataProducer whose value is < 0.
  */
-class Bookmarker extends ProcessFunction<Double, StreamSlice>{
+class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSlice>{
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
 
-    // We need the reader group of the Flink job to get the stream cut info.
-    private ReaderGroupManager readerGroupManager;
-
-    private StreamCut startStreamCut;
+    private transient ValueState<StreamCut> startStreamCut;
 
     @Override
     public void open(Configuration parameters) {
         // We will provide Bookmarker with a pointer to see the state of the reader group.
-        this.readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, StreamBookmarker.pravegaControllerURI);
+        ValueStateDescriptor<StreamCut> descriptor = new ValueStateDescriptor<>("startStreamCut",
+                TypeInformation.of(new TypeHint<StreamCut>() {}));
+        startStreamCut = getRuntimeContext().getState(descriptor);
     }
 
     @Override
-    public void processElement(Double value, Context ctx, Collector<StreamSlice> out) {
+    public void processElement(Tuple2<Integer, Double> value, Context ctx, Collector<SensorStreamSlice> out) throws IOException {
         // FIXME: The reader group exists, but the readerGroup.getStreamCuts() call does not provide updated StreamCuts.
-        if (value < 0 && startStreamCut == null) {
-            ReaderGroup readerGroup = readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
-            startStreamCut = readerGroup.getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
-            LOG.warn("Start bookmarking a stream slice at: {}.", startStreamCut);
-        } else if (value >= 0 && startStreamCut != null) {
-            ReaderGroup readerGroup = readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
-            StreamSlice slice = new StreamSlice(startStreamCut,
-                    readerGroup.getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
-            LOG.warn("Finish bookmarking a stream slice at: {}.", slice);
+        if (value.f1 < 0 && startStreamCut.value() == null) {
+            startStreamCut.update(getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
+            LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut.value(), value.f0);
+        } else if (value.f1 >= 0 && startStreamCut.value() != null) {
+            SensorStreamSlice slice = new SensorStreamSlice(startStreamCut.value(),
+                    getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)),
+                    value.f0);
+            LOG.warn("Finish bookmarking a stream slice for sensor {} at: {}.", value.f0, slice);
             out.collect(slice);
-            startStreamCut = null;
+            startStreamCut.update(null);
         }
     }
 
-    @Override
-    public void close() throws Exception {
-        super.close();
-        readerGroupManager.close();
+    private ReaderGroup getReaderGroup() {
+        ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, StreamBookmarker.pravegaControllerURI);
+        return readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
     }
 }
 
-class EventRouter implements PravegaEventRouter<StreamSlice> {
+class EventRouter implements PravegaEventRouter<SensorStreamSlice> {
 
     @Override
-    public String getRoutingKey(StreamSlice event) {
+    public String getRoutingKey(SensorStreamSlice event) {
         // Ordering - events with the same routing key will always be read in the order they were written.
-        return "SameRoutingKey";
+        return String.valueOf(event.getSensorId());
     }
 }

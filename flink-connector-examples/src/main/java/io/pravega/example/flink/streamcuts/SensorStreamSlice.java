@@ -14,16 +14,18 @@ import io.pravega.client.stream.StreamCut;
 import java.io.Serializable;
 
 /**
- * Class that contains a pair of StreamCut objects representing a slice of a stream.
+ * Class that contains a pair of StreamCut objects representing a slice of a stream for a single sensor.
  */
-public class StreamSlice implements Serializable {
+public class SensorStreamSlice implements Serializable {
 
     private StreamCut start;
     private StreamCut end;
+    private int sensorId;
 
-    public StreamSlice (StreamCut start, StreamCut end) {
+    public SensorStreamSlice(StreamCut start, StreamCut end, int sensorId) {
         this.start = start;
         this.end = end;
+        this.sensorId = sensorId;
     }
 
     public StreamCut getStart() {
@@ -34,9 +36,14 @@ public class StreamSlice implements Serializable {
         return end;
     }
 
+    public int getSensorId() {
+        return sensorId;
+    }
+
     @Override
     public String toString() {
         return "Start StreamCut: " + ((start != null) ? start.toString() : "") +
-               ", end StreamCut: " + ((end != null) ? end.toString() : "");
+               ", end StreamCut: " + ((end != null) ? end.toString() : "") +
+               "sensorId: " + sensorId;
     }
 }
