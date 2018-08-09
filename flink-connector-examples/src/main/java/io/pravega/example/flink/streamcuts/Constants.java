@@ -20,4 +20,5 @@ public class Constants {
     public static final String DEFAULT_SCOPE = "examples";
     public static final String PRODUCER_STREAM = "streamcuts-producer";
     public static final String STREAMCUTS_STREAM = "streamcuts-results";
+    public static final int PARALLELISM = 3;
 }

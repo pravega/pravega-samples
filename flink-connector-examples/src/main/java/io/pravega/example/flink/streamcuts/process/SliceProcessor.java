@@ -12,21 +12,17 @@ package io.pravega.example.flink.streamcuts.process;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.segment.impl.Segment;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.Stream;
-import io.pravega.client.stream.StreamCut;
 import io.pravega.client.stream.impl.JavaSerializer;
-import io.pravega.client.stream.impl.StreamCutImpl;
 import io.pravega.connectors.flink.FlinkPravegaInputFormat;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.example.flink.streamcuts.Constants;
 import io.pravega.example.flink.streamcuts.SensorStreamSlice;
 import io.pravega.example.flink.streamcuts.serialization.Tuple2DeserializationSchema;
-import io.pravega.shaded.com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -49,7 +45,7 @@ public class SliceProcessor {
     // The writer will contact with the Pravega controller to get information about segments.
     private static final URI pravegaControllerURI = URI.create("tcp://" + Constants.CONTROLLER_HOST + ":" + Constants.CONTROLLER_PORT);
 
-    private static final long READER_TIMEOUT_MS = 60 * 1000;
+    private static final long READER_TIMEOUT_MS = 600 * 1000;
 
     private static final Logger LOG = LoggerFactory.getLogger(SliceProcessor.class);
 
@@ -80,9 +76,8 @@ public class SliceProcessor {
 
                 // If we got a new stream slice to process, run a new batch job on it.
                 if (sliceToAnalyze.getEvent() != null) {
-                    // FIXME: Delete this when reader group gets actual stream cuts.
-                    triggerBatchJobOnSlice(pravegaConfig, getDummySensorStreamSlice(sliceToAnalyze.getEvent()));
-                    //triggerBatchJobOnSlice(pravegaConfig, sliceToAnalyze.getEvent());
+                    LOG.info("Running batch job for slice: {}.", sliceToAnalyze.getEvent());
+                    triggerBatchJobOnSlice(pravegaConfig, sliceToAnalyze.getEvent());
                 }
             } while (sliceToAnalyze.isCheckpoint() || sliceToAnalyze.getEvent() != null);
 
@@ -99,11 +94,11 @@ public class SliceProcessor {
      * @throws Exception
      */
     private static void triggerBatchJobOnSlice(PravegaConfig pravegaConfig, SensorStreamSlice sensorStreamSlice) throws Exception {
-        // Initialize the Flink execution environment (despite this job will run in the job driver program).
+        // Initialize the Flink execution environment (this job will run in the job driver program).
         final ExecutionEnvironment env = ExecutionEnvironment.createLocalEnvironment();
 
         // Instantiate a DataSet with the events defined in the slice.
-        DataSet<Tuple2<Integer, Double>> streamSlice = env.createInput(
+        DataSet<Tuple2<Integer, Double>> sliceEvents = env.createInput(
                 FlinkPravegaInputFormat.<Tuple2<Integer, Double>>builder()
                         .forStream(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM), sensorStreamSlice.getStart(), sensorStreamSlice.getEnd())
                         .withPravegaConfig(pravegaConfig)
@@ -114,20 +109,7 @@ public class SliceProcessor {
 
         // The batch job is simply to count the events in the slice.
         LOG.warn("Number of events in this slice for sensor " + sensorStreamSlice.getSensorId() + ": " +
-                streamSlice.filter(x -> x.f1 == sensorStreamSlice.getSensorId())
-                           .map(x -> 1)
-                           .reduce((a, b) -> a + b).collect().get(0));
-    }
-
-    private static SensorStreamSlice getDummySensorStreamSlice(SensorStreamSlice sliceToAnalyze) {
-        StreamCut sc = new StreamCutImpl(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM),
-                ImmutableMap.of(new Segment(Constants.DEFAULT_SCOPE,  Constants.PRODUCER_STREAM, 0), 285L,
-                        new Segment(Constants.DEFAULT_SCOPE,  Constants.PRODUCER_STREAM, 1), 285L,
-                        new Segment(Constants.DEFAULT_SCOPE,  Constants.PRODUCER_STREAM, 2), 285L));
-        StreamCut sc2 = new StreamCutImpl(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM),
-                ImmutableMap.of(new Segment(Constants.DEFAULT_SCOPE,  Constants.PRODUCER_STREAM, 0), 855L,
-                        new Segment(Constants.DEFAULT_SCOPE,  Constants.PRODUCER_STREAM, 1), 855L,
-                        new Segment(Constants.DEFAULT_SCOPE,  Constants.PRODUCER_STREAM, 2), 855L));
-        return new SensorStreamSlice(sc, sc2, sliceToAnalyze.getSensorId());
+                sliceEvents.filter(eventTuple -> eventTuple.f0 == sensorStreamSlice.getSensorId())
+                           .count());
     }
 }

@@ -49,8 +49,8 @@ public class StreamBookmarker {
 
     // The writer will contact with the Pravega controller to get information about segments.
     static final URI pravegaControllerURI = URI.create("tcp://" + Constants.CONTROLLER_HOST + ":" + Constants.CONTROLLER_PORT);
-
     static final String READER_GROUP_NAME = "bookmarkerReaderGroup" + System.currentTimeMillis();
+    static final int CHECKPOINT_INTERVAL = 5000;
 
     private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
 
@@ -81,11 +81,12 @@ public class StreamBookmarker {
                 .build();
 
         // Initialize the Flink execution environment.
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
+                                                                         .enableCheckpointing(CHECKPOINT_INTERVAL);
 
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
-                                                              .setParallelism(3) // Num of parallel segments
+                                                              .setParallelism(Constants.PARALLELISM) // Num of parallel segments
                                                               .keyBy(0)
                                                               .process(new Bookmarker())
                                                               .addSink(writer);
@@ -117,7 +118,6 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
 
     @Override
     public void processElement(Tuple2<Integer, Double> value, Context ctx, Collector<SensorStreamSlice> out) throws IOException {
-        // FIXME: The reader group exists, but the readerGroup.getStreamCuts() call does not provide updated StreamCuts.
         if (value.f1 < 0 && startStreamCut.value() == null) {
             startStreamCut.update(getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
             LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut.value(), value.f0);
