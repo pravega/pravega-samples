@@ -40,3 +40,9 @@ See [wordcount](doc/flink-wordcount/README.md) for more information and executio
 
 This sample demonstrates Pravega EXACTLY_ONCE feature in conjuction with Flink checkpointing and exactly-once mode.
 See [Exactly Once Sample](doc/exactly-once/README.md) for instructions.
+
+
+## StreamCuts Sample
+
+This sample demonstrates the use of Pravega StreamCuts in Flink applications.
+See [StreamCuts Sample](doc/streamcuts/README.md) for instructions.
