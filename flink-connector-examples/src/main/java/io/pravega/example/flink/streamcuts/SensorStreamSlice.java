@@ -42,8 +42,8 @@ public class SensorStreamSlice implements Serializable {
 
     @Override
     public String toString() {
-        return "Start StreamCut: " + ((start != null) ? start.toString() : "") +
-               ", end StreamCut: " + ((end != null) ? end.toString() : "") +
-               "sensorId: " + sensorId;
+        return "Start StreamCut: " + ((start != null) ? start.toString() : " null ") +
+               ", end StreamCut: " + ((end != null) ? end.toString() : "null ") +
+               ", sensorId: " + sensorId;
     }
 }

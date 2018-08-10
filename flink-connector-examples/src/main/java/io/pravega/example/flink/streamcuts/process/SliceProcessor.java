@@ -12,6 +12,7 @@ package io.pravega.example.flink.streamcuts.process;
 
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.ReaderConfig;
@@ -56,6 +57,10 @@ public class SliceProcessor {
                 .fromParams(params)
                 .withDefaultScope(Constants.DEFAULT_SCOPE);
 
+        // Create the scope if it is not present.
+        StreamManager streamManager = StreamManager.create(pravegaControllerURI);
+        streamManager.createScope(Constants.DEFAULT_SCOPE);
+
         // We will read from the stream slices published by StreamBookmarker.
         ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                                                                .stream(Stream.of(Constants.DEFAULT_SCOPE, Constants.STREAMCUTS_STREAM))
@@ -76,7 +81,7 @@ public class SliceProcessor {
 
                 // If we got a new stream slice to process, run a new batch job on it.
                 if (sliceToAnalyze.getEvent() != null) {
-                    LOG.info("Running batch job for slice: {}.", sliceToAnalyze.getEvent());
+                    LOG.warn("Running batch job for slice: {}.", sliceToAnalyze.getEvent());
                     triggerBatchJobOnSlice(pravegaConfig, sliceToAnalyze.getEvent());
                 }
             } while (sliceToAnalyze.isCheckpoint() || sliceToAnalyze.getEvent() != null);

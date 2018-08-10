@@ -11,6 +11,7 @@
 package io.pravega.example.flink.streamcuts.process;
 
 import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
@@ -61,6 +62,10 @@ public class StreamBookmarker {
                 .fromParams(params)
                 .withDefaultScope(Constants.DEFAULT_SCOPE);
 
+        // Create the scope if it is not present.
+        StreamManager streamManager = StreamManager.create(pravegaControllerURI);
+        streamManager.createScope(Constants.DEFAULT_SCOPE);
+
         // Create the Pravega source to read from data produced by DataProducer.
         Stream inputStream = Utils.createStream(pravegaConfig, Constants.PRODUCER_STREAM);
         FlinkPravegaReader<Tuple2<Integer, Double>> reader = FlinkPravegaReader.<Tuple2<Integer, Double>>builder()
@@ -107,28 +112,72 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
 
     private transient ValueState<StreamCut> startStreamCut;
+    private transient ValueState<StreamCut> lastStreamCutBeforeSlice;
+    private transient ValueState<Tuple2<Integer, Double>> lastValue;
 
     @Override
     public void open(Configuration parameters) {
         // We will provide Bookmarker with a pointer to see the state of the reader group.
-        ValueStateDescriptor<StreamCut> descriptor = new ValueStateDescriptor<>("startStreamCut",
-                TypeInformation.of(new TypeHint<StreamCut>() {}));
-        startStreamCut = getRuntimeContext().getState(descriptor);
+        startStreamCut = getRuntimeContext().getState(new ValueStateDescriptor<>("startStreamCut",
+                TypeInformation.of(new TypeHint<StreamCut>() {})));
+        lastStreamCutBeforeSlice = getRuntimeContext().getState(new ValueStateDescriptor<>("lastStreamCutBeforeSlice",
+                TypeInformation.of(new TypeHint<StreamCut>() {})));
+        lastValue = getRuntimeContext().getState(new ValueStateDescriptor<>("lastValue",
+                TypeInformation.of(new TypeHint<Tuple2<Integer, Double>>() {})));
     }
 
+    /**
+     * This function inspects the events written by a particular sensor (keyed stream by sensor id). When this function
+     * finds that there are events < 0 it considers them as of interest for further processing. For this reason, it
+     * gets a StreamCut related to the first observed event < 0 (start of stream slice). Then, if events become > 0
+     * again, the function schedules a timer to get a future StreamCut (end of slice). That is, the SensorStreamSlice
+     * object written to the collector will contain all the events < 0 for a certain sensor.
+     *
+     * @param value Input tuple from a sensor
+     * @param ctx Context
+     * @param out Collector
+     * @throws IOException
+     */
     @Override
     public void processElement(Tuple2<Integer, Double> value, Context ctx, Collector<SensorStreamSlice> out) throws IOException {
+        if (lastValue.value() != null) return;
+        // Infer the slice of the stream for which events are < 0.
         if (value.f1 < 0 && startStreamCut.value() == null) {
             startStreamCut.update(getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
             LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut.value(), value.f0);
-        } else if (value.f1 >= 0 && startStreamCut.value() != null) {
-            SensorStreamSlice slice = new SensorStreamSlice(startStreamCut.value(),
-                    getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)),
-                    value.f0);
-            LOG.warn("Finish bookmarking a stream slice for sensor {} at: {}.", value.f0, slice);
-            out.collect(slice);
-            startStreamCut.update(null);
+        } else if (value.f1 >= 0 && startStreamCut.value() != null && lastStreamCutBeforeSlice.value() == null) {
+            lastStreamCutBeforeSlice.update(getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
+            lastValue.update(value);
+            long sliceCreationTime = ctx.timerService().currentProcessingTime() + StreamBookmarker.CHECKPOINT_INTERVAL;
+            LOG.warn("Found events > 0 for sensor {}, waiting for the next stream cut update to create the slice at {}.", value.f0, sliceCreationTime);
+            ctx.timerService().registerProcessingTimeTimer(sliceCreationTime);
         }
+    }
+
+    /**
+     * The frequency of StreamCut updates accessible from a Flink application is related to the frequency of checkpoints.
+     * For this reason, to include all the events < 0, we need to create the slice ahead in time to wait for the next
+     * checkpoint to complete. This ensures that the slice build will contain all the events of interest.
+     *
+     * @param timestamp timestamp
+     * @param ctx OnTimerContext
+     * @param out Collector
+     * @throws Exception
+     */
+    @Override
+    public void onTimer(long timestamp, OnTimerContext ctx, Collector<SensorStreamSlice> out) throws Exception {
+        // To get all the events < 0 in the output slice, we need to get the next streamcut w.r.t. the first one found when events were > 0.
+        StreamCut nextStreamcut = getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
+        if (lastStreamCutBeforeSlice.value().equals(nextStreamcut)) {
+            LOG.error("The stream slice published may not contain all the events of interest");
+        }
+
+        SensorStreamSlice slice = new SensorStreamSlice(startStreamCut.value(), nextStreamcut, lastValue.value().f0);
+        LOG.warn("Finish bookmarking a stream slice for sensor {} at: {}.", lastValue.value().f0, slice);
+        out.collect(slice);
+        startStreamCut.update(null);
+        lastStreamCutBeforeSlice.update(null);
+        lastValue.update(null);
     }
 
     private ReaderGroup getReaderGroup() {
