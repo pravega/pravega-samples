@@ -108,8 +108,8 @@ public class SliceProcessor {
         );
 
         // The batch job is simply to count the events in the slice.
-        LOG.warn("Number of events in this slice for sensor " + sensorStreamSlice.getSensorId() + ": " +
-                sliceEvents.filter(eventTuple -> eventTuple.f0 == sensorStreamSlice.getSensorId())
+        LOG.warn("Number of events < 0 in this slice for sensor " + sensorStreamSlice.getSensorId() + ": " +
+                sliceEvents.filter(eventTuple -> eventTuple.f0 == sensorStreamSlice.getSensorId() && eventTuple.f1 < 0)
                            .count());
     }
 }
