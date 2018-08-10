@@ -2,7 +2,7 @@
 
 This sample application demonstrates the use of a Pravega abstraction, the `StreamCut`, in a Flink application to make 
 it easier for developers to write analytics applications. Concretely, the objective of this sample is to demonstrate 
-that: i) Flink applications may use `StreamCut`s to bookmark points of interest within a Pravega Stream, ii) `StreamCut`s 
+that: i) Flink applications may use `StreamCut`s to bookmark points of interest within a Pravega `Stream`, ii) `StreamCut`s 
 can be stored as persistent bookmarks for a Pravega stream, iii) `StreamCut`s may be used to perform batch processing on 
 slices bookmarked by a Flink application. 
 
@@ -20,13 +20,13 @@ First, let us describe the role that these applications play in the sample:
 is a tuple `<sensorId, eventValue>`. In particular, the values of events follow a sinusoidal function to have intuitive
 changing values within a controlled rage for a demonstration.
 
-- `StreamBookmarker`: This Flink application is intended to identify the slices of the stream that we want to bookmark,
+- `StreamBookmarker`: This Flink application is intended to identify the slices of the `Stream` that we want to bookmark,
 as they are of interest to execute further processing. That is, for a given `sensorId`, this job detects and stores the
-start and end StreamCuts (i.e., stream "slice") for which `eventValues` are `< 0`. From the start and end StreamCuts, 
-this application creates a "slice" object that stores in a separate stream.
+start and end `StreamCut`s (i.e., `Stream` "slice") for which `eventValues` are `< 0`. From the start and end `StreamCut`s, 
+this application creates a "slice" object that stores in a separate `Stream`.
 
-- `SliceProcessor`: This application reads from the Pravega Stream where the start and end StreamCuts are published by
-`StreamBookmarker`. For each stream slice object written in the stream, this application executes (locally) a batch job 
+- `SliceProcessor`: This application reads from the Pravega `Stream` where the start and end StreamCuts are published by
+`StreamBookmarker`. For each stream slice object written in the `Stream`, this application executes (locally) a batch job 
 that reads the events within the specified slice and performs some computation (e.g., counting events for the sensor
 for which values are `< 0`).
 
@@ -87,7 +87,7 @@ Then, `StreamBookmarker` shows messages like the ones posted below:
 
 These messages correspond to the 3 actions that this application performs. First, in the context of a given `sensorId`
 (i.e., keyed stream), this application detects the first time in which `eventValue < 0`. In that situation, the
-task processing events for this `sensorId` calls to `readergroup.getStreamCuts()` to keep the StreamCut immediately 
+task processing events for this `sensorId` calls to `readergroup.getStreamCuts()` to keep the `StreamCut` immediately 
 preceding this event. This corresponds to the first message shown in the output.
 
 A task continues processing events for a particular `sensorId` until if finds an `eventValue > 0`. As this application 
@@ -114,7 +114,7 @@ Finally, `SliceProcessor` shows messages like the ones posted below:
 18:41:53,395 WARN  io.pravega.example.flink.streamcuts.process.SliceProcessor    - Number of events < 0 in this slice for sensor 2: 314
 ```
 
-`SliceProcessor` keeps reading from the stream where stream slice objects are store by `StreamBookmarker`. When a new
+`SliceProcessor` keeps reading from the `Stream` where slice objects are store by `StreamBookmarker`. When a new
 slice is read, `SliceProcessor` shows a log message as the first shown in the output. In this application we use bounded
 processing events which are defined by the input `StreamCut`s. Concretely, the processing tasks consists of counting the
 number of negative events in the slice for a specific sensor. The result of this computation corresponds to the second
