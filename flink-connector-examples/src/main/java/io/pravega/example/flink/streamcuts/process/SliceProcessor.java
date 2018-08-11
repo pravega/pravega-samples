@@ -41,20 +41,20 @@ import org.slf4j.LoggerFactory;
  */
 public class SliceProcessor {
 
-    private static final String READER_GROUP_NAME = "sliceProcessorReaderGroup" + System.currentTimeMillis();
-
-    // The writer will contact with the Pravega controller to get information about segments.
-    private static final URI pravegaControllerURI = URI.create("tcp://" + Constants.CONTROLLER_HOST + ":" + Constants.CONTROLLER_PORT);
-
-    private static final long READER_TIMEOUT_MS = 600 * 1000;
-
     private static final Logger LOG = LoggerFactory.getLogger(SliceProcessor.class);
+
+    private static final String READER_GROUP_NAME = "sliceProcessorReaderGroup" + System.currentTimeMillis();
+    private static final long READER_TIMEOUT_MS = 600 * 1000;
 
     public static void main(String[] args) throws Exception {
         // Initialize the parameter utility tool in order to retrieve input parameters.
         ParameterTool params = ParameterTool.fromArgs(args);
+
+        // The writer will contact with the Pravega controller to get information about streams.
+        URI pravegaControllerURI = URI.create(params.get(Constants.CONTROLLER_ADDRESS_PARAM, Constants.CONTROLLER_ADDRESS));
         PravegaConfig pravegaConfig = PravegaConfig
                 .fromParams(params)
+                .withControllerURI(pravegaControllerURI)
                 .withDefaultScope(Constants.DEFAULT_SCOPE);
 
         // Create the scope if it is not present.

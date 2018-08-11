@@ -20,6 +20,7 @@ import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.example.flink.streamcuts.Constants;
 import java.net.URI;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +33,14 @@ public class DataProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataProducer.class);
 
-    private static final int NUM_EVENTS = 10000;
     private static final double EVENT_VALUE_INCREMENT = 0.01; // Should be < 1
     private static final int WRITER_SLEEP_MS = 100;
 
     public static void main(String[] args) throws InterruptedException {
+        ParameterTool params = ParameterTool.fromArgs(args);
         // The writer will contact with the Pravega controller to get information about segments.
-        URI pravegaControllerURI = URI.create("tcp://" + Constants.CONTROLLER_HOST + ":" + Constants.CONTROLLER_PORT);
+        URI pravegaControllerURI = URI.create(params.get(Constants.CONTROLLER_ADDRESS_PARAM, Constants.CONTROLLER_ADDRESS));
+        final int numEvents = params.getInt(Constants.NUM_EVENTS_PARAM, Constants.NUM_EVENTS);
 
         // StreamManager helps us to easily manage streams and copes.
         StreamManager streamManager = StreamManager.create(pravegaControllerURI);
@@ -63,7 +65,7 @@ public class DataProducer {
             EventStreamWriter<Tuple2<Integer, Double>> writer = clientFactory.createEventWriter(Constants.PRODUCER_STREAM,
                     new JavaSerializer<>(), EventWriterConfig.builder().build());
 
-            for (double i = 0; i < NUM_EVENTS * EVENT_VALUE_INCREMENT; i += EVENT_VALUE_INCREMENT) {
+            for (double i = 0; i < numEvents * EVENT_VALUE_INCREMENT; i += EVENT_VALUE_INCREMENT) {
                 // Write an event for each sensor.
                 for (int j = 0; j < Constants.PARALLELISM; j++) {
                     final double value = Math.sin(i + j); // Different values per sensor.

@@ -48,18 +48,20 @@ import org.slf4j.LoggerFactory;
  */
 public class StreamBookmarker {
 
-    // The writer will contact with the Pravega controller to get information about segments.
-    static final URI pravegaControllerURI = URI.create("tcp://" + Constants.CONTROLLER_HOST + ":" + Constants.CONTROLLER_PORT);
+    private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
+
     static final String READER_GROUP_NAME = "bookmarkerReaderGroup" + System.currentTimeMillis();
     static final int CHECKPOINT_INTERVAL = 5000;
-
-    private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
 
     public static void main(String[] args) throws Exception {
         // Initialize the parameter utility tool in order to retrieve input parameters.
         ParameterTool params = ParameterTool.fromArgs(args);
+
+        // Clients will contact with the Pravega controller to get information about Streams.
+        URI pravegaControllerURI = URI.create(params.get(Constants.CONTROLLER_ADDRESS_PARAM, Constants.CONTROLLER_ADDRESS));
         PravegaConfig pravegaConfig = PravegaConfig
                 .fromParams(params)
+                .withControllerURI(pravegaControllerURI)
                 .withDefaultScope(Constants.DEFAULT_SCOPE);
 
         // Create the scope if it is not present.
@@ -72,7 +74,7 @@ public class StreamBookmarker {
                 .withPravegaConfig(pravegaConfig)
                 .forStream(inputStream)
                 .withReaderGroupName(READER_GROUP_NAME)
-                .withEventReadTimeout(Time.seconds(1))
+                .withEventReadTimeout(Time.seconds(5))
                 .withDeserializationSchema(new Tuple2DeserializationSchema())
                 .build();
 
@@ -93,7 +95,7 @@ public class StreamBookmarker {
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
                                                               .setParallelism(Constants.PARALLELISM) // Num of parallel segments
                                                               .keyBy(0)
-                                                              .process(new Bookmarker())
+                                                              .process(new Bookmarker(pravegaControllerURI))
                                                               .addSink(writer);
 
         // Execute within the Flink environment.
@@ -110,10 +112,15 @@ public class StreamBookmarker {
 class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSlice>{
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
+    private final URI pravegaControllerURI;
 
     private transient ValueState<StreamCut> startStreamCut;
     private transient ValueState<StreamCut> lastStreamCutBeforeSlice;
     private transient ValueState<Tuple2<Integer, Double>> lastValue;
+
+    public Bookmarker(URI pravegaControllerURI) {
+        this.pravegaControllerURI = pravegaControllerURI;
+    }
 
     @Override
     public void open(Configuration parameters) {
@@ -181,7 +188,7 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
     }
 
     private ReaderGroup getReaderGroup() {
-        ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, StreamBookmarker.pravegaControllerURI);
+        ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI);
         return readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
     }
 }

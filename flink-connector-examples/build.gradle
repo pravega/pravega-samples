@@ -68,6 +68,27 @@ task scriptExactlyOnceChecker(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+task scriptStreamCutsDataProducer(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.streamcuts.process.DataProducer'
+    applicationName = 'dataProducer'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptStreamCutsStreamBookmarker(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.streamcuts.process.StreamBookmarker'
+    applicationName = 'streamBookmarker'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptStreamCutsSliceProcessor(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.streamcuts.process.SliceProcessor'
+    applicationName = 'sliceProcessor'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -83,6 +104,9 @@ distributions {
                 from project.scriptWordCountReader
                 from project.scriptExactlyOnceWriter
                 from project.scriptExactlyOnceChecker
+                from project.scriptStreamCutsDataProducer
+                from project.scriptStreamCutsStreamBookmarker
+                from project.scriptStreamCutsSliceProcessor
             }
         }
     }
