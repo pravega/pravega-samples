@@ -67,10 +67,11 @@ public class DataProducer {
 
             for (double i = 0; i < numEvents * EVENT_VALUE_INCREMENT; i += EVENT_VALUE_INCREMENT) {
                 // Write an event for each sensor.
-                for (int j = 0; j < Constants.PARALLELISM; j++) {
-                    final Tuple2<Integer, Double> value = new Tuple2<>(j, Math.sin(i + j)); // Different values per sensor.
-                    writer.writeEvent(String.valueOf(j), value).join();
-                    LOG.warn("Writing event: {} (routing key {}).", value, j);
+                for (int sensorId = 0; sensorId < Constants.PARALLELISM; sensorId++) {
+                    // Different starting values per sensor.
+                    final Tuple2<Integer, Double> value = new Tuple2<>(sensorId, Math.sin(i + sensorId));
+                    writer.writeEvent(String.valueOf(sensorId), value).join();
+                    LOG.warn("Writing event: {} (routing key {}).", value, sensorId);
                 }
 
                 Thread.sleep(WRITER_SLEEP_MS);

@@ -69,20 +69,20 @@ public class StreamBookmarker {
         streamManager.createScope(Constants.DEFAULT_SCOPE);
 
         // Create the Pravega source to read from data produced by DataProducer.
-        Stream inputStream = Utils.createStream(pravegaConfig, Constants.PRODUCER_STREAM);
+        Stream sensorEvents = Utils.createStream(pravegaConfig, Constants.PRODUCER_STREAM);
         FlinkPravegaReader<Tuple2<Integer, Double>> reader = FlinkPravegaReader.<Tuple2<Integer, Double>>builder()
                 .withPravegaConfig(pravegaConfig)
-                .forStream(inputStream)
+                .forStream(sensorEvents)
                 .withReaderGroupName(READER_GROUP_NAME)
                 .withEventReadTimeout(Time.seconds(5))
                 .withDeserializationSchema(new Tuple2DeserializationSchema())
                 .build();
 
         // Create the Pravega sink to output the stream cuts representing slices to analyze.
-        Stream outputStream = Utils.createStream(pravegaConfig, Constants.STREAMCUTS_STREAM);
+        Stream streamCutsStream = Utils.createStream(pravegaConfig, Constants.STREAMCUTS_STREAM);
         FlinkPravegaWriter<SensorStreamSlice> writer = FlinkPravegaWriter.<SensorStreamSlice>builder()
                 .withPravegaConfig(pravegaConfig)
-                .forStream(outputStream)
+                .forStream(streamCutsStream)
                 .withSerializationSchema(PravegaSerialization.serializationFor(SensorStreamSlice.class))
                 .withEventRouter(new EventRouter())
                 .build();
