@@ -37,6 +37,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +72,7 @@ public class StreamBookmarker {
 
         // Create the Pravega source to read from data produced by DataProducer.
         Stream sensorEvents = Utils.createStream(pravegaConfig, Constants.PRODUCER_STREAM);
-        FlinkPravegaReader<Tuple2<Integer, Double>> reader = FlinkPravegaReader.<Tuple2<Integer, Double>>builder()
+        SourceFunction<Tuple2<Integer, Double>> reader = FlinkPravegaReader.<Tuple2<Integer, Double>>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(sensorEvents)
                 .withReaderGroupName(READER_GROUP_NAME)
@@ -80,7 +82,7 @@ public class StreamBookmarker {
 
         // Create the Pravega sink to output the stream cuts representing slices to analyze.
         Stream streamCutsStream = Utils.createStream(pravegaConfig, Constants.STREAMCUTS_STREAM);
-        FlinkPravegaWriter<SensorStreamSlice> writer = FlinkPravegaWriter.<SensorStreamSlice>builder()
+        SinkFunction<SensorStreamSlice> writer = FlinkPravegaWriter.<SensorStreamSlice>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(streamCutsStream)
                 .withSerializationSchema(PravegaSerialization.serializationFor(SensorStreamSlice.class))
@@ -113,6 +115,7 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
     private final URI pravegaControllerURI;
+    private ReaderGroup readerGroup;
 
     private transient ValueState<StreamCut> startStreamCut;
     private transient ValueState<StreamCut> lastStreamCutBeforeSlice;
@@ -188,8 +191,12 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
     }
 
     private ReaderGroup getReaderGroup() {
-        ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI);
-        return readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
+        if (readerGroup == null) {
+            ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI);
+            readerGroup = readerGroupManager.getReaderGroup(StreamBookmarker.READER_GROUP_NAME);
+        }
+
+        return readerGroup;
     }
 }
 
