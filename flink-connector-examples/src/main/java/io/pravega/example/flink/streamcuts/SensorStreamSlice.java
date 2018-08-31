@@ -22,9 +22,7 @@ public class SensorStreamSlice implements Serializable {
     private StreamCut end;
     private int sensorId;
 
-    public SensorStreamSlice(StreamCut start, StreamCut end, int sensorId) {
-        this.start = start;
-        this.end = end;
+    public SensorStreamSlice(int sensorId) {
         this.sensorId = sensorId;
     }
 
@@ -38,6 +36,14 @@ public class SensorStreamSlice implements Serializable {
 
     public int getSensorId() {
         return sensorId;
+    }
+
+    public void setStart(StreamCut start) {
+        this.start = start;
+    }
+
+    public void setEnd(StreamCut end) {
+        this.end = end;
     }
 
     @Override

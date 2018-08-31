@@ -70,10 +70,11 @@ public class DataProducer {
                 for (int sensorId = 0; sensorId < Constants.PARALLELISM; sensorId++) {
                     // Different starting values per sensor.
                     final Tuple2<Integer, Double> value = new Tuple2<>(sensorId, Math.sin(i + sensorId));
-                    writer.writeEvent(String.valueOf(sensorId), value).join();
+                    writer.writeEvent(String.valueOf(sensorId), value);
                     LOG.warn("Writing event: {} (routing key {}).", value, sensorId);
                 }
 
+                writer.flush();
                 Thread.sleep(WRITER_SLEEP_MS);
             }
 

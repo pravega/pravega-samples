@@ -12,6 +12,7 @@ package io.pravega.example.flink.streamcuts.process;
 
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
+import io.pravega.client.segment.impl.Segment;
 import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
@@ -26,9 +27,10 @@ import io.pravega.example.flink.streamcuts.SensorStreamSlice;
 import io.pravega.example.flink.streamcuts.serialization.Tuple2DeserializationSchema;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -53,7 +55,7 @@ public class StreamBookmarker {
     private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
 
     static final String READER_GROUP_NAME = "bookmarkerReaderGroup" + System.currentTimeMillis();
-    static final int CHECKPOINT_INTERVAL = 5000;
+    static final int CHECKPOINT_INTERVAL = 4000;
 
     public static void main(String[] args) throws Exception {
         // Initialize the parameter utility tool in order to retrieve input parameters.
@@ -76,7 +78,6 @@ public class StreamBookmarker {
                 .withPravegaConfig(pravegaConfig)
                 .forStream(sensorEvents)
                 .withReaderGroupName(READER_GROUP_NAME)
-                .withEventReadTimeout(Time.seconds(5))
                 .withDeserializationSchema(new Tuple2DeserializationSchema())
                 .build();
 
@@ -95,7 +96,7 @@ public class StreamBookmarker {
 
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
-                                                              .setParallelism(Constants.PARALLELISM) // Num of parallel segments
+                                                              .setParallelism(Constants.PARALLELISM)
                                                               .keyBy(0)
                                                               .process(new Bookmarker(pravegaControllerURI))
                                                               .addSink(writer);
@@ -117,9 +118,7 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
     private final URI pravegaControllerURI;
     private ReaderGroup readerGroup;
 
-    private transient ValueState<StreamCut> startStreamCut;
-    private transient ValueState<StreamCut> lastStreamCutBeforeSlice;
-    private transient ValueState<Tuple2<Integer, Double>> lastValue;
+    private transient ValueState<Map<Integer, SensorStreamSlice>> pendingBookmarks;
 
     public Bookmarker(URI pravegaControllerURI) {
         this.pravegaControllerURI = pravegaControllerURI;
@@ -127,21 +126,17 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
 
     @Override
     public void open(Configuration parameters) {
-        // We will provide Bookmarker with a pointer to see the state of the reader group.
-        startStreamCut = getRuntimeContext().getState(new ValueStateDescriptor<>("startStreamCut",
-                TypeInformation.of(new TypeHint<StreamCut>() {})));
-        lastStreamCutBeforeSlice = getRuntimeContext().getState(new ValueStateDescriptor<>("lastStreamCutBeforeSlice",
-                TypeInformation.of(new TypeHint<StreamCut>() {})));
-        lastValue = getRuntimeContext().getState(new ValueStateDescriptor<>("lastValue",
-                TypeInformation.of(new TypeHint<Tuple2<Integer, Double>>() {})));
+        pendingBookmarks = getRuntimeContext().getState(new ValueStateDescriptor<>("pendingBookmarks",
+                TypeInformation.of(new TypeHint<Map<Integer, SensorStreamSlice>>() {})));
     }
 
     /**
      * This function inspects the events written by a particular sensor (keyed stream by sensor id). When this function
      * finds that there are events < 0 it considers them as of interest for further processing. For this reason, it
-     * gets a StreamCut related to the first observed event < 0 (start of stream slice). Then, if events become > 0
-     * again, the function schedules a timer to get a future StreamCut (end of slice). That is, the SensorStreamSlice
-     * object written to the collector will contain all the events < 0 for a certain sensor.
+     * gets a StreamCut before the first observed event < 0 (start of stream slice). Then, if events become > 0
+     * again, the function ensures to get a StreamCut strictly beyond the point where the first event > 0 was observed
+     * (end of slice). That is, the SensorStreamSlice object written to the collector will contain at least all the
+     * events < 0 for a certain sensor.
      *
      * @param value Input tuple from a sensor
      * @param ctx Context
@@ -150,46 +145,50 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
      */
     @Override
     public void processElement(Tuple2<Integer, Double> value, Context ctx, Collector<SensorStreamSlice> out) throws IOException {
-        if (lastValue.value() != null) return;
-        // Infer the slice of the stream for which events are < 0.
-        if (value.f1 < 0 && startStreamCut.value() == null) {
-            startStreamCut.update(getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
-            LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut.value(), value.f0);
-        } else if (value.f1 >= 0 && startStreamCut.value() != null && lastStreamCutBeforeSlice.value() == null) {
-            lastStreamCutBeforeSlice.update(getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
-            lastValue.update(value);
-            long sliceCreationTime = ctx.timerService().currentProcessingTime() + StreamBookmarker.CHECKPOINT_INTERVAL;
-            LOG.warn("Found events > 0 for sensor {}, waiting for the next stream cut update to create the slice at {}.", value.f0, sliceCreationTime);
-            ctx.timerService().registerProcessingTimeTimer(sliceCreationTime);
+        // Initialize task state for pending slices.
+        if (pendingBookmarks.value() == null) {
+            pendingBookmarks.update(new HashMap<>());
+        }
+
+        if (value.f1 < 0 && !pendingBookmarks.value().containsKey(value.f0)) {
+            // Instantiate a SensorStreamSlice object for this sensor.
+            SensorStreamSlice sensorStreamSlice = new SensorStreamSlice(value.f0);
+
+            // Set the current ReaderGroup StreamCut as the beginning of the slice of events of interest.
+            StreamCut startStreamCut = getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
+            sensorStreamSlice.setStart(startStreamCut);
+            Map<Integer, SensorStreamSlice> currentPendingBookmarks = pendingBookmarks.value();
+            currentPendingBookmarks.put(value.f0, sensorStreamSlice);
+            pendingBookmarks.update(currentPendingBookmarks);
+            LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut, value.f0);
+        } else if (value.f1 >= 0 && pendingBookmarks.value().containsKey(value.f0)) {
+            SensorStreamSlice sensorStreamSlice = pendingBookmarks.value().get(value.f0);
+            StreamCut currentStreamCut = getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
+
+            // If this is the first event > 0, then we need to keep the current StreamCut to check for the next one.
+            if (sensorStreamSlice.getEnd() == null) {
+                LOG.warn("Initialize sensorStreamSlice end value to look for the next updated StreamCut: {} for sensor {}.", currentStreamCut, value.f0);
+                sensorStreamSlice.setEnd(currentStreamCut);
+            } else if (updatedStreamCutPositions(sensorStreamSlice.getEnd(), currentStreamCut)) {
+                // Only when all the positions in the previous StreamCut are updated in the current one, we can ensure
+                // that the slice contains all the evens of interest.
+                sensorStreamSlice.setEnd(currentStreamCut);
+                out.collect(sensorStreamSlice);
+                LOG.warn("Found next end StreamCut for sensor {}: {}. The slice should contain all events < 0 for a specific sensor sine wave.", value.f0, currentStreamCut);
+                Map<Integer, SensorStreamSlice> currentPendingBookmarks = pendingBookmarks.value();
+                currentPendingBookmarks.remove(value.f0);
+                pendingBookmarks.update(currentPendingBookmarks);
+            }
         }
     }
 
     /**
-     * The frequency of StreamCut updates accessible from a Flink application is related to the frequency of checkpoints.
-     * For this reason, to include all the events < 0, we need to create the slice ahead in time to wait for the next
-     * checkpoint to complete. This ensures that the slice build will contain all the events of interest.
+     * This method returns a reference to the ReaderGroup being used by FlinkPravegaReader instance consuming events. As
+     * ReaderGroups are identified by name, we can get this reference if we know the name of the targeted ReaderGroup.
+     * This will allow us to get the StreamCuts from the reader positions working in the FlinkPravegaReader instance.
      *
-     * @param timestamp timestamp
-     * @param ctx OnTimerContext
-     * @param out Collector
-     * @throws Exception
+     * @return Reference to the ReaderGroup used by FlinkPravegaReader.
      */
-    @Override
-    public void onTimer(long timestamp, OnTimerContext ctx, Collector<SensorStreamSlice> out) throws Exception {
-        // To get all the events < 0 in the output slice, we need to get the next streamcut w.r.t. the first one found when events were > 0.
-        StreamCut nextStreamcut = getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
-        if (lastStreamCutBeforeSlice.value().equals(nextStreamcut)) {
-            LOG.error("The stream slice published may not contain all the events of interest");
-        }
-
-        SensorStreamSlice slice = new SensorStreamSlice(startStreamCut.value(), nextStreamcut, lastValue.value().f0);
-        LOG.warn("Finish bookmarking a stream slice for sensor {} at: {}.", lastValue.value().f0, slice);
-        out.collect(slice);
-        startStreamCut.update(null);
-        lastStreamCutBeforeSlice.update(null);
-        lastValue.update(null);
-    }
-
     private ReaderGroup getReaderGroup() {
         if (readerGroup == null) {
             ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI);
@@ -197,6 +196,27 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
         }
 
         return readerGroup;
+    }
+
+    /**
+     * This method compares the positions of two StreamCuts. Concretely, this method verifies that all the positions
+     * from the first input StreamCut are higher compared to the second input argument. This ensures that all the
+     * reading positions of interest for the first StreamCut have been updated in the second one.
+     *
+     * @param streamCut StreamCut at a given point in time.
+     * @param toCompare StreamCut to check if all its reading positions are higher compared to the first input argument.
+     * @return Whether all the common positions between two StreamCuts are higher for the second one.
+     */
+    private boolean updatedStreamCutPositions(StreamCut streamCut, StreamCut toCompare) {
+        Map<Segment, Long> streamCutPositions = streamCut.asImpl().getPositions();
+        Map<Segment, Long> toComparePositions = toCompare.asImpl().getPositions();
+        for (Segment s: streamCutPositions.keySet()) {
+            if (toComparePositions.containsKey(s) && toComparePositions.get(s) <= streamCutPositions.get(s)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

@@ -78,11 +78,11 @@ event ordering in a per-sensor basis:
 Then, `StreamBookmarker` shows messages like the ones posted below:
 
 ```
-18:41:07,291 WARN  io.pravega.example.flink.streamcuts.process.Bookmarker        - Start bookmarking a stream slice at: examples20/streamcuts-producer:0=0, 1=0, 2=0 for sensor 2.
+18:41:07,291 WARN  io.pravega.example.flink.streamcuts.process.Bookmarker        - Start bookmarking a stream slice at: examples8/sensor-events:0=623580, 1=623295, 2=623580 for sensor 0.
 ...
-18:41:43,136 WARN  io.pravega.example.flink.streamcuts.process.Bookmarker        - Found events > 0 for sensor 2, waiting for the next stream cut update to create the slice at 1533919308136.
+18:41:43,136 WARN  io.pravega.example.flink.streamcuts.process.Bookmarker        - Initialize sensorStreamSlice end value to look for the next updated StreamCut: examples8/sensor-events:0=656070, 1=655785, 2=656070 for sensor 2.
 ...
-18:41:48,277 WARN  io.pravega.example.flink.streamcuts.process.Bookmarker        - Finish bookmarking a stream slice for sensor 2 at: Start StreamCut: examples20/streamcuts-producer:0=0, 1=0, 2=0, end StreamCut: examples20/streamcuts-producer:0=129105, 1=123690, 2=129105, sensorId: 2.
+18:41:48,277 WARN  io.pravega.example.flink.streamcuts.process.Bookmarker        - Found next end StreamCut for sensor 2: examples8/sensor-events:0=664050, 1=664050, 2=664050. The slice should contain all events < 0 for a specific sensor sine wave.
 ```
 
 These messages correspond to the 3 actions that this application performs. First, in the context of a given `sensorId`
@@ -91,19 +91,22 @@ task processing events for this `sensorId` calls to `readergroup.getStreamCuts()
 preceding this event. This corresponds to the first message shown in the output.
 
 A task continues processing events for a particular `sensorId` until if finds an `eventValue > 0`. As this application 
-wants to bookmark slices of a `Stream` for which a sensor's events are `< 0`, it realizes that the slice should complete. 
+wants to bookmark slices of a `Stream` for which a sensor's events are `< 0`, it realizes that the slice should complete.
+However, there is no guarantee that in the case of finding the first `eventValue > 0` we will have a `StreamCut`
+representing this point in the Pravega `Stream` by calling `readergroup.getStreamCuts()` to form a slice containing all 
+the events of interest. This is because the `StreamCut`s in a `ReaderGroup` are updated under certain situations, but 
+not on every event read. In the case of a Flink application, one of the situations that trigger the update of a 
+`ReaderGroup` `StreamCut`s are the execution of automatic checkpoints (which are associated with Pravega `Checkpoint`s). 
+Therefore, the application stores the current `StreamCut` at this point to check for a proper `StreamCut` in the future. 
 This corresponds to the second message shown in the output.
 
-However, there is no guarantee that in the case of finding the first `eventValue > 0` we can get the very precise point
-in the Pravega `Stream` by calling `readergroup.getStreamCuts()` in order to form a slice containing all the events of 
-interest. This is because the `StreamCut`s in a `ReaderGroup` are updated under certain situations, but not on every 
-event read. In the case of a Flink application, one of the situations that trigger the update of a `ReaderGroup` 
-`StreamCut`s are the execution of automatic checkpoints (which are associated with Pravega `Checkpoint`s). For this
-reason, this application writes the pair of `StreamCut`s in an `onTimer` method, which is executed after an automatic
-Flink checkpoint has updated the `StreamCut`s. When this occurs, we see a message as the third one in the output above.
-In this specific example, `StreamBookmarker` bookmarks a stream slice for which `sensorId=2` exhibited negative event 
-values according to the following `StreamCuts`: from `<0=0, 1=0, 2=0>` to `<0=129105, 1=123690, 2=129105>` 
-(the Pravega `Stream` used had 3 segments, so a `StreamCut` provides a reading offset for each segment in the `Stream`).
+The application proceeds by checking whether the current `StreamCut` in the `ReaderGroup` is strictly higher than one
+obtained for the first `eventValue > 0` the for all its common positions. When this condition is satisfied, we are sure
+that the slice formed by the pair of `StreamCut`s will contain all the events of interest. In this case, we see a 
+message as the third one in the output above. In this specific example, `StreamBookmarker` bookmarks a stream slice for 
+which `sensorId=2` exhibited negative event values according to the following `StreamCuts`: 
+from `<0=623580, 1=623295, 2=623580>` to `<0=664050, 1=664050, 2=664050>` (the Pravega `Stream` used had 3 segments, 
+so a `StreamCut` provides a reading offset for each segment in the `Stream`).
 
 
 Finally, `SliceProcessor` shows messages like the ones posted below:

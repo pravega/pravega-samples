@@ -20,7 +20,7 @@ public class Constants {
     public static final int NUM_EVENTS = 10000;
     public static final String NUM_EVENTS_PARAM = "num-events";
     public static final String DEFAULT_SCOPE = "examples";
-    public static final String PRODUCER_STREAM = "streamcuts-producer";
-    public static final String STREAMCUTS_STREAM = "streamcuts-results";
+    public static final String PRODUCER_STREAM = "sensor-events";
+    public static final String STREAMCUTS_STREAM = "streamcut-pairs";
     public static final int PARALLELISM = 3;
 }
