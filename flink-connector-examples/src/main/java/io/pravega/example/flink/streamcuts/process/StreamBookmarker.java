@@ -27,7 +27,6 @@ import io.pravega.example.flink.streamcuts.SensorStreamSlice;
 import io.pravega.example.flink.streamcuts.serialization.Tuple2DeserializationSchema;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -118,7 +117,7 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
     private final URI pravegaControllerURI;
     private ReaderGroup readerGroup;
 
-    private transient ValueState<Map<Integer, SensorStreamSlice>> pendingBookmarks;
+    private transient ValueState<SensorStreamSlice> pendingBookmark;
 
     public Bookmarker(URI pravegaControllerURI) {
         this.pravegaControllerURI = pravegaControllerURI;
@@ -126,8 +125,8 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
 
     @Override
     public void open(Configuration parameters) {
-        pendingBookmarks = getRuntimeContext().getState(new ValueStateDescriptor<>("pendingBookmarks",
-                TypeInformation.of(new TypeHint<Map<Integer, SensorStreamSlice>>() {})));
+        pendingBookmark = getRuntimeContext().getState(new ValueStateDescriptor<>("pendingBookmarks",
+                TypeInformation.of(new TypeHint<SensorStreamSlice>() {})));
     }
 
     /**
@@ -145,40 +144,35 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
      */
     @Override
     public void processElement(Tuple2<Integer, Double> value, Context ctx, Collector<SensorStreamSlice> out) throws IOException {
-        // Initialize task state for pending slices.
-        if (pendingBookmarks.value() == null) {
-            pendingBookmarks.update(new HashMap<>());
-        }
-
-        if (value.f1 < 0 && !pendingBookmarks.value().containsKey(value.f0)) {
+        if (value.f1 < 0 && pendingBookmark.value() == null) {
             // Instantiate a SensorStreamSlice object for this sensor.
             SensorStreamSlice sensorStreamSlice = new SensorStreamSlice(value.f0);
 
             // Set the current ReaderGroup StreamCut as the beginning of the slice of events of interest.
             StreamCut startStreamCut = getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
             sensorStreamSlice.setStart(startStreamCut);
-            Map<Integer, SensorStreamSlice> currentPendingBookmarks = pendingBookmarks.value();
-            currentPendingBookmarks.put(value.f0, sensorStreamSlice);
-            pendingBookmarks.update(currentPendingBookmarks);
+            pendingBookmark.update(sensorStreamSlice);
             LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut, value.f0);
-        } else if (value.f1 >= 0 && pendingBookmarks.value().containsKey(value.f0)) {
-            SensorStreamSlice sensorStreamSlice = pendingBookmarks.value().get(value.f0);
+        } else if (value.f1 >= 0 && pendingBookmark.value() != null) {
+            SensorStreamSlice sensorStreamSlice = pendingBookmark.value();
             StreamCut currentStreamCut = getReaderGroup().getStreamCuts().get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
 
-            // If this is the first event > 0, then we need to keep the current StreamCut to check for the next one.
+            // If this is the first event > 0, then we need to keep the current StreamCut. Note that this is needed to
+            // check for the next StreamCut strictly beyond the current reader position, as the current StreamCut is
+            // likely to represent past reader positions that may not contain all events < 0 for this sensor.
             if (sensorStreamSlice.getEnd() == null) {
                 LOG.warn("Initialize sensorStreamSlice end value to look for the next updated StreamCut: {} for sensor {}.", currentStreamCut, value.f0);
                 sensorStreamSlice.setEnd(currentStreamCut);
             } else if (updatedStreamCutPositions(sensorStreamSlice.getEnd(), currentStreamCut)) {
-                // Only when all the positions in the previous StreamCut are updated in the current one, we can ensure
-                // that the slice contains all the evens of interest.
+                // Only when all the positions in the previous StreamCut are updated in currentStreamCut, we can ensure
+                // that the slice contains at least all the evens of interest.
                 sensorStreamSlice.setEnd(currentStreamCut);
                 out.collect(sensorStreamSlice);
                 LOG.warn("Found next end StreamCut for sensor {}: {}. The slice should contain all events < 0 for a specific sensor sine wave.", value.f0, currentStreamCut);
-                Map<Integer, SensorStreamSlice> currentPendingBookmarks = pendingBookmarks.value();
-                currentPendingBookmarks.remove(value.f0);
-                pendingBookmarks.update(currentPendingBookmarks);
+                sensorStreamSlice = null;
             }
+
+            pendingBookmark.update(sensorStreamSlice);
         }
     }
 

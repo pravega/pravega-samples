@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class is first intended to read from a stream where stream slices are published by the StreamBookmarker process.
- * Then, upon a new stream slice received, this class runs a new batch job on that slice that represents a set of events
- * in the stream where DataProducer is storing events.
+ * Then, upon a new stream slice received, this class runs (locally, only for demonstration purposes) a bounded batch
+ * job on that slice that represents a set of events in the stream where DataProducer is storing events.
  */
 public class SliceProcessor {
 
@@ -75,6 +75,9 @@ public class SliceProcessor {
             EventStreamReader<SensorStreamSlice> sliceReader = clientFactory.createReader("sliceReader", READER_GROUP_NAME,
                     new JavaSerializer<>(), ReaderConfig.builder().build());
 
+            // The application locally executes bounded batch jobs for every slice received from StreamBookmarker. Note
+            // that this is only for simplifying the demo and have the three processes working in a loop; but, in a real
+            // setting, we could pass a representation of the SensorStreamSlice object as input argument for a batch job.
             EventRead<SensorStreamSlice> sliceToAnalyze;
             do {
                 sliceToAnalyze = sliceReader.readNextEvent(READER_TIMEOUT_MS);
