@@ -163,7 +163,7 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
             if (sensorStreamSlice.getEnd() == null) {
                 LOG.warn("Initialize sensorStreamSlice end value to look for the next updated StreamCut: {} for sensor {}.", currentStreamCut, value.f0);
                 sensorStreamSlice.setEnd(currentStreamCut);
-            } else if (updatedStreamCutPositions(sensorStreamSlice.getEnd(), currentStreamCut)) {
+            } else if (checkUpdatedStreamCutPositions(sensorStreamSlice.getEnd(), currentStreamCut)) {
                 // Only when all the positions in the previous StreamCut are updated in currentStreamCut, we can ensure
                 // that the slice contains at least all the evens of interest.
                 sensorStreamSlice.setEnd(currentStreamCut);
@@ -201,7 +201,7 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
      * @param toCompare StreamCut to check if all its reading positions are higher compared to the first input argument.
      * @return Whether all the common positions between two StreamCuts are higher for the second one.
      */
-    private boolean updatedStreamCutPositions(StreamCut streamCut, StreamCut toCompare) {
+    private boolean checkUpdatedStreamCutPositions(StreamCut streamCut, StreamCut toCompare) {
         Map<Segment, Long> streamCutPositions = streamCut.asImpl().getPositions();
         Map<Segment, Long> toComparePositions = toCompare.asImpl().getPositions();
         for (Segment s: streamCutPositions.keySet()) {
