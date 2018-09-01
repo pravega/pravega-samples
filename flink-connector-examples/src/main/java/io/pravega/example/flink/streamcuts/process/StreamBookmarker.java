@@ -53,7 +53,7 @@ public class StreamBookmarker {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
 
-    static final String READER_GROUP_NAME = "bookmarkerReaderGroup" + System.currentTimeMillis();
+    static final String READER_GROUP_NAME = "streamBookmarkerReaderGroup";
     static final int CHECKPOINT_INTERVAL = 4000;
 
     public static void main(String[] args) throws Exception {
