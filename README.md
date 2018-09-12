@@ -35,6 +35,7 @@ The related documentation and instructions are [here](pravega-client-examples).
 | ------------- |:-----| :-----|
 | `wordcount` | Counting the words continuously from a Pravega `Stream` to demonstrate the usage of Flink connector for Pravega. | [Java](flink-connector-examples/src/main/java/io/pravega/example/flink/wordcount)
 | `primer` | This sample demonstrates Pravega "exactly-once" feature jointly with Flink checkpointing and exactly-once mode. | [Java](flink-connector-examples/src/main/java/io/pravega/example/flink/primer)
+| `streamcuts` | This sample demonstrates the use of Pravega StreamCuts in Flink applications. | [Java](flink-connector-examples/src/main/java/io/pravega/example/flink/streamcuts)
 
 The related documentation and instructions are [here](flink-connector-examples).
 
