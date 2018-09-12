@@ -1,4 +1,4 @@
-# StreamCuts Example
+# StreamCuts Flink Example
 
 This sample application demonstrates the use of a Pravega abstraction, the `StreamCut`, in a Flink application to make 
 it easier for developers to write analytics applications. Concretely, the objective of this sample is to demonstrate 
@@ -10,22 +10,22 @@ The example consists of three applications: `DataProducer`, `StreamBookmarker` a
 
 ```
 $ cd flink-connector-examples/build/install/pravega-flink-examples
-$ bin/dataProducer  [--controller tcp://localhost:9090] [--num-events 10000]
-$ bin/streamBookmarker   [--controller tcp://localhost:9090] 
-$ bin/sliceProcessor   [--controller tcp://localhost:9090]
+$ bin/dataProducer [--controller tcp://localhost:9090] [--num-events 10000]
+$ bin/streamBookmarker [--controller tcp://localhost:9090] 
+$ bin/sliceProcessor [--controller tcp://localhost:9090]
 ```
 
 First, let us describe the role that these applications play in the sample:
 - `DataProducer`: This application is intended to create data simulating various sensors publishing events. Each event
 is a tuple `<sensorId, eventValue>`. In particular, the values of events follow a sinusoidal function to have intuitive
-changing values within a controlled rage for a demonstration.
+changing values within a controlled range for a demonstration.
 
 - `StreamBookmarker`: This Flink application is intended to identify the slices of the `Stream` that we want to bookmark,
 as they are of interest to execute further processing. That is, for a given `sensorId`, this job detects and stores the
 start and end `StreamCut`s (i.e., `Stream` "slice") for which `eventValues` are `< 0`. With the start and end `StreamCut`s, 
 this application creates a "slice" object that is persistently stored in a separate Pravega `Stream`.
 
-- `SliceProcessor`: This application reads from the Pravega `Stream` where the start and end StreamCuts are published by
+- `SliceProcessor`: This application reads from the Pravega `Stream` where the start and end `StreamCut`s are published by
 `StreamBookmarker`. For each stream slice object written in the `Stream`, this application executes (locally) a batch job 
 that reads the events within the specified slice and performs some computation (e.g., counting events for the sensor
 for which values are `< 0`). This is an example of bounded processing in Flink on a Pravega `Stream`.
@@ -36,19 +36,19 @@ First of all, as this example consists of 3 applications, we recommend to open 3
 First, we run the `DataProducer` application:
 
 ```
-$ bin/dataProducer --controller tcp://localhost:9090 --num-events 10000
+$ bin/dataProducer --num-events 10000
 ```
 
 Second, we run the `StreamBookmarker` application:
 
 ```
-$ bin/streamBookmarker --controller tcp://localhost:9090
+$ bin/streamBookmarker
 ```
 
 And finally, the `SliceProcessor` application:
 
 ```
-$ bin/sliceProcessor --controller tcp://localhost:9090
+$ bin/sliceProcessor
 ```
 
 Note that each application should run in a separate terminal.
