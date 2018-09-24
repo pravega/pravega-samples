@@ -44,7 +44,7 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
     // Pravega scope name
     public static final String SCOPE_NAME = "pravega.scope";
     // Pravega stream name
-    public static final String STREAM_NAME = "pravega.stream";
+    public static final String OUT_STREAM_NAME = "pravega.out.stream";
     // Pravega uri string
     public static final String URI_STRING = "pravega.uri";
     // Pravega deserializer class name
@@ -70,8 +70,8 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
         Configuration conf = context.getConfiguration();
         final String scopeName = Optional.ofNullable(conf.get(PravegaOutputFormat.SCOPE_NAME)).orElseThrow(() ->
                 new IOException("The input scope name must be configured (" + PravegaOutputFormat.SCOPE_NAME + ")"));
-        final String streamName = Optional.ofNullable(conf.get(PravegaOutputFormat.STREAM_NAME)).orElseThrow(() ->
-                new IOException("The input stream name must be configured (" + PravegaOutputFormat.STREAM_NAME + ")"));
+        final String streamName = Optional.ofNullable(conf.get(PravegaOutputFormat.OUT_STREAM_NAME)).orElseThrow(() ->
+                new IOException("The input stream name must be configured (" + PravegaOutputFormat.OUT_STREAM_NAME + ")"));
         final URI controllerURI = Optional.ofNullable(conf.get(PravegaOutputFormat.URI_STRING)).map(URI::create).orElseThrow(() ->
                 new IOException("The Pravega controller URI must be configured (" + PravegaOutputFormat.URI_STRING + ")"));
         final String deserializerClassName = Optional.ofNullable(conf.get(PravegaOutputFormat.DESERIALIZER)).orElseThrow(() ->
