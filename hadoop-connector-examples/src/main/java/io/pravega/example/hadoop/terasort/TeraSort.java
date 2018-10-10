@@ -8,6 +8,24 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.pravega.example.hadoop.terasort;
 
 import io.pravega.connectors.hadoop.EventKey;
@@ -282,6 +300,7 @@ public class TeraSort extends Configured implements Tool {
   }
 
   private static void usage() throws IOException {
+    //The usage is changed for using Pravega streams
     System.err.println("Usage: terasort [-Dproperty=value] " +
             "<dummy hdfs input> <hdfs output> <pravega uri> <scope> <input stream> <output stream prefix>");
     System.err.println("TeraSort configurations are:");
@@ -290,6 +309,11 @@ public class TeraSort extends Configured implements Tool {
     }
   }
 
+  /**
+   * The original run() has been modified to:
+   *  - take command parameters for running terasort on Pravega streams
+   *  - use special mapper and reducer to convert data type required by Pravega hadoop connector
+   */
   public int run(String[] args) throws Exception {
     if (args.length != 6) {
       usage();
@@ -342,6 +366,9 @@ public class TeraSort extends Configured implements Tool {
     return ret;
   }
 
+  /**
+   * The mapper reads events from Pravega stream, the key is the first 10 bytes of value.
+   */
   public static class TeraSortMapper
     extends Mapper<EventKey, Text, Text, Text> {
 
@@ -352,6 +379,10 @@ public class TeraSort extends Configured implements Tool {
     }
   }
 
+  /**
+   * Since the output is Pravega stream as well, the key text has to be converted from text to string
+   * to satisfy the requirement of PravegaOutputFormat
+   */
   public static class TeraSortReducer
           extends Reducer<Text, Text, String, Text> {
 

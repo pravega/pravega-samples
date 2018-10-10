@@ -30,7 +30,7 @@ Hadoop (verified with Hadoop 2.8.3 on Ubuntu 16.04)
 
 2. set env variables
    export HDFS=hdfs://<hdfs_ip_and_port> # e.g. hdfs://192.168.0.188:9000
-   export HADOOP_EXAMPLES_JAR=<pravega-hadoop-examples-0.4.0-SNAPSHOT-all.jar location> # e.g. ./build/libs/pravega-hadoop-examples-0.4.0-SNAPSHOT-all.jar
+   export HADOOP_EXAMPLES_JAR=<pravega-hadoop-examples-x.y.z.jar location> # e.g. ./build/libs/pravega-hadoop-examples-0.4.0-SNAPSHOT-all.jar
    export HADOOP_EXAMPLES_INPUT_DUMMY=${HDFS}/tmp/hadoop_examples_input_dummy
    export HADOOP_EXAMPLES_OUTPUT=${HDFS}/tmp/hadoop_examples_output
    export PRAVEGA_URI=tcp://<pravega_controller_ip_and_port> # e.g. tcp://192.168.0.188:9090
@@ -113,7 +113,7 @@ Hadoop (verified with Hadoop 2.8.1 and 3.1.1 on Ubuntu 16.04)
 
 2. set env variables
    export HDFS=hdfs://<hdfs_ip_and_port> # e.g. hdfs://192.168.0.188:9000
-   export HADOOP_EXAMPLES_JAR=<pravega-hadoop-examples-0.4.0-SNAPSHOT-all.jar location> # e.g. ./build/libs/pravega-hadoop-examples-0.4.0-SNAPSHOT-all.jar
+   export HADOOP_EXAMPLES_JAR=<pravega-hadoop-examples-x.y.z-SNAPSHOT-all.jar location> # e.g. ./build/libs/pravega-hadoop-examples-0.4.0-SNAPSHOT-all.jar
    export HADOOP_EXAMPLES_INPUT_DUMMY=${HDFS}/tmp/hadoop_examples_input_dummy
    export HADOOP_EXAMPLES_OUTPUT=${HDFS}/tmp/hadoop_examples_output
    export PRAVEGA_URI=tcp://<pravega_controller_ip_and_port> # e.g. tcp://192.168.0.188:9090
