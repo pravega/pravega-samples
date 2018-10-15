@@ -25,7 +25,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.MRJobConfig;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -36,8 +38,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- *  The class to validate terasort results.
- *  It simply dumps the events of specified Pravega stream into hdfs file specified.
+ *  The class is to dump events from a Pravega stream into a hdfs file for manual validation
+ *  of terasort results, e.g. checking whether events are sorted in a stream, as well as crossing streams.
  */
 public class TeraStreamValidate extends Configured implements Tool {
   private static final Logger LOG = LoggerFactory.getLogger(TeraStreamValidate.class);

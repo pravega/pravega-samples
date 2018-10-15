@@ -10,16 +10,18 @@
 
 package io.pravega.example.hadoop.terasort;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.*;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Serializer;
+import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.example.hadoop.wordcount.PravegaOutputFormat;
 import io.pravega.example.hadoop.wordcount.PravegaOutputRecordWriter;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.*;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

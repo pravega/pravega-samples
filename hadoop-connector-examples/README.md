@@ -133,11 +133,11 @@ Hadoop (verified with Hadoop 2.8.1 and 3.1.1 on Ubuntu 16.04)
       hadoop jar ${HADOOP_EXAMPLES_JAR} teragen [1m|1b|1t] ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}
       e.g. hadoop jar $HADOOP_EXAMPLES_JAR teragen 10 hdfs://localhost:8020/pravega/input tcp://localhost:9090 myScope inputStream
 
-   4.2 to sort all the events from the input stream and put sorted events into out stream
+   4.2 to sort all the events from the input stream and put sorted events into output stream(s)
       hadoop jar ${HADOOP_EXAMPLES_JAR} terasort ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_INPUT_STREAM} ${PRAVEGA_OUTPUT_STREAM_PREFIX}
       e.g. hadoop jar $HADOOP_EXAMPLES_JAR terasort -D mapreduce.job.maps=3 -D mapreduce.job.reduces=3 hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/output tcp://localhost:9090 myScope inputStream outputStream
 
-   4.3 to validate the result pravega stream
+   4.3 to dump events from output stream(s) into corresponding hdfs file(s), in order to manually verify whether terasort is correctly done 
       hadoop jar ${HADOOP_EXAMPLES_JAR} terastreamvalidate ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_OUTPUT_STREAM_PREFIX}[0-9]+
       e.g. (in case of 3 reducers)
       hadoop jar $HADOOP_EXAMPLES_JAR terastreamvalidate hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/validate/output0 tcp://localhost:9090 myScope outputStream0
