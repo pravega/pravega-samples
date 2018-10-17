@@ -8,6 +8,24 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.pravega.example.hadoop.wordcount;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -44,7 +62,7 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
     // Pravega scope name
     public static final String SCOPE_NAME = "pravega.scope";
     // Pravega stream name
-    public static final String STREAM_NAME = "pravega.stream";
+    public static final String OUT_STREAM_NAME = "pravega.out.stream";
     // Pravega uri string
     public static final String URI_STRING = "pravega.uri";
     // Pravega deserializer class name
@@ -70,8 +88,8 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
         Configuration conf = context.getConfiguration();
         final String scopeName = Optional.ofNullable(conf.get(PravegaOutputFormat.SCOPE_NAME)).orElseThrow(() ->
                 new IOException("The input scope name must be configured (" + PravegaOutputFormat.SCOPE_NAME + ")"));
-        final String streamName = Optional.ofNullable(conf.get(PravegaOutputFormat.STREAM_NAME)).orElseThrow(() ->
-                new IOException("The input stream name must be configured (" + PravegaOutputFormat.STREAM_NAME + ")"));
+        final String streamName = Optional.ofNullable(conf.get(PravegaOutputFormat.OUT_STREAM_NAME)).orElseThrow(() ->
+                new IOException("The input stream name must be configured (" + PravegaOutputFormat.OUT_STREAM_NAME + ")"));
         final URI controllerURI = Optional.ofNullable(conf.get(PravegaOutputFormat.URI_STRING)).map(URI::create).orElseThrow(() ->
                 new IOException("The Pravega controller URI must be configured (" + PravegaOutputFormat.URI_STRING + ")"));
         final String deserializerClassName = Optional.ofNullable(conf.get(PravegaOutputFormat.DESERIALIZER)).orElseThrow(() ->

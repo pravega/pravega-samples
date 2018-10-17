@@ -8,8 +8,29 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.pravega.example.hadoop.wordcount;
 
+import io.pravega.example.hadoop.terasort.TeraGen;
+import io.pravega.example.hadoop.terasort.TeraStreamValidate;
+import io.pravega.example.hadoop.terasort.TeraSort;
 import org.apache.hadoop.util.ProgramDriver;
 
 /**
@@ -38,6 +59,14 @@ public class ExampleDriver {
                     "A map/reduce program that writes random data to pravega.");
             pgd.addClass("randomtextwriter", RandomTextWriter.class,
                     "A map/reduce program that writes random textual data to pravega.");
+            pgd.addClass("teragen", TeraGen.class,
+                    "A map/reduce program that generate the official GraySort input data set to pravega.");
+            pgd.addClass("terasort", TeraSort.class,
+                    "A map/reduce program that sorts events from one pravega stream and write the sorted " +
+                            "events into one or more streams in a globally sorted manner.");
+            pgd.addClass("terastreamvalidate", TeraStreamValidate.class,
+                    "A map/reduce program that reads events from sorted streams and write into hdfs files " +
+                            "for validation purpose");
             exitCode = pgd.run(argv);
         } catch (Throwable e) {
             e.printStackTrace();
