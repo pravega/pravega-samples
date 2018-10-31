@@ -37,7 +37,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.util.Collector;
@@ -97,7 +97,7 @@ public class StreamBookmarker {
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
                                                               .setParallelism(Constants.PARALLELISM)
                                                               .keyBy(0)
-                                                              .process(new Bookmarker(pravegaControllerURI))
+                                                              .process((KeyedProcessFunction) new Bookmarker(pravegaControllerURI))
                                                               .addSink(writer);
 
         // Execute within the Flink environment.
@@ -111,18 +111,17 @@ public class StreamBookmarker {
  * the state of the Flink reader. The main task of this class is to output SensorStreamSlice objects that represent events
  * created by DataProducer whose value is < 0.
  */
-class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSlice> {
+class Bookmarker extends KeyedProcessFunction<Long, Tuple2<Integer, Double>, SensorStreamSlice> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
+    private static final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(3);
     private final URI pravegaControllerURI;
     private ReaderGroup readerGroup;
-    private transient ScheduledExecutorService executor;
 
     private transient ValueState<SensorStreamSlice> pendingBookmark;
 
     public Bookmarker(URI pravegaControllerURI) {
         this.pravegaControllerURI = pravegaControllerURI;
-        this.executor = new ScheduledThreadPoolExecutor(1);
     }
 
     @Override
@@ -154,17 +153,17 @@ class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSl
                                                        .get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
             sensorStreamSlice.setStart(startStreamCut);
             pendingBookmark.update(sensorStreamSlice);
-            LOG.warn("Start bookmarking a stream slice at: {} for sensor {}.", startStreamCut, value.f0);
+            LOG.warn("Start bookmarking a stream slice at StreamCut: {} for sensor {}.", startStreamCut, value.f0);
         } else if (value.f1 >= 0 && pendingBookmark.value() != null) {
             SensorStreamSlice sensorStreamSlice = pendingBookmark.value();
             // We found the first event > 0, so we want a StreamCut from this point onward to complete the slice.
-            StreamCut currentStreamCut = getReaderGroup().generateStreamCuts(executor)
-                                                         .join()
-                                                         .get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
-            sensorStreamSlice.setEnd(currentStreamCut);
+            StreamCut endStreamCut = getReaderGroup().generateStreamCuts(executor)
+                                                     .join()
+                                                     .get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
+            LOG.warn("End bookmarking a stream slice at StreamCut: {} for sensor {}. The slice should contain all " +
+                    "events < 0 for a specific sensor sine wave.", endStreamCut, value.f0);
+            sensorStreamSlice.setEnd(endStreamCut);
             out.collect(sensorStreamSlice);
-            LOG.warn("Found next end StreamCut for sensor {}: {}. The slice should contain all events < 0 for a specific sensor sine wave.",
-                    value.f0, currentStreamCut);
             pendingBookmark.update(null);
         }
     }
