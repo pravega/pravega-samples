@@ -54,7 +54,7 @@ public class StreamBookmarker {
     private static final Logger LOG = LoggerFactory.getLogger(StreamBookmarker.class);
 
     static final String READER_GROUP_NAME = "streamBookmarkerReaderGroup";
-    static final int PERIODIC_STREAMCUT_GENERATION_EVENTS = 50;
+    static final int CHECKPOINT_INTERVAL = 4000;
 
     public static void main(String[] args) throws Exception {
         // Initialize the parameter utility tool in order to retrieve input parameters.
@@ -91,7 +91,7 @@ public class StreamBookmarker {
 
         // Initialize the Flink execution environment.
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-                                                                         .enableCheckpointing(10000);
+                                                                         .enableCheckpointing(CHECKPOINT_INTERVAL);
 
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
@@ -118,9 +118,7 @@ class Bookmarker extends KeyedProcessFunction<Long, Tuple2<Integer, Double>, Sen
     private final URI pravegaControllerURI;
     private ReaderGroup readerGroup;
 
-    private transient ValueState<SensorStreamSlice> sensorStreamSlice;
-    private transient ValueState<StreamCut> periodicStreamCut;
-    private transient ValueState<Long> eventCounter;
+    private transient ValueState<SensorStreamSlice> pendingBookmark;
 
     public Bookmarker(URI pravegaControllerURI) {
         this.pravegaControllerURI = pravegaControllerURI;
@@ -128,12 +126,8 @@ class Bookmarker extends KeyedProcessFunction<Long, Tuple2<Integer, Double>, Sen
 
     @Override
     public void open(Configuration parameters) {
-        sensorStreamSlice = getRuntimeContext().getState(new ValueStateDescriptor<>("sensorStreamSlice",
+        pendingBookmark = getRuntimeContext().getState(new ValueStateDescriptor<>("pendingBookmarks",
                 TypeInformation.of(new TypeHint<SensorStreamSlice>() {})));
-        periodicStreamCut = getRuntimeContext().getState(new ValueStateDescriptor<>("periodicStreamCut",
-                TypeInformation.of(new TypeHint<StreamCut>() {})));
-        eventCounter = getRuntimeContext().getState(new ValueStateDescriptor<>("eventCounter",
-                TypeInformation.of(new TypeHint<Long>() {})));
     }
 
     /**
@@ -151,21 +145,17 @@ class Bookmarker extends KeyedProcessFunction<Long, Tuple2<Integer, Double>, Sen
      */
     @Override
     public void processElement(Tuple2<Integer, Double> value, Context ctx, Collector<SensorStreamSlice> out) throws IOException {
-        // Initialize the periodic StreamCut in case it is null.
-        if (periodicStreamCut.value() == null || eventCounter.value() == null) {
-            periodicStreamCut.update(StreamCut.UNBOUNDED);
-            eventCounter.update(0L);
-        }
-
-        if (value.f1 < 0 && sensorStreamSlice.value() == null) {
+        if (value.f1 < 0 && pendingBookmark.value() == null) {
             // Instantiate a SensorStreamSlice object for this sensor.
             SensorStreamSlice sensorStreamSlice = new SensorStreamSlice(value.f0);
-            // Set the latest periodically generated StreamCut as the beginning of the slice of events of interest.
-            sensorStreamSlice.setStart(periodicStreamCut.value());
-            this.sensorStreamSlice.update(sensorStreamSlice);
-            LOG.warn("Start bookmarking a stream slice at StreamCut: {} for sensor {}.", periodicStreamCut.value(), value.f0);
-        } else if (value.f1 >= 0 && sensorStreamSlice.value() != null) {
-            SensorStreamSlice sensorStreamSlice = this.sensorStreamSlice.value();
+            // Set the current ReaderGroup StreamCut as the beginning of the slice of events of interest.
+            StreamCut startStreamCut = getReaderGroup().getStreamCuts()
+                                                       .get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM));
+            sensorStreamSlice.setStart(startStreamCut);
+            pendingBookmark.update(sensorStreamSlice);
+            LOG.warn("Start bookmarking a stream slice at StreamCut: {} for sensor {}.", startStreamCut, value.f0);
+        } else if (value.f1 >= 0 && pendingBookmark.value() != null) {
+            SensorStreamSlice sensorStreamSlice = pendingBookmark.value();
             // We found the first event > 0, so we want a StreamCut from this point onward to complete the slice.
             StreamCut endStreamCut = getReaderGroup().generateStreamCuts(executor)
                                                      .join()
@@ -174,17 +164,8 @@ class Bookmarker extends KeyedProcessFunction<Long, Tuple2<Integer, Double>, Sen
                     "events < 0 for a specific sensor sine wave.", endStreamCut, value.f0);
             sensorStreamSlice.setEnd(endStreamCut);
             out.collect(sensorStreamSlice);
-            this.sensorStreamSlice.update(null);
+            pendingBookmark.update(null);
         }
-
-        // Generate a StreamCut every PERIODIC_STREAMCUT_GENERATION_EVENTS events.
-        if (eventCounter.value() % StreamBookmarker.PERIODIC_STREAMCUT_GENERATION_EVENTS == 0) {
-            periodicStreamCut.update(getReaderGroup().generateStreamCuts(executor)
-                                                     .join()
-                                                     .get(Stream.of(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM)));
-        }
-
-        eventCounter.update(eventCounter.value() + 1);
     }
 
     /**
