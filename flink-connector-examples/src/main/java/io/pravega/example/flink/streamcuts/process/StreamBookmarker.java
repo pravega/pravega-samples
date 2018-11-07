@@ -92,6 +92,7 @@ public class StreamBookmarker {
         // Initialize the Flink execution environment.
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
                                                                          .enableCheckpointing(CHECKPOINT_INTERVAL);
+        env.getCheckpointConfig().setCheckpointTimeout(CHECKPOINT_INTERVAL);
 
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
