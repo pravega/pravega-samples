@@ -37,7 +37,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.util.Collector;
@@ -98,7 +98,7 @@ public class StreamBookmarker {
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
                                                               .setParallelism(Constants.PARALLELISM)
                                                               .keyBy(0)
-                                                              .process(new Bookmarker(pravegaControllerURI))
+                                                              .process((KeyedProcessFunction) new Bookmarker(pravegaControllerURI))
                                                               .addSink(writer);
 
         // Execute within the Flink environment.
@@ -112,7 +112,7 @@ public class StreamBookmarker {
  * the state of the Flink reader. The main task of this class is to output SensorStreamSlice objects that represent events
  * created by DataProducer whose value is < 0.
  */
-class Bookmarker extends ProcessFunction<Tuple2<Integer, Double>, SensorStreamSlice> {
+class Bookmarker extends KeyedProcessFunction<Long, Tuple2<Integer, Double>, SensorStreamSlice> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookmarker.class);
     private static final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(Constants.PARALLELISM);
