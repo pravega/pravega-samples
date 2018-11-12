@@ -63,6 +63,8 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
     public static final String SCOPE_NAME = "pravega.scope";
     // Pravega stream name
     public static final String OUT_STREAM_NAME = "pravega.out.stream";
+    // Pravega stream segments
+    public static final String OUT_STREAM_SEGMENTS = "pravega.out.stream.segments";
     // Pravega uri string
     public static final String URI_STRING = "pravega.uri";
     // Pravega deserializer class name
@@ -85,6 +87,10 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
 
     @Override
     public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+        return getRecordWriter(context, null);
+    }
+
+    public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context, String segmentRoutingKey) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         final String scopeName = Optional.ofNullable(conf.get(PravegaOutputFormat.SCOPE_NAME)).orElseThrow(() ->
                 new IOException("The input scope name must be configured (" + PravegaOutputFormat.SCOPE_NAME + ")"));
@@ -94,12 +100,13 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
                 new IOException("The Pravega controller URI must be configured (" + PravegaOutputFormat.URI_STRING + ")"));
         final String deserializerClassName = Optional.ofNullable(conf.get(PravegaOutputFormat.DESERIALIZER)).orElseThrow(() ->
                 new IOException("The event deserializer must be configured (" + PravegaOutputFormat.DESERIALIZER + ")"));
+        final int segments = Integer.parseInt(Optional.of(conf.get(PravegaOutputFormat.OUT_STREAM_SEGMENTS)).orElse("3"));
 
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scopeName);
 
         StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scopeName).streamName(streamName)
-                .scalingPolicy(ScalingPolicy.fixed(3))
+                .scalingPolicy(ScalingPolicy.fixed(segments))
                 .build();
 
         streamManager.createStream(scopeName, streamName, streamConfig);
@@ -119,7 +126,7 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
                 .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
                 .build());
 
-        return new PravegaOutputRecordWriter<V>(writer);
+        return new PravegaOutputRecordWriter<V>(writer, segmentRoutingKey);
     }
 
     @Override

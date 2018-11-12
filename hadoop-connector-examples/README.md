@@ -118,9 +118,9 @@ Hadoop (verified with Hadoop 2.8.1 and 3.1.1 on Ubuntu 16.04)
    export HADOOP_EXAMPLES_OUTPUT=${HDFS}/tmp/hadoop_examples_output
    export PRAVEGA_URI=tcp://<pravega_controller_ip_and_port> # e.g. tcp://192.168.0.188:9090
    export PRAVEGA_SCOPE=<scope_name>   # e.g. myScope
-   export PRAVEGA_INPUT_STREAM=<stream_name> # e.g. intStream
-   export PRAVEGA_OUTPUT_STREAM=<stream_name> # e.g. outStream
-   export PRAVEGA_OUTPUT_STREAM_PREFIX=<stream_name_prefix> # e.g. sortedStream
+   export PRAVEGA_INPUT_STREAM=<stream_name> # e.g. inputStream
+   export PRAVEGA_OUTPUT_STREAM=<stream_name> # e.g. outputStream
+   export PRAVEGA_NUMBER_OF_SEGMENTS=<number_of_segments> # e.g. 12
    export CMD=wordcount # so far, can also try wordmean and wordmedian
 
 3. make sure input and output dir are empty
@@ -130,16 +130,13 @@ Hadoop (verified with Hadoop 2.8.1 and 3.1.1 on Ubuntu 16.04)
 4. run hadoop commands
 
    4.1 to generate events into a Pravega stream
-      hadoop jar ${HADOOP_EXAMPLES_JAR} teragen [1m|1b|1t] ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM}
-      e.g. hadoop jar $HADOOP_EXAMPLES_JAR teragen 10 hdfs://localhost:8020/pravega/input tcp://localhost:9090 myScope inputStream
+      hadoop jar ${HADOOP_EXAMPLES_JAR} teragen <number of rows> ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${PRAVEGA_NUMBER_OF_SEGMENTS}
+      e.g. hadoop jar $HADOOP_EXAMPLES_JAR teragen 10m hdfs://localhost:8020/pravega/input tcp://localhost:9090 myScope inputStream 12
 
-   4.2 to sort all the events from the input stream and put sorted events into output stream(s)
-      hadoop jar ${HADOOP_EXAMPLES_JAR} terasort ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_INPUT_STREAM} ${PRAVEGA_OUTPUT_STREAM_PREFIX}
-      e.g. hadoop jar $HADOOP_EXAMPLES_JAR terasort -D mapreduce.job.maps=3 -D mapreduce.job.reduces=3 hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/output tcp://localhost:9090 myScope inputStream outputStream
+   4.2 to sort all the events from the input stream and put sorted events into output stream, optionally with segements specified. (Default segements are 3.
+      hadoop jar ${HADOOP_EXAMPLES_JAR} terasort ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_INPUT_STREAM} ${PRAVEGA_OUTPUT_STREAM} {PRAVEGA_NUMBER_OF_SEGMENTS}
+      e.g. hadoop jar $HADOOP_EXAMPLES_JAR terasort -D mapreduce.job.maps=12 -D mapreduce.job.reduces=12 hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/output tcp://localhost:9090 myScope inputStream outputStream 12
 
-   4.3 to dump events from output stream(s) into corresponding hdfs file(s), in order to manually verify whether terasort is correctly done 
-      hadoop jar ${HADOOP_EXAMPLES_JAR} terastreamvalidate ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_OUTPUT_STREAM_PREFIX}[0-9]+
-      e.g. (in case of 3 reducers)
-      hadoop jar $HADOOP_EXAMPLES_JAR terastreamvalidate hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/validate/output0 tcp://localhost:9090 myScope outputStream0
-      hadoop jar $HADOOP_EXAMPLES_JAR terastreamvalidate hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/validate/output1 tcp://localhost:9090 myScope outputStream1
-      hadoop jar $HADOOP_EXAMPLES_JAR terastreamvalidate hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/validate/output2 tcp://localhost:9090 myScope outputStream2
+   4.3 to dump events from specified Pravega stream into hdfs file 
+      hadoop jar ${HADOOP_EXAMPLES_JAR} terastreamvalidate ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_OUTPUT_STREAM}
+      e.g. hadoop jar $HADOOP_EXAMPLES_JAR terastreamvalidate hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/validate/output tcp://localhost:9090 myScope outputStream
