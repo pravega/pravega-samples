@@ -26,7 +26,7 @@
  * limitations under the License.
  */
 
-package io.pravega.example.hadoop.wordcount;
+package io.pravega.example.hadoop;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientFactory;
@@ -90,7 +90,7 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
         return getRecordWriter(context, null);
     }
 
-    public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context, String segmentRoutingKey) throws IOException, InterruptedException {
+    public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context, String routingKey) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         final String scopeName = Optional.ofNullable(conf.get(PravegaOutputFormat.SCOPE_NAME)).orElseThrow(() ->
                 new IOException("The input scope name must be configured (" + PravegaOutputFormat.SCOPE_NAME + ")"));
@@ -126,7 +126,7 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
                 .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
                 .build());
 
-        return new PravegaOutputRecordWriter<V>(writer, segmentRoutingKey);
+        return new PravegaOutputRecordWriter<V>(writer, routingKey);
     }
 
     @Override

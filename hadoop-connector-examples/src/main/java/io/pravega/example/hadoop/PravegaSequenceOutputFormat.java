@@ -8,33 +8,26 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package io.pravega.example.hadoop.terasort;
+package io.pravega.example.hadoop;
 
-import io.pravega.client.ClientFactory;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.EventStreamWriter;
-import io.pravega.client.stream.EventWriterConfig;
-import io.pravega.client.stream.ScalingPolicy;
-import io.pravega.client.stream.Serializer;
-import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.example.hadoop.wordcount.PravegaOutputFormat;
-import io.pravega.example.hadoop.wordcount.PravegaOutputRecordWriter;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.Optional;
 
 /**
  * A special PravegaOutputFormat to write events to Pravega stream in sequence:
  *   For a map/reduce job, an output stream will be created with segments specified (default value is 3);
  *   for each reducer (or mapper if no reducer) task it will receive a record-writer with its task id embedded,
  *   when events are being written into stream, original event key will be replaced with the task id,
- *   hence all the events from one mapper/reducer task will goto a particular segment, hence the sequence is kept.
+ *   hence all the events from one mapper/reducer task will go to a particular segment, hence the sequence is kept.
+ *
+ * The "sequence" here means:
+ * All the keys in a segment are in order;
+ * Segments are in order too by segment id - all the keys in segment with lower id are less than all the keys in
+ * segments with greater ids.
  *
  */
 public class PravegaSequenceOutputFormat<V> extends PravegaOutputFormat<V> {

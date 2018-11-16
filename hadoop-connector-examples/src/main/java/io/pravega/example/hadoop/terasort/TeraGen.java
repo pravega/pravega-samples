@@ -28,7 +28,7 @@
 
 package io.pravega.example.hadoop.terasort;
 
-import io.pravega.example.hadoop.wordcount.PravegaOutputFormat;
+import io.pravega.example.hadoop.PravegaOutputFormat;
 import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -79,7 +79,7 @@ import java.util.zip.Checksum;
  * </ul>
  *
  * <p>
- * e.g. to run the program:
+ * To run the program:
  * <b>bin/hadoop jar hadoop-*-examples.jar teragen 1m in-dir pravega-uri scopeName streamName 12</b>
  */
 public class TeraGen extends Configured implements Tool {
@@ -263,7 +263,7 @@ public class TeraGen extends Configured implements Tool {
 
   private static void usage() throws IOException {
     System.err.println
-            ("teragen <num rows> <dummy output dir> <pravega uri> <scope> <stream> [optional: number of segments]");
+      ("teragen <num rows> <dummy output dir> <pravega uri> <scope> <stream> [optional: number of segments]");
   }
 
   /**

@@ -27,7 +27,7 @@
  */
 
 
-package io.pravega.example.hadoop.wordcount;
+package io.pravega.example.hadoop;
 
 import io.pravega.client.stream.EventStreamWriter;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -47,17 +47,17 @@ public class PravegaOutputRecordWriter<V> extends RecordWriter<String, V> {
 
     private static final Logger log = LoggerFactory.getLogger(PravegaOutputRecordWriter.class);
     private final EventStreamWriter writer;
-    private final String segmentRoutingKey;
+    private final String routingKey;
 
-    public PravegaOutputRecordWriter(EventStreamWriter writer, String segmentRoutingKey) {
+    public PravegaOutputRecordWriter(EventStreamWriter writer, String routingKey) {
         this.writer = writer;
-        this.segmentRoutingKey = segmentRoutingKey;
+        this.routingKey = routingKey;
     }
 
-  @Override
+    @Override
     public void write(String key, V value) throws IOException, InterruptedException {
-        final CompletableFuture<Void> future = segmentRoutingKey == null ?
-                writer.writeEvent(key, value) : writer.writeEvent(segmentRoutingKey, value);
+        final CompletableFuture<Void> future = routingKey == null ?
+                writer.writeEvent(key, value) : writer.writeEvent(routingKey, value);
         future.whenCompleteAsync(
             (v, e) -> {
                 if (e != null) {

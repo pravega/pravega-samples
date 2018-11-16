@@ -30,6 +30,7 @@ package io.pravega.example.hadoop.terasort;
 
 import io.pravega.connectors.hadoop.EventKey;
 import io.pravega.connectors.hadoop.PravegaInputFormat;
+import io.pravega.example.hadoop.PravegaSequenceOutputFormat;
 import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;

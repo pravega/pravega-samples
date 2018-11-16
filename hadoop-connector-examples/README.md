@@ -133,7 +133,7 @@ Hadoop (verified with Hadoop 2.8.1 and 3.1.1 on Ubuntu 16.04)
       hadoop jar ${HADOOP_EXAMPLES_JAR} teragen <number of rows> ${HADOOP_EXAMPLES_INPUT_DUMMY} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_STREAM} ${PRAVEGA_NUMBER_OF_SEGMENTS}
       e.g. hadoop jar $HADOOP_EXAMPLES_JAR teragen 10m hdfs://localhost:8020/pravega/input tcp://localhost:9090 myScope inputStream 12
 
-   4.2 to sort all the events from the input stream and put sorted events into output stream, optionally with segements specified. (Default segements are 3.
+   4.2 to sort all the events from the input stream and put sorted events into output stream, optionally with segements specified. (Default segments are 3.
       hadoop jar ${HADOOP_EXAMPLES_JAR} terasort ${HADOOP_EXAMPLES_INPUT_DUMMY} ${HADOOP_EXAMPLES_OUTPUT} ${PRAVEGA_URI} ${PRAVEGA_SCOPE} ${PRAVEGA_INPUT_STREAM} ${PRAVEGA_OUTPUT_STREAM} {PRAVEGA_NUMBER_OF_SEGMENTS}
       e.g. hadoop jar $HADOOP_EXAMPLES_JAR terasort -D mapreduce.job.maps=12 -D mapreduce.job.reduces=12 hdfs://localhost:8020/pravega/input hdfs://localhost:8020/pravega/output tcp://localhost:9090 myScope inputStream outputStream 12
 
