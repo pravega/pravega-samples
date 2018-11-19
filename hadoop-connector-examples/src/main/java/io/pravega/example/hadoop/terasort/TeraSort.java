@@ -62,11 +62,10 @@ import java.net.URI;
  * https://github.com/apache/hadoop/blob/trunk/hadoop-mapreduce-project/hadoop-mapreduce-examples
  * /src/main/java/org/apache/hadoop/examples/terasort/TeraSort.java
  *
- * Generates the sampled split points, launches the job, and waits for it to
- * finish. 
+ * Generates the sampled split points, launches the job, and waits for it to finish.
  * <p>
  * To run the program:
- * <b>bin/hadoop jar hadoop-*-examples.jar terasort in-dir out-dir pravega-uri scopeName inputStream outputStream numberOfSegments</b>
+ * <b>bin/hadoop jar hadoop-*-examples.jar terasort in-dir out-dir pravega-uri scopeName inputStream outputStreamPrefix</b>
  */
 public class TeraSort extends Configured implements Tool {
   private static final Logger LOG = LoggerFactory.getLogger(TeraSort.class);
@@ -304,10 +303,8 @@ public class TeraSort extends Configured implements Tool {
   }
 
   private static void usage() throws IOException {
-    //The usage is changed for using Pravega streams
     System.err.println("Usage: terasort [-Dproperty=value] " +
-            "<dummy hdfs input> <hdfs output> <pravega uri> <scope> <input stream> <output stream>" +
-            "[optional: number of segments]");
+            "<dummy hdfs input> <hdfs output> <pravega uri> <scope> <input stream> <output stream prefix>");
     System.err.println("TeraSort configurations are:");
     for (TeraSortConfigKeys teraSortConfigKeys : TeraSortConfigKeys.values()) {
       System.err.println(teraSortConfigKeys.toString());
@@ -320,7 +317,7 @@ public class TeraSort extends Configured implements Tool {
    *  - use special mapper and reducer to convert data type required by Pravega hadoop connector
    */
   public int run(String[] args) throws Exception {
-    if (args.length != 6 && args.length != 7) {
+    if (args.length != 6) {
       usage();
       return 2;
     }
@@ -330,8 +327,7 @@ public class TeraSort extends Configured implements Tool {
     getConf().setStrings("pravega.uri", args[2]);
     getConf().setStrings("pravega.scope", args[3]);
     getConf().setStrings("pravega.stream", args[4]);
-    getConf().setStrings("pravega.out.stream", args[5]);
-    getConf().setStrings("pravega.out.stream.segments", args[6]);
+    getConf().setStrings("pravega.output.stream.prefix", args[5]);
     getConf().setStrings("pravega.deserializer", TextSerializer.class.getName());
     Job job = Job.getInstance(getConf());
 

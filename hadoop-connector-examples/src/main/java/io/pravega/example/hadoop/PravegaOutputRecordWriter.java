@@ -47,17 +47,14 @@ public class PravegaOutputRecordWriter<V> extends RecordWriter<String, V> {
 
     private static final Logger log = LoggerFactory.getLogger(PravegaOutputRecordWriter.class);
     private final EventStreamWriter writer;
-    private final String routingKey;
 
-    public PravegaOutputRecordWriter(EventStreamWriter writer, String routingKey) {
+    public PravegaOutputRecordWriter(EventStreamWriter writer) {
         this.writer = writer;
-        this.routingKey = routingKey;
     }
 
     @Override
     public void write(String key, V value) throws IOException, InterruptedException {
-        final CompletableFuture<Void> future = routingKey == null ?
-                writer.writeEvent(key, value) : writer.writeEvent(routingKey, value);
+        final CompletableFuture<Void> future = writer.writeEvent(key, value);
         future.whenCompleteAsync(
             (v, e) -> {
                 if (e != null) {

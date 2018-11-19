@@ -10,33 +10,80 @@
 
 package io.pravega.example.hadoop;
 
+import io.pravega.client.ClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Serializer;
+import io.pravega.client.stream.StreamConfiguration;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.Optional;
 
 /**
  * A special PravegaOutputFormat to write events to Pravega stream in sequence:
- *   For a map/reduce job, an output stream will be created with segments specified (default value is 3);
- *   for each reducer (or mapper if no reducer) task it will receive a record-writer with its task id embedded,
- *   when events are being written into stream, original event key will be replaced with the task id,
- *   hence all the events from one mapper/reducer task will go to a particular segment, hence the sequence is kept.
+ *  each mapper/reducer task will write to a different stream, with the name as "OUTPUT_STREAM_PREFIX" + taskId;
+ *  each stream is with a fixed(1) segment, so the order of event is same as order of writing.
  *
- * The "sequence" here means:
- * All the keys in a segment are in order;
- * Segments are in order too by segment id - all the keys in segment with lower id are less than all the keys in
- * segments with greater ids.
+ * In the end, the outcome streams are also "in order" which means:
+ *  all the keys of events inside a stream are in order (here the key is the first 10 bytes of event);
+ *  any key of stream with lower taskId is smaller than all the keys of streams with greater taskId.
  *
  */
 public class PravegaSequenceOutputFormat<V> extends PravegaOutputFormat<V> {
 
     private static final Logger log = LoggerFactory.getLogger(PravegaSequenceOutputFormat.class);
 
+    // Pravega stream name
+    public static final String OUTPUT_STREAM_PREFIX = "pravega.output.stream.prefix";
+
     @Override
-    public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
-        return getRecordWriter(context, String.valueOf(context.getTaskAttemptID().getTaskID().getId()));
+    public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context) throws IOException {
+
+        Configuration conf = context.getConfiguration();
+        final String scopeName = Optional.ofNullable(conf.get(SCOPE_NAME)).orElseThrow(() ->
+                new IOException("The output scope name must be configured (" + SCOPE_NAME + ")"));
+        final String outputStreamPrefix = Optional.ofNullable(conf.get(OUTPUT_STREAM_PREFIX)).orElseThrow(() ->
+                new IOException("The output stream prefix must be configured (" + OUTPUT_STREAM_PREFIX + ")"));
+        final URI controllerURI = Optional.ofNullable(conf.get(URI_STRING)).map(URI::create).orElseThrow(() ->
+                new IOException("The Pravega controller URI must be configured (" + URI_STRING + ")"));
+        final String deserializerClassName = Optional.ofNullable(conf.get(DESERIALIZER)).orElseThrow(() ->
+                new IOException("The event deserializer must be configured (" + DESERIALIZER + ")"));
+
+        final String outputStreamName = outputStreamPrefix + context.getTaskAttemptID().getTaskID().getId();
+
+        StreamManager streamManager = StreamManager.create(controllerURI);
+        streamManager.createScope(scopeName);
+
+        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scopeName).streamName(outputStreamName)
+                .scalingPolicy(ScalingPolicy.fixed(1))
+                .build();
+
+        streamManager.createStream(scopeName, outputStreamName, streamConfig);
+        ClientFactory clientFactory = ClientFactory.withScope(scopeName, controllerURI);
+
+        Serializer deserializer;
+        try {
+            Class<?> deserializerClass = Class.forName(deserializerClassName);
+            deserializer = (Serializer<V>) deserializerClass.newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            log.error("Exception when creating deserializer: {}", e);
+            throw new IOException(
+                    "Unable to create the event deserializer (" + deserializerClassName + ")", e);
+        }
+
+        EventStreamWriter<V> writer = clientFactory.createEventWriter(outputStreamName, deserializer, EventWriterConfig.builder()
+                .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                .build());
+
+        return new PravegaOutputRecordWriter<V>(writer);
     }
 
 }
