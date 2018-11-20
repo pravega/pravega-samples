@@ -37,9 +37,9 @@ import java.util.Optional;
  *  any key of stream with lower taskId is smaller than all the keys of streams with greater taskId.
  *
  */
-public class PravegaSequenceOutputFormat<V> extends PravegaOutputFormat<V> {
+public class PravegaSingleSegmentOutputFormat<V> extends PravegaFixedSegmentsOutputFormat<V> {
 
-    private static final Logger log = LoggerFactory.getLogger(PravegaSequenceOutputFormat.class);
+    private static final Logger log = LoggerFactory.getLogger(PravegaSingleSegmentOutputFormat.class);
 
     // Pravega stream name
     public static final String OUTPUT_STREAM_PREFIX = "pravega.output.stream.prefix";

@@ -28,7 +28,7 @@
 
 package io.pravega.example.hadoop.terasort;
 
-import io.pravega.example.hadoop.PravegaOutputFormat;
+import io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat;
 import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -322,7 +322,7 @@ public class TeraGen extends Configured implements Tool {
     job.setOutputKeyClass(String.class);
     job.setOutputValueClass(Text.class);
     job.setInputFormatClass(RangeInputFormat.class);
-    job.setOutputFormatClass(PravegaOutputFormat.class);
+    job.setOutputFormatClass(PravegaFixedSegmentsOutputFormat.class);
     return job.waitForCompletion(true) ? 0 : 1;
   }
 

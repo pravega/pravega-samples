@@ -30,7 +30,7 @@ package io.pravega.example.hadoop.terasort;
 
 import io.pravega.connectors.hadoop.EventKey;
 import io.pravega.connectors.hadoop.PravegaInputFormat;
-import io.pravega.example.hadoop.PravegaSequenceOutputFormat;
+import io.pravega.example.hadoop.PravegaSingleSegmentOutputFormat;
 import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -341,7 +341,7 @@ public class TeraSort extends Configured implements Tool {
     job.setMapperClass(TeraSortMapper.class);
     job.setReducerClass(TeraSortReducer.class);
     job.setInputFormatClass(PravegaInputFormat.class);
-    job.setOutputFormatClass(PravegaSequenceOutputFormat.class);
+    job.setOutputFormatClass(PravegaSingleSegmentOutputFormat.class);
     if (useSimplePartitioner) {
       job.setPartitionerClass(SimplePartitioner.class);
     } else {

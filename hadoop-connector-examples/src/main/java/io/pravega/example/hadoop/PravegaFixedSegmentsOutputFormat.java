@@ -55,9 +55,9 @@ import org.slf4j.LoggerFactory;
 /**
  * An OutputFormat that can be added as a storage to write events to Pravega.
  */
-public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
+public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V> {
 
-    private static final Logger log = LoggerFactory.getLogger(PravegaOutputFormat.class);
+    private static final Logger log = LoggerFactory.getLogger(PravegaFixedSegmentsOutputFormat.class);
 
     // Pravega scope name
     public static final String SCOPE_NAME = "pravega.scope";
@@ -75,11 +75,11 @@ public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
     // client factory
     private ClientFactory externalClientFactory;
 
-    public PravegaOutputFormat() {
+    public PravegaFixedSegmentsOutputFormat() {
     }
 
     @VisibleForTesting
-    protected PravegaOutputFormat(ClientFactory externalClientFactory) {
+    protected PravegaFixedSegmentsOutputFormat(ClientFactory externalClientFactory) {
         this.externalClientFactory = externalClientFactory;
     }
 

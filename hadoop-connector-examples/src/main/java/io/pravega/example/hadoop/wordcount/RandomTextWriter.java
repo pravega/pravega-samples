@@ -28,7 +28,7 @@
 
 package io.pravega.example.hadoop.wordcount;
 
-import io.pravega.example.hadoop.PravegaOutputFormat;
+import io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -227,7 +227,7 @@ public class RandomTextWriter extends Configured implements Tool {
 
         job.setInputFormatClass(RandomWriter.RandomInputFormat.class);
         job.setMapperClass(RandomTextMapper.class);
-        job.setOutputFormatClass(PravegaOutputFormat.class);
+        job.setOutputFormatClass(PravegaFixedSegmentsOutputFormat.class);
         FileOutputFormat.setOutputPath(job, new Path(args[0]));
 
         System.out.println("Running " + numMaps + " maps.");
