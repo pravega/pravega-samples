@@ -28,8 +28,42 @@ dependencies {
     compile "org.apache.flink:flink-table_2.11:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
     compile "ch.qos.logback:logback-classic:1.1.7"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
 
     compile "joda-time:joda-time:2.7"
     compile "org.projectlombok:lombok:1.16.18"
 }
 
+task scriptConnectorTableApiSamples(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.connectors.nytaxi.ApplicationMain'
+    applicationName = 'tableapi-samples'
+    defaultJvmOpts = ["-Dlog4j.configuration=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath + sourceSets.main.resources
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('bin') {
+                from project.scriptConnectorTableApiSamples
+            }
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/dist/conf/logback.xml'))
+            }
+        }
+    }
+}
+
+shadowJar {
+    dependencies {
+        include dependency("io.pravega:pravega-connectors-flink_2.11")
+    }
+}
