@@ -6,6 +6,15 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
+/**
+ * The ZoneLookup record has the following details
+ * Sample record:
+ * 1,EWR,Newark Airport,EWR
+ * column1:  locationId
+ * column2:  Borough
+ * column3:  Zone
+ * column4:  Service Zone
+ */
 @Data
 @Builder
 @EqualsAndHashCode

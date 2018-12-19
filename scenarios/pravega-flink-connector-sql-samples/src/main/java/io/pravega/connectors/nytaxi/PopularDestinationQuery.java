@@ -19,19 +19,18 @@ import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.api.java.Tumble;
 import org.apache.flink.table.sources.tsextractors.ExistingField;
 import org.apache.flink.table.sources.wmstrategies.BoundedOutOfOrderTimestamps;
 import org.apache.flink.types.Row;
 
 /**
- * Find maximum number of travellers who travelled to a destination point for a given window interval.
+ * Identify the popular destination based on total trips that exceeds a given threshold for specific time window.
  */
 
 @Slf4j
-public class MaxTravellersPerDestination extends AbstractHandler {
+public class PopularDestinationQuery extends AbstractHandler {
 
-    public MaxTravellersPerDestination (String ... args) {
+    public PopularDestinationQuery (String ... args) {
         super(args);
     }
 
@@ -44,10 +43,13 @@ public class MaxTravellersPerDestination extends AbstractHandler {
                 .forStream(Stream.of(getScope(), getStream()).getScopedName())
                 .withPravegaConfig(getPravegaConfig())
                 .failOnMissingField(true)
-                .withRowtimeAttribute("dropOffTime", new ExistingField("dropOffTime"), new BoundedOutOfOrderTimestamps(30000L))
+                .withRowtimeAttribute("pickupTime",
+                        new ExistingField("pickupTime"),
+                        new BoundedOutOfOrderTimestamps(30000L))
                 .withSchema(tableSchema)
                 .withReaderGroupScope(getScope())
                 .build();
+
 
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
@@ -55,19 +57,29 @@ public class MaxTravellersPerDestination extends AbstractHandler {
         StreamTableEnvironment tEnv = TableEnvironment.getTableEnvironment(env);
         tEnv.registerTableSource("TaxiRide", source);
 
-        String fields = "passengerCount, dropOffTime, destLocationZone";
+        String query =
+                "SELECT " +
+                        "destLocationId, wstart, wend, cnt " +
+                        "FROM " +
+                        "(SELECT " +
+                        "destLocationId, " +
+                        "HOP_START(pickupTime, INTERVAL '5' MINUTE, INTERVAL '15' MINUTE) AS wstart, " +
+                        "HOP_END(pickupTime, INTERVAL '5' MINUTE, INTERVAL '15' MINUTE) AS wend, " +
+                        "COUNT(destLocationId) AS cnt " +
+                        "FROM " +
+                        "(SELECT " +
+                        "pickupTime, " +
+                        "destLocationId " +
+                        "FROM TaxiRide) " +
+                        "GROUP BY destLocationId, HOP(pickupTime, INTERVAL '5' MINUTE, INTERVAL '15' MINUTE)) " +
+                        "WHERE cnt > " + getLimit();
 
-        Table noOfTravelersPerDest = tEnv
-                .scan("TaxiRide")
-                .select(fields)
-                .window(Tumble.over("1.hour").on("dropOffTime").as("w"))
-                .groupBy("destLocationZone, w")
-                .select("destLocationZone, w.start AS start, w.end AS end, count(passengerCount) AS cnt");
+        Table results = tEnv.sqlQuery(query);
 
-        tEnv.toAppendStream(noOfTravelersPerDest, Row.class).print();
+        tEnv.toAppendStream(results, Row.class).print();
 
         try {
-            env.execute("Max-Travellers-Per-Destination");
+            env.execute("Popular-Destination");
         } catch (Exception e) {
             log.error("Application Failed", e);
         }

@@ -1,6 +1,11 @@
 # Flink Pravega Table API samples
 
-This module contains examples to demonstrate the use of FLink connector Table API and it uses [NY Taxi Records](http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml) to demonstrate the usage.  
+This module contains examples to demonstrate the use of Flink connector Table API and it uses [NY Taxi Records](http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml) to demonstrate the usage.
+```
+The follwing files are downloaded and used for this sample application
+https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2018-01.csv
+https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv
+```
 
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
@@ -21,7 +26,7 @@ Additional optional parameters: --scope <scope-name> --stream <stream-name> --co
 
 1) Load taxi data to Pravega
 
-The default option assumes that Pravega is running locally. You can override it by passing the controller Uri options. The `create-stream` option allows the program to create the scope and stream (enabled by default).
+The default option assumes that Pravega is running locally. You can override it by passing the controller URI options. The `create-stream` option allows the program to create the scope and stream (enabled by default).
 
 > bin/tableapi-samples --runApp Prepare
 
@@ -39,7 +44,7 @@ The above command uses SQL to find the most popular destination (drop-off locati
 
 The above command uses Table API to find the most popular taxi vendor that was used by the commuters.
 
-4) Maximum travellers/Destination
+4) Maximum Travellers/Destination
 
 > bin/tableapi-samples --runApp MaxTravellers
 

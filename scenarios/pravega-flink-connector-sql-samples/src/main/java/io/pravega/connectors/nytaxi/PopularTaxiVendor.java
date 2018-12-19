@@ -10,12 +10,10 @@
  */
 package io.pravega.connectors.nytaxi;
 
+import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaJsonTableSource;
-import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
@@ -26,44 +24,32 @@ import org.apache.flink.table.sources.tsextractors.ExistingField;
 import org.apache.flink.table.sources.wmstrategies.BoundedOutOfOrderTimestamps;
 import org.apache.flink.types.Row;
 
-import java.net.URI;
-
-import static io.pravega.connectors.nytaxi.common.Constants.*;
-
 /**
- * Identify the popular taxi vendor based on total trips travelled on specific window interval
+ * Identify the popular taxi vendor based on total trips travelled on specific window interval.
  */
 
 @Slf4j
-public class PopularTaxiVendor {
+public class PopularTaxiVendor extends AbstractHandler {
 
-    public void findPopularVendor(String... args) {
-        // read parameters
-        ParameterTool params = ParameterTool.fromArgs(args);
+    public PopularTaxiVendor (String ... args) {
+        super(args);
+    }
 
-        final String scope = params.get("scope", DEFAULT_SCOPE);
-        final String stream = params.get("stream", DEFAULT_STREAM);
-        final String controllerUri = params.get("controllerUri", DEFAULT_CONTROLLER_URI);
-
-        PravegaConfig pravegaConfig = PravegaConfig.fromDefaults()
-                .withControllerURI(URI.create(controllerUri))
-                .withDefaultScope(scope);
+    @Override
+    public void handleRequest() {
 
         TableSchema tableSchema = TripRecord.getTableSchema();
 
         FlinkPravegaJsonTableSource source = FlinkPravegaJsonTableSource.builder()
-                .forStream(scope + "/" + stream)
-                .withPravegaConfig(pravegaConfig)
+                .forStream(Stream.of(getScope(), getStream()).getScopedName())
+                .withPravegaConfig(getPravegaConfig())
                 .failOnMissingField(true)
                 .withRowtimeAttribute("pickupTime", new ExistingField("pickupTime"), new BoundedOutOfOrderTimestamps(30000L))
                 .withSchema(tableSchema)
-                .withReaderGroupScope(scope)
+                .withReaderGroupScope(getScope())
                 .build();
 
-        // set up streaming execution environment
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.setParallelism(1);
+        StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
         // create a TableEnvironment
         StreamTableEnvironment tEnv = TableEnvironment.getTableEnvironment(env);
@@ -76,8 +62,7 @@ public class PopularTaxiVendor {
                 .select(fields)
                 .window(Slide.over("15.minutes").every("5.minutes").on("pickupTime").as("w"))
                 .groupBy("vendorId, w")
-                .select("vendorId, w.start AS start, w.end AS end, count(vendorId) AS cnt")
-                .select("vendorId, start, end, cnt");
+                .select("vendorId, w.start AS start, w.end AS end, count(vendorId) AS cnt");
 
         tEnv.toAppendStream(popularRides, Row.class).print();
 
@@ -86,11 +71,5 @@ public class PopularTaxiVendor {
         } catch (Exception e) {
             log.error("Application Failed", e);
         }
-
-    }
-
-    public static void main(String... args) {
-        PopularTaxiVendor popularTaxiVendor = new PopularTaxiVendor();
-        popularTaxiVendor.findPopularVendor(args);
     }
 }

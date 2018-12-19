@@ -21,7 +21,7 @@ public class ApplicationMain {
 
         StringBuilder usage = new StringBuilder();
         usage.append("\n----------------------------------------------------------------------------------------------------------------------------------\n");
-        usage.append("Uasge: java io.pravega.connectors.nytaxi.ApplicationMain --runApp <Prepare|PopularDestination|PopularTaxiVendor|MaxTravellers> \n");
+        usage.append("Uasge: java io.pravega.connectors.nytaxi.ApplicationMain --runApp <Prepare|PopularDestinationQuery|PopularTaxiVendor|MaxTravellers> \n");
         usage.append("Additional optional parameters: ");
         usage.append("--scope <scope-name> --stream <stream-name> --controllerUri <controller-uri> --create-stream <true|false> \n");
         usage.append("----------------------------------------------------------------------------------------------------------------------------------");
@@ -36,20 +36,20 @@ public class ApplicationMain {
             log.error(usage.toString(), e);
             return;
         }
+
+        AbstractHandler handler = null;
+
         if (type.equals("Prepare")) {
-            PrepareMain prepareMain = new PrepareMain();
-            prepareMain.prepareData(args);
-        } else if (type.equals("PopularDestination")) {
-            PopularDestination popularDestination = new PopularDestination();
-            popularDestination.findPopularDestination(args);
+            handler = new PrepareMain(args);
+        } else if (type.equals("PopularDestinationQuery")) {
+            handler = new PopularDestinationQuery(args);
         } else if (type.equals("PopularTaxiVendor")) {
-            PopularTaxiVendor popularTaxiVendor = new PopularTaxiVendor();
-            popularTaxiVendor.findPopularVendor(args);
+            handler = new PopularTaxiVendor(args);
         } else if (type.equals("MaxTravellers")) {
-            MaxTravellersPerDestination maxTravellersPerDestination = new MaxTravellersPerDestination();
-            maxTravellersPerDestination.findMaxTravellers(args);
+            handler = new MaxTravellersPerDestination(args);
         } else {
             log.error(usage.toString());
         }
+        handler.handleRequest();
     }
 }

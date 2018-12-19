@@ -24,6 +24,21 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Locale;
 
+/**
+ * The trip record data set contains following elements. It has total 17 columns of which we are extracting only some of them.
+ * Sample record
+ * 2,2018-01-30 17:51:30,2018-01-30 18:10:37,2,2.09,1,N,186,229,1,13,1,0.5,2.96,0,0.3,17.76
+ * column1:  vendorId
+ * column2:  pickupTime
+ * column3:  dropOffTime
+ * column4:  passengerCount
+ * column5:  tripDistance
+ * column6:  RateCodeID //ignore
+ * column7:  Store_and_fwd_flag //ignore
+ * column8:  PULocationID //start location id
+ * column9:  DOLocationID //drop off location id
+ * column10 and above //ignore
+ */
 @Builder
 @Data
 public final class TripRecord implements Serializable, Comparable<TripRecord> {
