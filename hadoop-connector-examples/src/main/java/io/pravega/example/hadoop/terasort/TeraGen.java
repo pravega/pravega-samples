@@ -262,7 +262,7 @@ public class TeraGen extends Configured implements Tool {
   }
 
   private static void usage() throws IOException {
-    System.err.println
+    LOG.error
       ("teragen <num rows> <dummy output dir> <pravega uri> <scope> <stream> [optional: number of segments]");
   }
 

@@ -43,7 +43,7 @@ The related documentation and instructions are [here](flink-connector-examples).
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
-| `terasort` | Sort events from an input Pravega `Stream` and then write sorted events to output stream(s). | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/terasort)
+| `terasort` | Sort events from an input Pravega `Stream` and then write sorted events to one or more streams. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/terasort)
 
 The related documentation and instructions are [here](hadoop-connector-examples).
 

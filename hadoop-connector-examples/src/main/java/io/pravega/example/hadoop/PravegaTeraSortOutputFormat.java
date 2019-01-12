@@ -28,18 +28,18 @@ import java.net.URI;
 import java.util.Optional;
 
 /**
- * A special PravegaOutputFormat to write events to Pravega stream in sequence:
- *  each mapper/reducer task will write to a different stream, with the name as "OUTPUT_STREAM_PREFIX" + taskId;
- *  each stream is with a fixed(1) segment, so the order of event is same as order of writing.
+ * A special PravegaFixedSegmentsOutputFormat to store Terasort result into Pravega stream(s):
+ *  each mapper/reducer task will write to a different stream, with the stream name as "OUTPUT_STREAM_PREFIX" + taskId;
+ *  each stream is with a fixed one(1) segment.
  *
- * In the end, the outcome streams are also "in order" which means:
- *  all the keys of events inside a stream are in order (here the key is the first 10 bytes of event);
- *  any key of stream with lower taskId is smaller than all the keys of streams with greater taskId.
+ * In the end, all the events are considered "in order" because:
+ *  all the events in a stream are "in order" by their key (the first 10 bytes of event);
+ *  any event of stream with lower taskId is smaller than any event of stream with greater taskId.
  *
  */
-public class PravegaSingleSegmentOutputFormat<V> extends PravegaFixedSegmentsOutputFormat<V> {
+public class PravegaTeraSortOutputFormat<V> extends PravegaFixedSegmentsOutputFormat<V> {
 
-    private static final Logger log = LoggerFactory.getLogger(PravegaSingleSegmentOutputFormat.class);
+    private static final Logger log = LoggerFactory.getLogger(PravegaTeraSortOutputFormat.class);
 
     // Pravega stream name
     public static final String OUTPUT_STREAM_PREFIX = "pravega.output.stream.prefix";

@@ -30,7 +30,7 @@ package io.pravega.example.hadoop.terasort;
 
 import io.pravega.connectors.hadoop.EventKey;
 import io.pravega.connectors.hadoop.PravegaInputFormat;
-import io.pravega.example.hadoop.PravegaSingleSegmentOutputFormat;
+import io.pravega.example.hadoop.PravegaTeraSortOutputFormat;
 import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -303,11 +303,11 @@ public class TeraSort extends Configured implements Tool {
   }
 
   private static void usage() throws IOException {
-    System.err.println("Usage: terasort [-Dproperty=value] " +
+    LOG.error("Usage: terasort [-Dproperty=value] " +
             "<dummy hdfs input> <hdfs output> <pravega uri> <scope> <input stream> <output stream prefix>");
-    System.err.println("TeraSort configurations are:");
+    LOG.error("TeraSort configurations are:");
     for (TeraSortConfigKeys teraSortConfigKeys : TeraSortConfigKeys.values()) {
-      System.err.println(teraSortConfigKeys.toString());
+      LOG.error(teraSortConfigKeys.toString());
     }
   }
 
@@ -341,7 +341,7 @@ public class TeraSort extends Configured implements Tool {
     job.setMapperClass(TeraSortMapper.class);
     job.setReducerClass(TeraSortReducer.class);
     job.setInputFormatClass(PravegaInputFormat.class);
-    job.setOutputFormatClass(PravegaSingleSegmentOutputFormat.class);
+    job.setOutputFormatClass(PravegaTeraSortOutputFormat.class);
     if (useSimplePartitioner) {
       job.setPartitionerClass(SimplePartitioner.class);
     } else {
@@ -358,7 +358,7 @@ public class TeraSort extends Configured implements Tool {
       }
       job.addCacheFile(partitionUri);  
       long end = System.currentTimeMillis();
-      System.out.println("Spent " + (end - start) + "ms computing partitions.");
+      LOG.info("Spent " + (end - start) + "ms computing partitions.");
       job.setPartitionerClass(TotalOrderPartitioner.class);
     }
     
