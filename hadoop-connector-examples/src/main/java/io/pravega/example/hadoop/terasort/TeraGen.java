@@ -28,7 +28,7 @@
 
 package io.pravega.example.hadoop.terasort;
 
-import io.pravega.example.hadoop.wordcount.PravegaOutputFormat;
+import io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat;
 import io.pravega.example.hadoop.wordcount.TextSerializer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -69,8 +69,8 @@ import java.util.zip.Checksum;
  * /src/main/java/org/apache/hadoop/examples/terasort/TeraGen.java
  *
  * Generate the official GraySort input data set.
- * The user specifies the number of rows and the output directory and this
- * class runs a map/reduce program to generate the data.
+ * The user specifies the number of rows and the output Pravega scope and stream and this
+ * tool runs a map/reduce program to generate the data into the specified Pravega stream.
  * The format of the data is:
  * <ul>
  * <li>(10 bytes key) (constant 2 bytes) (32 bytes rowid) 
@@ -79,8 +79,8 @@ import java.util.zip.Checksum;
  * </ul>
  *
  * <p>
- * To run the program: 
- * <b>bin/hadoop jar hadoop-*-examples.jar teragen 1m in-dir pravega-uri scopeName streamName</b>
+ * To run the program:
+ * <b>bin/hadoop jar hadoop-*-examples.jar teragen 1m in-dir pravega-uri scopeName streamName 12</b>
  */
 public class TeraGen extends Configured implements Tool {
   private static final Logger LOG = LoggerFactory.getLogger(TeraGen.class);
@@ -262,7 +262,8 @@ public class TeraGen extends Configured implements Tool {
   }
 
   private static void usage() throws IOException {
-    System.err.println("teragen <num rows> <dummy output dir> <pravega uri> <scope> <stream>");
+    LOG.error
+      ("teragen <num rows> <dummy output dir> <pravega uri> <scope> <stream> [optional: number of segments]");
   }
 
   /**
@@ -299,14 +300,15 @@ public class TeraGen extends Configured implements Tool {
    */
   public int run(String[] args) 
       throws IOException, InterruptedException, ClassNotFoundException {
-    if (args.length != 5) {
+    if (args.length != 5 && args.length != 6) {
       usage();
       return 2;
     }
     Path outputDir = new Path(args[1]);
     getConf().setStrings("pravega.uri", args[2]);
     getConf().setStrings("pravega.scope", args[3]);
-    getConf().setStrings("pravega.out.stream", args[4]);
+    getConf().setStrings("pravega.stream", args[4]);
+    getConf().setStrings("pravega.stream.segments", args[5]);
     getConf().setStrings("pravega.deserializer", TextSerializer.class.getName());
 
     Job job = Job.getInstance(getConf());
@@ -320,7 +322,7 @@ public class TeraGen extends Configured implements Tool {
     job.setOutputKeyClass(String.class);
     job.setOutputValueClass(Text.class);
     job.setInputFormatClass(RangeInputFormat.class);
-    job.setOutputFormatClass(PravegaOutputFormat.class);
+    job.setOutputFormatClass(PravegaFixedSegmentsOutputFormat.class);
     return job.waitForCompletion(true) ? 0 : 1;
   }
 
