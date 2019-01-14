@@ -26,7 +26,7 @@
  * limitations under the License.
  */
 
-package io.pravega.example.hadoop.wordcount;
+package io.pravega.example.hadoop;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientFactory;
@@ -55,51 +55,53 @@ import org.slf4j.LoggerFactory;
 /**
  * An OutputFormat that can be added as a storage to write events to Pravega.
  */
-public class PravegaOutputFormat<V> extends OutputFormat<String, V> {
+public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V> {
 
-    private static final Logger log = LoggerFactory.getLogger(PravegaOutputFormat.class);
+    private static final Logger log = LoggerFactory.getLogger(PravegaFixedSegmentsOutputFormat.class);
 
     // Pravega scope name
     public static final String SCOPE_NAME = "pravega.scope";
     // Pravega stream name
-    public static final String OUT_STREAM_NAME = "pravega.out.stream";
+    public static final String STREAM_NAME = "pravega.stream";
+    // Pravega stream segments
+    public static final String STREAM_SEGMENTS = "pravega.stream.segments";
     // Pravega uri string
     public static final String URI_STRING = "pravega.uri";
     // Pravega deserializer class name
     public static final String DESERIALIZER = "pravega.deserializer";
 
-    private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
-    private static final long DEFAULT_TXN_MAX_EXECUTION_TIME_MS = 30000L;
-    private static final long DEFAULT_PING_LEASE_MS = 30000L;
+    static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
 
     // client factory
     private ClientFactory externalClientFactory;
 
-    public PravegaOutputFormat() {
+    public PravegaFixedSegmentsOutputFormat() {
     }
 
     @VisibleForTesting
-    protected PravegaOutputFormat(ClientFactory externalClientFactory) {
+    protected PravegaFixedSegmentsOutputFormat(ClientFactory externalClientFactory) {
         this.externalClientFactory = externalClientFactory;
     }
 
     @Override
     public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+
         Configuration conf = context.getConfiguration();
-        final String scopeName = Optional.ofNullable(conf.get(PravegaOutputFormat.SCOPE_NAME)).orElseThrow(() ->
-                new IOException("The input scope name must be configured (" + PravegaOutputFormat.SCOPE_NAME + ")"));
-        final String streamName = Optional.ofNullable(conf.get(PravegaOutputFormat.OUT_STREAM_NAME)).orElseThrow(() ->
-                new IOException("The input stream name must be configured (" + PravegaOutputFormat.OUT_STREAM_NAME + ")"));
-        final URI controllerURI = Optional.ofNullable(conf.get(PravegaOutputFormat.URI_STRING)).map(URI::create).orElseThrow(() ->
-                new IOException("The Pravega controller URI must be configured (" + PravegaOutputFormat.URI_STRING + ")"));
-        final String deserializerClassName = Optional.ofNullable(conf.get(PravegaOutputFormat.DESERIALIZER)).orElseThrow(() ->
-                new IOException("The event deserializer must be configured (" + PravegaOutputFormat.DESERIALIZER + ")"));
+        final String scopeName = Optional.ofNullable(conf.get(SCOPE_NAME)).orElseThrow(() ->
+                new IOException("The input scope name must be configured (" + SCOPE_NAME + ")"));
+        final String streamName = Optional.ofNullable(conf.get(STREAM_NAME)).orElseThrow(() ->
+                new IOException("The input stream name must be configured (" + STREAM_NAME + ")"));
+        final URI controllerURI = Optional.ofNullable(conf.get(URI_STRING)).map(URI::create).orElseThrow(() ->
+                new IOException("The Pravega controller URI must be configured (" + URI_STRING + ")"));
+        final String deserializerClassName = Optional.ofNullable(conf.get(DESERIALIZER)).orElseThrow(() ->
+                new IOException("The event deserializer must be configured (" + DESERIALIZER + ")"));
+        final int segments = Integer.parseInt(Optional.of(conf.get(STREAM_SEGMENTS)).orElse("3"));
 
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scopeName);
 
         StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scopeName).streamName(streamName)
-                .scalingPolicy(ScalingPolicy.fixed(3))
+                .scalingPolicy(ScalingPolicy.fixed(segments))
                 .build();
 
         streamManager.createStream(scopeName, streamName, streamConfig);
