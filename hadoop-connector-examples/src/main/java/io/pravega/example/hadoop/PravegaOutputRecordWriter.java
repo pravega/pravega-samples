@@ -27,7 +27,7 @@
  */
 
 
-package io.pravega.example.hadoop.wordcount;
+package io.pravega.example.hadoop;
 
 import io.pravega.client.stream.EventStreamWriter;
 import org.apache.hadoop.mapreduce.RecordWriter;
