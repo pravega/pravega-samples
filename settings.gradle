@@ -17,4 +17,4 @@ include 'hadoop-connector-examples'
 include 'scenarios/turbine-heat-sensor'
 include 'scenarios/turbine-heat-processor'
 include 'scenarios/anomaly-detection'
-
+include 'scenarios/pravega-flink-connector-sql-samples'
