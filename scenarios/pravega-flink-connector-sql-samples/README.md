@@ -34,7 +34,7 @@ The above command loads the taxi dataset records to Pravega and prepares the env
 
 2) Popular Destination
 
-> bin/tableapi-samples --runApp PopularDestination
+> bin/tableapi-samples --runApp PopularDestinationQuery
 
 The above command uses SQL to find the most popular destination (drop-off location) from the available trip records.
 
