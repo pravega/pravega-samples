@@ -37,6 +37,12 @@ subprojects {
         maven {
             url "https://oss.jfrog.org/jfrog-dependencies"
         }
+        maven {
+            url "https://oss.sonatype.org/content/repositories/iopravega-1024"
+        }
+        maven {
+            url "https://oss.sonatype.org/content/repositories/iopravega-1023"
+        }
     }
     
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
