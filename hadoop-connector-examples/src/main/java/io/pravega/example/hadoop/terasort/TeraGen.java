@@ -305,11 +305,11 @@ public class TeraGen extends Configured implements Tool {
       return 2;
     }
     Path outputDir = new Path(args[1]);
-    getConf().setStrings("pravega.uri", args[2]);
-    getConf().setStrings("pravega.scope", args[3]);
-    getConf().setStrings("pravega.stream", args[4]);
-    getConf().setStrings("pravega.stream.segments", args[5]);
-    getConf().setStrings("pravega.deserializer", TextSerializer.class.getName());
+    getConf().setStrings("input.pravega.uri", args[2]);
+    getConf().setStrings("input.pravega.scope", args[3]);
+    getConf().setStrings("input.pravega.stream", args[4]);
+    getConf().setStrings("input.pravega.stream.segments", args[5]);
+    getConf().setStrings("input.pravega.deserializer", TextSerializer.class.getName());
 
     Job job = Job.getInstance(getConf());
     setNumberOfRows(job, parseHumanLong(args[0]));
