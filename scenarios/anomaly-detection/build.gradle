@@ -34,8 +34,8 @@ shadowJar {
         include dependency("io.pravega:pravega-connectors-flink_2.11")
 
         //All below dependencies are from Elastic Search 5 connector
-        include dependency("org.apache.flink:flink-connector-elasticsearch5_2.11:1.4")
-        include dependency("org.apache.flink:flink-connector-elasticsearch-base_2.11:1.4")
+        include dependency("org.apache.flink:flink-connector-elasticsearch5_2.11:${flinkVersion}")
+        include dependency("org.apache.flink:flink-connector-elasticsearch-base_2.11:${flinkVersion}")
         include dependency("org.elasticsearch.client:transport:5.1.2")
         include dependency("org.elasticsearch:elasticsearch:5.1.2")
         include dependency("org.apache.lucene:lucene-core:6.3.0")
