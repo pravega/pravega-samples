@@ -122,22 +122,22 @@ public class WordCount {
 
         String uri = otherArgs[1], scope = otherArgs[2], stream = otherArgs[3], out = otherArgs[4];
 
-        conf.setStrings("pravega.uri", uri);
-        conf.setStrings("pravega.scope", scope);
-        conf.setStrings("pravega.stream", stream);
-        conf.setStrings("pravega.deserializer", TextSerializer.class.getName());
+        conf.setStrings("input.pravega.uri", uri);
+        conf.setStrings("input.pravega.scope", scope);
+        conf.setStrings("input.pravega.stream", stream);
+        conf.setStrings("input.pravega.deserializer", TextSerializer.class.getName());
 
         if (otherArgs.length >= 6) {
-            conf.setStrings("pravega.startpositions", otherArgs[5]);
+            conf.setStrings("input.pravega.startpositions", otherArgs[5]);
         }
 
         String endPos = "";
         if (otherArgs.length >= 7) {
             endPos = otherArgs[6];
         } else {
-            endPos = PravegaInputFormat.fetchLatestPositionsJson(uri, scope, stream);
+            endPos = PravegaInputFormat.fetchLatestPosition(uri, scope, stream);
         }
-        conf.setStrings("pravega.endpositions", endPos);
+        conf.setStrings("input.pravega.endpositions", endPos);
 
         Job job = Job.getInstance(conf, "word count");
         job.setJarByClass(WordCount.class);

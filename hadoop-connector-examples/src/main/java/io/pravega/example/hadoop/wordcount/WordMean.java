@@ -173,10 +173,10 @@ public class WordMean extends Configured implements Tool {
 
         Configuration conf = getConf();
 
-        conf.setStrings("pravega.uri", args[1]);
-        conf.setStrings("pravega.scope", args[2]);
-        conf.setStrings("pravega.stream", args[3]);
-        conf.setStrings("pravega.deserializer", TextSerializer.class.getName());
+        conf.setStrings("input.pravega.uri", args[1]);
+        conf.setStrings("input.pravega.scope", args[2]);
+        conf.setStrings("input.pravega.stream", args[3]);
+        conf.setStrings("input.pravega.deserializer", TextSerializer.class.getName());
 
         Job job = Job.getInstance(conf, "word mean");
         job.setJarByClass(WordMean.class);
