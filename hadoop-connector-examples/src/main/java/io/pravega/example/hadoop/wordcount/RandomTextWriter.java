@@ -212,10 +212,10 @@ public class RandomTextWriter extends Configured implements Tool {
         }
         conf.setInt(MRJobConfig.NUM_MAPS, numMaps);
 
-        conf.setStrings("input.pravega.uri", args[1]);
-        conf.setStrings("input.pravega.scope", args[2]);
-        conf.setStrings("input.pravega.stream", args[3]);
-        conf.setStrings("input.pravega.deserializer", TextSerializer.class.getName());
+        conf.setStrings("pravega.uri", args[1]);
+        conf.setStrings("pravega.scope", args[2]);
+        conf.setStrings("pravega.stream", args[3]);
+        conf.setStrings("pravega.deserializer", TextSerializer.class.getName());
 
         Job job = Job.getInstance(conf);
 

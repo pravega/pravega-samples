@@ -60,15 +60,15 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
     private static final Logger log = LoggerFactory.getLogger(PravegaFixedSegmentsOutputFormat.class);
 
     // Pravega scope name
-    public static final String SCOPE_NAME = "input.pravega.scope";
+    public static final String SCOPE_NAME = "pravega.scope";
     // Pravega stream name
-    public static final String STREAM_NAME = "input.pravega.stream";
+    public static final String STREAM_NAME = "pravega.stream";
     // Pravega stream segments
-    public static final String STREAM_SEGMENTS = "input.pravega.stream.segments";
+    public static final String STREAM_SEGMENTS = "pravega.stream.segments";
     // Pravega uri string
-    public static final String URI_STRING = "input.pravega.uri";
+    public static final String URI_STRING = "pravega.uri";
     // Pravega deserializer class name
-    public static final String DESERIALIZER = "input.pravega.deserializer";
+    public static final String DESERIALIZER = "pravega.deserializer";
 
     static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
 
