@@ -95,7 +95,7 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
                 new IOException("The Pravega controller URI must be configured (" + URI_STRING + ")"));
         final String deserializerClassName = Optional.ofNullable(conf.get(DESERIALIZER)).orElseThrow(() ->
                 new IOException("The event deserializer must be configured (" + DESERIALIZER + ")"));
-        final int segments = Integer.parseInt(Optional.of(conf.get(STREAM_SEGMENTS)).orElse("3"));
+        final int segments = Integer.parseInt(conf.get(STREAM_SEGMENTS, "3"));
 
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scopeName);

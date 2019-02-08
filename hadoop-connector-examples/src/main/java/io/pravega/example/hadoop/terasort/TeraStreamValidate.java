@@ -61,10 +61,10 @@ public class TeraStreamValidate extends Configured implements Tool {
     LOG.info("starting");
     Path inputDir = new Path(args[0]);
     Path outputDir = new Path(args[1]);
-    getConf().setStrings("pravega.uri", args[2]);
-    getConf().setStrings("pravega.scope", args[3]);
-    getConf().setStrings("pravega.stream", args[4]);
-    getConf().setStrings("pravega.deserializer", TextSerializer.class.getName());
+    getConf().setStrings("input.pravega.uri", args[2]);
+    getConf().setStrings("input.pravega.scope", args[3]);
+    getConf().setStrings("input.pravega.stream", args[4]);
+    getConf().setStrings("input.pravega.deserializer", TextSerializer.class.getName());
 
     getConf().setInt(MRJobConfig.NUM_MAPS, 1);
     Job job = Job.getInstance(getConf());
