@@ -214,7 +214,7 @@ public class RandomTextWriter extends Configured implements Tool {
 
         conf.setStrings("pravega.uri", args[1]);
         conf.setStrings("pravega.scope", args[2]);
-        conf.setStrings("pravega.out.stream", args[3]);
+        conf.setStrings("pravega.stream", args[3]);
         conf.setStrings("pravega.deserializer", TextSerializer.class.getName());
 
         Job job = Job.getInstance(conf);

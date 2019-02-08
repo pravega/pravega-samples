@@ -49,6 +49,7 @@ public class ApplicationMain {
             handler = new MaxTravellersPerDestination(args);
         } else {
             log.error(usage.toString());
+            return;
         }
         handler.handleRequest();
     }
