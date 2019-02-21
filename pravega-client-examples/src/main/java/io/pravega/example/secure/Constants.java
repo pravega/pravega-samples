@@ -8,7 +8,7 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.example.https;
+package io.pravega.example.secure;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,21 +16,18 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 /**
- * Defines a handful of constants shared by classes in this package.
- *
+ * Defines constants shared by classes in this package.
  */
 public class Constants {
-    static final String SCOPE = "examples";
-    static final String STREAM_NAME = "httpsStream";
+    static final String SCOPE = "io.pravega.clientsamples.https";
+    static final String STREAM_NAME = "mytream";
     static final URI CONTROLLER_URI = URI.create("tls://localhost:9090");
     static final int NO_OF_SEGMENTS = 1;
+    static String READER_GROUP_NAME;
 
-    static final String ROUTING_KEY = "httpsRoutingKey";
     static final String MESSAGE = "hello https world!";
 
-    static String READER_GROUP_NAME = null;
-
-    static String TRUSTSTORE_PATH = null;
+    static String TRUSTSTORE_PATH;
 
     static {
         READER_GROUP_NAME = UUID.randomUUID().toString().replace("-", "");
