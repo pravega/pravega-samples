@@ -37,14 +37,14 @@ public class SecureWriter {
         /**
          * Note about setting the client config for HTTPS:
          *    - The client config below is configured to use an optional truststore. The truststore is expected to be
-         *      a signing certificate for the certification authority (CA). If this is null or empty, the default JVM
-         *      trust store is used. In this demo, it is configured to use a provided "cert.pem", which is also provided
-         *      on the server-side. If the cluster uses a different CA certificate, use that CA's certificate here
-         *      instead.
+         *      the certificate of the certification authority (CA) that was used to sign the server certificates.
+         *      If this is null or empty, the default JVM trust store is used. In this demo, we use a provided
+         *      "cert.pem" as the CA certificate, which is also provided on the server-side. If the cluster uses a
+         *      different CA (which it should), use that CA's certificate as the truststore instead.
          *
          *    - Also, the client config below disables host name verification. If the cluster's server certificates
-         *      have certificates with respective host names set as subjects, you may turn this on. In a production
-         *      deployment, it is recommended to turn this on.
+         *      have host names specified as the that of the server, you may turn this on. In a production
+         *      deployment, it is recommended to keep this on.
          *
          * Note about setting the client config for auth:
          *    - The client config below is configured with an object of DefaultCredentials class. The user name
