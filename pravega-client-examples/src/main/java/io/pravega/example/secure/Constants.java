@@ -19,8 +19,8 @@ import java.util.UUID;
  * Defines constants shared by classes in this package.
  */
 public class Constants {
-    static final String SCOPE = "io.pravega.clientsamples.https";
-    static final String STREAM_NAME = "mytream";
+    static final String SCOPE = "io.pravega.clientsamples.secure";
+    static final String STREAM_NAME = "mystream";
     static final URI CONTROLLER_URI = URI.create("tls://localhost:9090");
     static final int NO_OF_SEGMENTS = 1;
     static String READER_GROUP_NAME;

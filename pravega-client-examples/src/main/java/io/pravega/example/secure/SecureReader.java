@@ -56,7 +56,7 @@ public class SecureReader {
                 .validateHostName(false)                 // SSL-related client-side configuration
                 .credentials(new DefaultCredentials("1111_aaaa", "admin")) // Auth-related client-side configuration
                 .build();
-        System.out.println("Done creating client config");
+        System.out.println("Done creating a client config.");
 
         // Everything below depicts the usual flow of reading events. All client-side security configuration is
         // done through the ClientConfig object as shown above.
@@ -69,21 +69,22 @@ public class SecureReader {
                     .stream(Stream.of(Constants.SCOPE, Constants.STREAM_NAME))
                     .disableAutomaticCheckpoints()
                     .build();
-            System.out.println("Done creating reader group config");
+            System.out.println("Done creating a reader group config with specified scope: [" +
+                    Constants.SCOPE +"] and stream name: [" + Constants.STREAM_NAME + "].");
 
             readerGroupManager = ReaderGroupManager.withScope(Constants.SCOPE, clientConfig);
             readerGroupManager.createReaderGroup(Constants.READER_GROUP_NAME, readerGroupConfig);
-            System.out.println("Done creating reader group with specified name and config");
+            System.out.println("Done creating a reader group with specified name  and config.");
 
             clientFactory = ClientFactory.withScope(Constants.SCOPE, clientConfig);
-            System.out.println("Done creating a client factory with the specified scope and client config");
+            System.out.println("Done creating a client factory with the specified scope and client config.");
 
             reader = clientFactory.createReader("readerId", Constants.READER_GROUP_NAME,
                     new JavaSerializer<String>(), ReaderConfig.builder().build());
-            System.out.println("Done creating reader");
+            System.out.println("Done creating a reader.");
 
             String readMessage = reader.readNextEvent(2000).getEvent();
-            System.out.println("Done reading message: [" + readMessage + "]");
+            System.out.println("Done reading an event: [" + readMessage + "].");
 
         } finally {
             if (reader != null) reader.close();

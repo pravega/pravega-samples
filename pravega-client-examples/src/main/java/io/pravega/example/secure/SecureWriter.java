@@ -63,7 +63,7 @@ public class SecureWriter {
         // Everything below depicts the usual flow of writing events. All client-side security configuration is
         // done through the ClientConfig object as shown above.
 
-        System.out.println("Done creating client config");
+        System.out.println("Done creating client config.");
 
         StreamManager streamManager = null;
         ClientFactory clientFactory = null;
@@ -71,30 +71,30 @@ public class SecureWriter {
 
         try {
             streamManager = StreamManager.create(clientConfig);
-            System.out.println("Done creating a stream manager with the specified client config");
+            System.out.println("Done creating a stream manager.");
 
             streamManager.createScope(Constants.SCOPE);
-            System.out.println("Done creating a scope with the specified name: [" + Constants.SCOPE + "]");
+            System.out.println("Done creating a scope with the specified name: [" + Constants.SCOPE + "].");
 
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .scalingPolicy(ScalingPolicy.fixed(Constants.NO_OF_SEGMENTS))
                     .build();
-            System.out.println("Done creating a stream configuration");
+            System.out.println("Done creating a stream configuration.");
 
             streamManager.createStream(Constants.SCOPE, Constants.STREAM_NAME, streamConfig);
             System.out.println("Done creating a stream with the specified name: [" + Constants.STREAM_NAME
-                    + "] and stream configuration");
+                    + "] and stream configuration.");
 
             clientFactory = ClientFactory.withScope(Constants.SCOPE, clientConfig);
-            System.out.println("Done creating a client factory with the specified scope and client config");
+            System.out.println("Done creating a client factory with the specified scope and client config.");
 
             writer = clientFactory.createEventWriter(
                     Constants.STREAM_NAME, new JavaSerializer<String>(),
                     EventWriterConfig.builder().build());
-            System.out.println("Done creating a writer");
+            System.out.println("Done creating a writer.");
 
             writer.writeEvent(Constants.MESSAGE);
-            System.out.println("Done writing an event: [" + Constants.MESSAGE + "]");
+            System.out.println("Done writing an event: [" + Constants.MESSAGE + "].");
         } finally {
             if (writer != null) writer.close();
             if (clientFactory != null) clientFactory.close();
