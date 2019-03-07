@@ -1,0 +1,61 @@
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "application"
+
+group = "io.pravega.example.video"
+version = samplesVersion
+archivesBaseName = "video-demo"
+description = "video-demo"
+mainClassName = "io.pravega.example.video.videodemo.Main"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    jcenter()
+    maven {
+        url "https://repository.apache.org/snapshots"
+    }
+    maven {
+  	    url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+    maven {
+    	url "http://central.maven.org/maven2"
+    }
+    maven {
+        url "https://repo.eclipse.org/content/repositories/paho-snapshots/"
+    }
+    maven {
+        url "https://oss.jfrog.org/jfrog-dependencies"
+    }
+}
+
+ext {
+    junitVersion = '4.12'
+    commonsCLIVersion = '1.4'
+}
+
+dependencies {
+    compile "org.slf4j:slf4j-api:1.7.13"
+    compile "ch.qos.logback:logback-classic:1.2.3"
+    compile "ch.qos.logback:logback-core:1.2.3"
+    compile "net.logstash.logback:logstash-logback-encoder:4.11"
+
+    compile "io.pravega:pravega-client:${pravegaVersion}",
+            "io.pravega:pravega-common:${pravegaVersion}",
+            "commons-cli:commons-cli:${commonsCLIVersion}"
+
+    compile "org.jcodec:jcodec:0.2.2"
+
+    testCompile "junit:junit:${junitVersion}"
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+    }
+}

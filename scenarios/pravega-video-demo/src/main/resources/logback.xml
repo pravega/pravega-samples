@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+   
+-->
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+
+        <!-- Below will log using a human-readable line format. -->
+        <encoder>
+            <pattern>%-5level [%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %logger{36}: %msg%n</pattern>
+        </encoder>
+
+        <!-- Below will log using JSON format. -->
+        <!--<encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">-->
+            <!--<providers>-->
+                <!--<timestamp />-->
+                <!--<version />-->
+                <!--<message />-->
+                <!--<loggerName />-->
+                <!--<threadName />-->
+                <!--<logLevel />-->
+                <!--<logLevelValue />-->
+                <!--<context />-->
+                <!--<mdc />-->
+                <!--<logstashMarkers />-->
+                <!--<arguments />-->
+            <!--</providers>-->
+        <!--</encoder>-->
+
+    </appender>
+
+    <!-- You can change the default log level below or set the Java system property at run time. -->
+    <root level="${root.log.level:-INFO}">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
