@@ -25,6 +25,8 @@ ext {
 }
 
 dependencies {
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+
     testCompile "junit:junit:${junitVersion}"
 
     compile "io.pravega:pravega-client:${pravegaVersion}",

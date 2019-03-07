@@ -31,7 +31,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
 
     compile "joda-time:joda-time:2.7"
-    compile "org.projectlombok:lombok:1.16.18"
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
 }
 
 task scriptConnectorTableApiSamples(type: CreateStartScripts) {

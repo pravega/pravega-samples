@@ -26,6 +26,7 @@ ext {
 }
 
 dependencies {
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
     compile "org.scala-lang.modules:scala-java8-compat_2.11:${scalaJava8CompatVersion}"
     compile "io.pravega:pravega-connectors-flink_2.11:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"

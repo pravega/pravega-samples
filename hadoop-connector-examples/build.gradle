@@ -35,6 +35,7 @@ repositories {
 }
 
 dependencies {
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
     compile     "io.pravega:pravega-connectors-hadoop:${hadoopConnectorVersion}"
     compileOnly "org.apache.hadoop:hadoop-common:${hadoopVersion}"
     compileOnly "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
