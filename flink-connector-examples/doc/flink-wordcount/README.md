@@ -109,8 +109,8 @@ Submit `WordCountWriter` job
 - Browser to flink-examples/build/install/pravega-flink-examples/lib and select the uber jar file: pravega-flink-examples-0.2.0-SNAPSHOT-**all**.jar
 - Click **Upload** button
 - Click the checkbox next to the uploaded jar file.
-- In the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountWriter```
-- In the **Program Arguments** field, enter: ```--host localhost --port 9999 --controller tcp://localhost:9090```
+- In the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountWriter```
+- In the **Program Arguments** field, enter: ```-host localhost --port 9999 --controller tcp://localhost:9090```
 - Click **Submit** button
 
 ![](image/flink-wordcount-submit-writer.png)
@@ -118,7 +118,7 @@ Submit `WordCountWriter` job
 Submit `WordCountReader` job
 
 Repeat the steps above except
-- in the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountReader```
+- in the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountReader```
 - in the **Program Arguments** field, enter: ```--controller tcp://localhost:9090```
 
 ## IDE Setup
