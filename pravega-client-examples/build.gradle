@@ -182,6 +182,20 @@ task startSecureBatchReader(type: JavaExec) {
     }
 }
 
+task startEventGenerator(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.EventGenerator"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task startExactlyOnceMultithreadedProcessor(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.ExactlyOnceMultithreadedProcessor"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task startEventDebugSink(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.EventDebugSink"
+    classpath = sourceSets.main.runtimeClasspath
+}
 
 distributions {
     main {

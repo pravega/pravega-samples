@@ -198,3 +198,6 @@ $ bin/secureBatchReader [-scope "myScope"] [-stream "myStream"] [-uri "tls://loc
 
 All args are optional. If not included, the default values are same as the defaults mentioned earlier for
 `bin\secureWriter`.
+
+## `streamprocessing`
+See [streamprocessing](src/main/java/io/pravega/example/streamprocessing/README.md).
