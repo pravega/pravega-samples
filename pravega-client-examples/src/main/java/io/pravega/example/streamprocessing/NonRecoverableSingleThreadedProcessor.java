@@ -65,7 +65,7 @@ public class NonRecoverableSingleThreadedProcessor {
 
     public void run() throws Exception {
         try (StreamManager streamManager = StreamManager.create(controllerURI)) {
-            final boolean scopeIsNew = streamManager.createScope(scope);
+            streamManager.createScope(scope);
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .scalingPolicy(ScalingPolicy.byEventRate(
                             Parameters.getTargetRateEventsPerSec(),
@@ -73,15 +73,6 @@ public class NonRecoverableSingleThreadedProcessor {
                             Parameters.getMinNumSegments()))
                     .build();
             streamManager.createStream(scope, inputStreamName, streamConfig);
-            // Since we start reading the input stream from the earliest event, we must delete the output stream.
-            try {
-                streamManager.sealStream(scope, outputStreamName);
-            } catch (Exception e) {
-                if (!(e.getCause() instanceof InvalidStreamException)) {
-                    throw e;
-                }
-            }
-            streamManager.deleteStream(scope, outputStreamName);
             streamManager.createStream(scope, outputStreamName, streamConfig);
         }
 

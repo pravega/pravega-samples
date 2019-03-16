@@ -12,11 +12,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.Callable;
 
 /**
  * See {@link ExactlyOnceMultithreadedProcessor}.
  */
-public class ExactlyOnceMultithreadedProcessorWorker implements Runnable {
+public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExactlyOnceMultithreadedProcessorWorker.class);
 
     private static final String STATE_FILE_NAME_PREFIX = "state-worker-";
@@ -45,7 +46,7 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Runnable {
         startFromCheckpoint = startFromCheckpointName != null;
     }
 
-    public void run() {
+    public Void call() {
         Thread.currentThread().setName("worker-" + workerIndex);
         log.info("BEGIN");
 
@@ -55,11 +56,19 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Runnable {
                 Path checkpointDirPath = checkpointRootPath.resolve(startFromCheckpointName);
                 Path statePath = checkpointDirPath.resolve(STATE_FILE_NAME_PREFIX + this.workerIndex);
                 log.info("statePath={}", statePath.toString());
-                try (FileInputStream fis = new FileInputStream(statePath.toString());
-                     ObjectInputStream ois = new ObjectInputStream(fis)) {
-                    state = (State) ois.readObject();
+                if (Files.exists(statePath)) {
+                    try (FileInputStream fis = new FileInputStream(statePath.toString());
+                         ObjectInputStream ois = new ObjectInputStream(fis)) {
+                        state = (State) ois.readObject();
+                    }
+                    log.info("Loaded state {} from {}", state, statePath);
+                } else {
+                    log.info("Initializing with new state");
+                    // TODO: This is the wrong behavior.
+                    // In the event that a single worker dies, the segments that it was reading will be automatically assigned to another worker. However, this code does not transfer the state between workers, leaving the state inconsistent.
+                    state = new State();
                 }
-                log.info("Loaded state {} from {}", state, statePath);
+
             } else {
                 log.info("Initializing with new state");
                 state = new State();
@@ -134,6 +143,8 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Runnable {
                         state.sum += intData;
                         String processedTimestampStr = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
 
+                        if (eventCounter == 10) return null;
+
                         // Build the output event.
                         String message = String.join(",",
                                 String.format("%06d", generatedEventCounter),
@@ -157,7 +168,11 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Runnable {
             }
         } catch (Exception e) {
             log.error("Fatal Error", e);
+            // We don't handle incremental recovery of a single failed worker.
+            // Stop the entire process (master and all workers).
+            // When it is restarted, recovery of all workers will begin.
             System.exit(1);
         }
+        return null;
     }
 }

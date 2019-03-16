@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -34,7 +35,7 @@ import java.util.stream.IntStream;
  * See also {@link ExactlyOnceMultithreadedProcessorWorker}.
  */
 
-public class ExactlyOnceMultithreadedProcessor implements Runnable {
+public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExactlyOnceMultithreadedProcessor.class);
 
     private static final String PRAVEGA_CHECKPOINT_FILE_NAME = "pravega-checkpoint";
@@ -96,17 +97,6 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
                                 Parameters.getMinNumSegments()))
                         .build();
                 streamManager.createStream(scope, inputStreamName, streamConfig);
-                // Since we are starting processing from the beginning, delete and create a new output stream.
-                // TODO: Should we truncate stream instead of deleting?
-                try {
-                    streamManager.sealStream(scope, outputStreamName);
-                } catch (Exception e) {
-                    if (!(e.getCause() instanceof InvalidStreamException)) {
-                        throw e;
-                    }
-                }
-                // TODO: It would be nice if deleteStream did not require sealStream to be called.
-                streamManager.deleteStream(scope, outputStreamName);
                 streamManager.createStream(scope, outputStreamName, streamConfig);
             }
 
@@ -147,8 +137,10 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
         Path checkpointDirPath = checkpointRootPath.resolve(checkpointName);
         List<UUID> txnIds = IntStream
                 .range(0, numWorkers)
+                .parallel()
                 .boxed()
                 .map(workerIndex -> checkpointDirPath.resolve(CHECKPOINT_TRANSACTION_ID_FILE_NAME_PREFIX + workerIndex))
+                .filter(Files::exists)
                 .flatMap(path -> {
                     try {
                         return Files.readAllLines(path, StandardCharsets.UTF_8).stream();
@@ -161,7 +153,7 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
 
         log.info("commitTransactions: txnIds={}", txnIds);
 
-        // Initiate commit of all transactions in the checkpoint.
+        // Commit all transactions that have been opened and flushed since the last checkpoint.
         txnIds.parallelStream().forEach(txnId -> {
             try {
                 Transaction<String> transaction = writer.getTxn(txnId);
@@ -170,31 +162,9 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
                 if (status == Transaction.Status.OPEN) {
                     log.info("commitTransaction: committing {}", transaction.getTxnId());
                     transaction.commit();
-                    // Note that commit may return before the transaction is committed.
-                    // TODO: It would be nice for commit() to return a future when it becomes COMMITTED or ABORTED.
+                    log.info("commitTransaction: committed {}", transaction.getTxnId());
                 }
             } catch (TxnFailedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        // Wait for commit of all transactions in the checkpoint.
-        txnIds.parallelStream().forEach(txnId -> {
-            try {
-                Transaction<String> transaction = writer.getTxn(txnId);
-                // TODO: Is there a better way to wait for COMMITTED besides polling?
-                for (; ; ) {
-                    Transaction.Status status = transaction.checkStatus();
-                    log.info("commitTransaction: transaction {} status is {}", transaction.getTxnId(), status);
-                    if (status == Transaction.Status.COMMITTED) {
-                        log.info("commitTransaction: committed {}", transaction.getTxnId());
-                        break;
-                    } else if (status == Transaction.Status.ABORTED) {
-                        throw new RuntimeException(new TxnFailedException());
-                    }
-                    Thread.sleep(100);
-                }
-            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -202,7 +172,7 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
         log.info("commitTransactions: END");
     }
 
-    public void run() {
+    public Void call() throws InterruptedException {
         // It is possible that the checkpoint was completely written but that some or all Pravega transactions
         // have not been committed. This will ensure that they are.
         if (startFromCheckpoint) {
@@ -213,15 +183,23 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
         // If any execution of this task takes longer than its period, then subsequent executions may start late, but will not concurrently execute.
         initiateCheckpointExecutor.scheduleAtFixedRate(this::performCheckpoint, checkpointPeriodMs, checkpointPeriodMs, TimeUnit.MILLISECONDS);
 
-        // Start workers.
-        IntStream.range(0, numWorkers).forEach(workerIndex -> {
-            ExactlyOnceMultithreadedProcessorWorker worker = new ExactlyOnceMultithreadedProcessorWorker(workerIndex, scope, readerGroupName, startFromCheckpointName, outputStreamName, controllerURI);
-            workerExecutor.submit(worker);
-        });
-        try {
-            workerExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-        }
+        // Start workers and wait for all of them to terminate.
+        workerExecutor.invokeAll(
+                IntStream.range(0, numWorkers).boxed().map(
+                        workerIndex -> new ExactlyOnceMultithreadedProcessorWorker(
+                                workerIndex, scope, readerGroupName, startFromCheckpointName, outputStreamName, controllerURI)
+                ).collect(Collectors.toList()));
+
+        log.info("call: shutting down");
+        workerExecutor.shutdownNow();
+        performCheckpointExecutor.shutdownNow();
+        initiateCheckpointExecutor.shutdownNow();
+        readerGroup.close();
+        readerGroupManager.close();
+        writer.close();
+        clientFactory.close();
+        log.info("call: END");
+        return null;
     }
 
     /**
@@ -265,7 +243,7 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
 
             cleanCheckpointDirectory(checkpointDirPath);
         } catch (final Exception e) {
-            log.warn("performCheckpoint: timed out waiting for checkpoint to complete", e);
+            log.warn("performCheckpoint: Error performing checkpoint", e);
             // Ignore error. We will retry when we are scheduled again.
         }
         log.info("performCheckpoint: END: checkpointName={}", checkpointName);
@@ -317,6 +295,6 @@ public class ExactlyOnceMultithreadedProcessor implements Runnable {
                 Parameters.getStream2Name(),
                 Parameters.getControllerURI(),
                 Parameters.getNumWorkers());
-        master.run();
+        master.call();
     }
 }
