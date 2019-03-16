@@ -45,14 +45,6 @@ public class NonRecoverableSingleThreadedProcessor {
     public final String outputStreamName;
     public final URI controllerURI;
 
-    private static class State {
-        long sum;
-
-        public State(long sum) {
-            this.sum = sum;
-        }
-    }
-
     public State state;
 
     public NonRecoverableSingleThreadedProcessor(String scope, String inputStreamName, String outputStreamName, URI controllerURI) {
@@ -114,7 +106,7 @@ public class NonRecoverableSingleThreadedProcessor {
                      EventWriterConfig.builder().build())) {
 
             // Initialize state.
-            state = new State(0);
+            state = new State();
 
             EventRead<String> event;
             for (int i = 0; ; i++) {
