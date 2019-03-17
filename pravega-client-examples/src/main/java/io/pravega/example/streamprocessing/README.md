@@ -6,14 +6,10 @@
 The examples in this directory are intended to illustrate
 how exactly-once semantics can be achieved with Pravega.
 To make it clear to the reader, the entirety of the stream processor is defined
-in a single source file of under 500 lines.
-In particular, these illustrative examples do not use Apache Flink.
-
-As one reads and understands this example exactly-once processor, they should
-understand that enterprise-grade stream processing at scale requires
-a sophisticated stream processing system like Apache Flink.
-In addition to providing exactly-once processing, it also handles
-windowing, aggregations, event time processing, state management, and a lot more.
+within this package with minimal dependencies.
+In particular, these illustrative examples do *not* use Apache Flink.
+In addition to exactly-once semantics, Apache Flink provides
+windowing, aggregations, event time processing, and stateful processing.
 
 These examples include:
 
@@ -22,7 +18,7 @@ These examples include:
   and writes them to a Pravega stream (referred to as stream1).
 
 - [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java):
-  This application continuously reads events from stream1, performs a stateful computation
+  This application continuously reads events from stream1, performs a stateless computation
   to generate output events, and writes the output event to another
   Pravega stream (referred to as stream2).
   It uses the exactly-once algorithms described below.

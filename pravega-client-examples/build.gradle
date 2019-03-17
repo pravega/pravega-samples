@@ -182,6 +182,14 @@ task startSecureBatchReader(type: JavaExec) {
     }
 }
 
+task scriptEventGenerator(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.streamprocessing.EventGenerator'
+    applicationName = 'eventGenerator'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 task startEventGenerator(type: JavaExec) {
     main = "io.pravega.example.streamprocessing.EventGenerator"
     classpath = sourceSets.main.runtimeClasspath
@@ -190,7 +198,7 @@ task startEventGenerator(type: JavaExec) {
 task scriptExactlyOnceMultithreadedProcessor(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.streamprocessing.ExactlyOnceMultithreadedProcessor'
-    applicationName = 'ExactlyOnceMultithreadedProcessor'
+    applicationName = 'exactlyOnceMultithreadedProcessor'
     defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
@@ -198,6 +206,14 @@ task scriptExactlyOnceMultithreadedProcessor(type: CreateStartScripts) {
 task startExactlyOnceMultithreadedProcessor(type: JavaExec) {
     main = "io.pravega.example.streamprocessing.ExactlyOnceMultithreadedProcessor"
     classpath = sourceSets.main.runtimeClasspath
+}
+
+task scriptEventDebugSink(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.streamprocessing.EventDebugSink'
+    applicationName = 'eventDebugSink'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
 task startEventDebugSink(type: JavaExec) {

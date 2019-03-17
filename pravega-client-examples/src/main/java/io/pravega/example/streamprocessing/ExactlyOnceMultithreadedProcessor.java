@@ -14,7 +14,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +27,7 @@ import java.util.stream.IntStream;
  *
  * This supports multiple worker threads.
  * Upon restart, it restarts from the last successful checkpoint and guarantees exactly-once semantics.
+ * Workers must be stateless.
  *
  * Use {@link EventGenerator} to generate input events and {@link EventDebugSink}
  * to view the output events.

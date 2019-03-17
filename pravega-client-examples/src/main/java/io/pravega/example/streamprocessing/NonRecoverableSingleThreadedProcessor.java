@@ -18,6 +18,9 @@ import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -28,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
  * and writing each output event to another Pravega stream.
  *
  * This runs only a single thread.
- * Upon restart, it reprocesses the entire input stream and recreates the output stream.
  *
  * Use {@link EventGenerator} to generate input events and {@link EventDebugSink}
  * to view the output events.
@@ -40,12 +42,10 @@ public class NonRecoverableSingleThreadedProcessor {
 
     private static final int READER_TIMEOUT_MS = 2000;
 
-    public final String scope;
-    public final String inputStreamName;
-    public final String outputStreamName;
-    public final URI controllerURI;
-
-    public State state;
+    private final String scope;
+    private final String inputStreamName;
+    private final String outputStreamName;
+    private final URI controllerURI;
 
     public NonRecoverableSingleThreadedProcessor(String scope, String inputStreamName, String outputStreamName, URI controllerURI) {
         this.scope = scope;
@@ -96,51 +96,47 @@ public class NonRecoverableSingleThreadedProcessor {
                      new UTF8StringSerializer(),
                      EventWriterConfig.builder().build())) {
 
-            // Initialize state.
-            state = new State();
+            long eventCounter = 0;
 
-            EventRead<String> event;
-            for (int i = 0; ; i++) {
+            for (; ; ) {
                 // Read input event.
-                try {
-                    event = reader.readNextEvent(READER_TIMEOUT_MS);
-                } catch (ReinitializationRequiredException e) {
-                    // There are certain circumstances where the reader needs to be reinitialized
-                    log.error("Read error", e);
-                    throw e;
-                }
+                EventRead<String> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
+                log.debug("readEvents: eventRead={}", eventRead);
 
-                if (event.getEvent() != null) {
-                    log.info("Read event '{}'", event.getEvent());
+                if (eventRead.getEvent() != null) {
+                    eventCounter++;
+                    log.debug("Read eventCounter={}, event={}", String.format("%06d", eventCounter), eventRead.getEvent());
 
                     // Parse input event.
-                    String[] cols = event.getEvent().split(",");
-                    String routingKey = cols[0];
-                    long intData = Long.parseLong(cols[1]);
-                    long generatedIndex = Long.parseLong(cols[2]);
-                    String generatedTimestampStr = cols[3];
+                    String[] cols = eventRead.getEvent().split(",");
+                    long generatedEventCounter = Long.parseLong(cols[0]);
+                    String routingKey = cols[1];
+                    long intData = Long.parseLong(cols[2]);
+                    long generatedSum = Long.parseLong(cols[3]);
+                    String generatedTimestampStr = cols[4];
 
-                    // Process the input event and update the state.
-                    state.sum += intData;
+                    // Process the input event.
                     String processedTimestampStr = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
 
                     // Build the output event.
                     String message = String.join(",",
+                            String.format("%06d", generatedEventCounter),
+                            String.format("%06d", eventCounter),
                             routingKey,
                             String.format("%02d", intData),
-                            String.format("%08d", generatedIndex),
-                            String.format("%08d", i),
+                            String.format("%08d", generatedSum),
+                            String.format("%03d", 0),
                             generatedTimestampStr,
                             processedTimestampStr,
-                            String.format("%d", state.sum));
+                            "");
 
                     // Write the output event.
-                    log.info("Writing message '{}' with routing key '{}' to stream {}/{}",
-                            message, routingKey, scope, outputStreamName);
+                    log.info("eventCounter={}, event={}",
+                            String.format("%06d", eventCounter),
+                            message);
                     final CompletableFuture writeFuture = writer.writeEvent(routingKey, message);
                 }
             }
         }
     }
-
 }

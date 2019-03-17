@@ -49,7 +49,7 @@ class Parameters {
     }
 
     public static long getCheckpointTimeoutMs() {
-        return Long.parseLong(getEnvVar("CHECKPOINT_TIMEOUT_MS", "10000"));
+        return Long.parseLong(getEnvVar("CHECKPOINT_TIMEOUT_MS", "120000"));
     }
 
     public static long getTransactionTimeoutMs() {

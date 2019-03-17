@@ -5,7 +5,6 @@ import io.pravega.client.stream.*;
 import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,8 +32,6 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
     private final String readerId;
     private final Path checkpointRootPath = Parameters.getCheckpointRootPath();
 
-    private State state;
-
     public ExactlyOnceMultithreadedProcessorWorker(int workerIndex, String scope, String readerGroupName, String startFromCheckpointName, String outputStreamName, URI controllerURI) {
         this.workerIndex = workerIndex;
         this.scope = scope;
@@ -51,29 +48,6 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
         log.info("BEGIN");
 
         try {
-            // Load state from checkpoint.
-            if (startFromCheckpoint) {
-                Path checkpointDirPath = checkpointRootPath.resolve(startFromCheckpointName);
-                Path statePath = checkpointDirPath.resolve(STATE_FILE_NAME_PREFIX + this.workerIndex);
-                log.info("statePath={}", statePath.toString());
-                if (Files.exists(statePath)) {
-                    try (FileInputStream fis = new FileInputStream(statePath.toString());
-                         ObjectInputStream ois = new ObjectInputStream(fis)) {
-                        state = (State) ois.readObject();
-                    }
-                    log.info("Loaded state {} from {}", state, statePath);
-                } else {
-                    log.info("Initializing with new state");
-                    // TODO: This is the wrong behavior.
-                    // In the event that a single worker dies, the segments that it was reading will be automatically assigned to another worker. However, this code does not transfer the state between workers, leaving the state inconsistent.
-                    state = new State();
-                }
-
-            } else {
-                log.info("Initializing with new state");
-                state = new State();
-            }
-
             try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
                  EventStreamReader<String> reader = clientFactory.createReader(
                          readerId,
@@ -102,7 +76,7 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
                         Path checkpointDirPath = checkpointRootPath.resolve(checkpointName);
                         Path transactionIdFilePath = checkpointDirPath.resolve(ExactlyOnceMultithreadedProcessor.CHECKPOINT_TRANSACTION_ID_FILE_NAME_PREFIX + this.workerIndex);
 
-                        // Must ensure that txnId is persisted to latest state before committing transaction!
+                        // Must ensure that txnId is persisted before committing transaction!
                         // Do not commit transaction here. Instead write TxnId to checkpoint directory. Master will read all TxnIds and commit transactions.
 
                         String transactionIds = "";
@@ -112,17 +86,6 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
                             transaction = null;
                         }
                         Files.write(transactionIdFilePath, transactionIds.getBytes(StandardCharsets.UTF_8));
-
-                        // Write state to checkpoint directory
-                        Path statePath = checkpointDirPath.resolve(STATE_FILE_NAME_PREFIX + this.workerIndex);
-                        log.info("statePath={}", statePath.toString());
-                        try (FileOutputStream fos = new FileOutputStream(statePath.toString());
-                             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-                            oos.writeObject(state);
-                            oos.flush();
-                            fos.getFD().sync();
-                        }
-
                     } else if (eventRead.getEvent() != null) {
                         eventCounter++;
                         log.debug("Read eventCounter={}, event={}", String.format("%06d", eventCounter), eventRead.getEvent());
@@ -139,11 +102,8 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
                         long generatedSum = Long.parseLong(cols[3]);
                         String generatedTimestampStr = cols[4];
 
-                        // Process the input event and update the state.
-                        state.sum += intData;
+                        // Process the input event.
                         String processedTimestampStr = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
-
-                        if (eventCounter == 10) return null;
 
                         // Build the output event.
                         String message = String.join(",",
@@ -152,7 +112,6 @@ public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
                                 routingKey,
                                 String.format("%02d", intData),
                                 String.format("%08d", generatedSum),
-                                String.format("%08d", state.sum),
                                 String.format("%03d", workerIndex),
                                 generatedTimestampStr,
                                 processedTimestampStr,
