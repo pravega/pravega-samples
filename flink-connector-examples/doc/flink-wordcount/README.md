@@ -110,7 +110,7 @@ Submit `WordCountWriter` job
 - Click **Upload** button
 - Click the checkbox next to the uploaded jar file.
 - In the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountWriter```
-- In the **Program Arguments** field, enter: ```-host localhost --port 9999 --controller tcp://localhost:9090```
+- In the **Program Arguments** field, enter: ```--host localhost --port 9999 --controller tcp://localhost:9090```
 - Click **Submit** button
 
 ![](image/flink-wordcount-submit-writer.png)
