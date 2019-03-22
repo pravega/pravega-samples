@@ -1,0 +1,35 @@
+apply plugin: "java"
+apply plugin: "scala"
+apply plugin: 'application'
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+archivesBaseName = 'pravega-spark-connector-examples'
+mainClassName = "io.pravega.example.spark.StreamPravegaToConsole"
+
+repositories {
+    mavenLocal()
+    if (findProperty("repositoryUrl")) {
+        maven {
+            url findProperty("repositoryUrl")
+        }
+    }
+    else {
+        jcenter()
+        mavenCentral()
+        maven { url "https://repository.apache.org/snapshots" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+        maven { url "https://oss.jfrog.org/jfrog-dependencies" }
+    }
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.additionalParameters = ["-target:jvm-1.8"]
+}
+
+dependencies {
+    compile group: 'org.scala-lang', name: 'scala-library', version: scalaVersion
+    compile group: 'org.scala-lang', name: 'scala-reflect', version: scalaVersion
+    compile group: 'org.scala-lang', name: 'scala-compiler', version: scalaVersion
+    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: sparkVersion
+}
