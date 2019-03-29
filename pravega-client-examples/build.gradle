@@ -133,6 +133,39 @@ task startStreamCutsCli(type: JavaExec) {
     }
 }
 
+task scriptSecureWriter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.secure.SecureWriter'
+    applicationName = 'secureWriter'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptSecureReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.secure.SecureReader'
+    applicationName = 'secureReader'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startSecureWriter(type: JavaExec) {
+    main = "io.pravega.example.secure.SecureWriter"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
+task startSecureReader(type: JavaExec) {
+    main = "io.pravega.example.secure.SecureReader"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -145,6 +178,8 @@ distributions {
                 from project.scriptSharedConfigCli
                 from project.scriptNoopReader
                 from project.scriptStreamCutsCli
+                from project.scriptSecureWriter
+                from project.scriptSecureReader
             }
             into('lib') {
                 from(jar)
@@ -152,6 +187,7 @@ distributions {
             }
             into('conf') {
                 from(project.file('src/main/resources/logback.xml'))
+                from(project.file('src/main/resources/cert.pem'))
             }
         }
     }

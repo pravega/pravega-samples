@@ -13,9 +13,17 @@ package io.pravega.example.secure;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.stream.*;
+import io.pravega.client.stream.EventStreamReader;
+import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.ReinitializationRequiredException;
+import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.impl.DefaultCredentials;
 import io.pravega.client.stream.impl.JavaSerializer;
+import org.apache.commons.cli.*;
+
+import java.net.URI;
+import java.util.UUID;
 
 /**
  * This class demonstrates how to configure a Pravega reader application for:
@@ -29,9 +37,35 @@ import io.pravega.client.stream.impl.JavaSerializer;
  */
 public class SecureReader {
 
-    public static void main(String[] args) throws ReinitializationRequiredException {
+    private final String scope;
+    private final String stream;
+    private final URI controllerURI;
 
-        /**
+    // TLS related config
+    private final String truststorePath;
+    private final boolean validateHostName;
+
+    // Auth related config
+    private final String username;
+    private final String password;
+
+    public SecureReader(String scope, String stream, URI controllerURI,
+                        String truststorePath, boolean validateHostname,
+                        String username, String password) {
+
+        this.scope = scope;
+        this.stream = stream;
+        this.controllerURI = controllerURI;
+        this.truststorePath = truststorePath;
+        this.validateHostName = validateHostname;
+        this.username = username;
+        this.password = password;
+    }
+
+
+    public void read() throws ReinitializationRequiredException {
+
+        /*
          * Note about setting the client config for HTTPS:
          *    - The client config below is configured to use an optional truststore. The truststore is expected to be
          *      the certificate of the certification authority (CA) that was used to sign the server certificates.
@@ -40,7 +74,7 @@ public class SecureReader {
          *      different CA (which it should), use that CA's certificate as the truststore instead.
          *
          *    - Also, the client config below disables host name verification. If the cluster's server certificates
-         *      have host names specified as the that of the server, you may turn this on. In a production
+         *      have DNS names / IP addresses of the servers specified in them, you may turn this on. In a production
          *      deployment, it is recommended to keep this on.
          *
          * Note about setting the client config for auth:
@@ -51,11 +85,16 @@ public class SecureReader {
          *      subsequent operations.
          */
         ClientConfig clientConfig = ClientConfig.builder()
-                .controllerURI(Constants.CONTROLLER_URI) // "tls://localhost:9090"
-                .trustStore(Constants.TRUSTSTORE_PATH)   // SSL-related client-side configuration
-                .validateHostName(false)                 // SSL-related client-side configuration
-                .credentials(new DefaultCredentials("1111_aaaa", "admin")) // Auth-related client-side configuration
+                .controllerURI(this.controllerURI) // "tls://localhost:9090"
+
+                // TLS-related client-side configuration
+                .trustStore(this.truststorePath)
+                .validateHostName(this.validateHostName)
+
+                // Auth-related client-side configuration
+                .credentials(new DefaultCredentials(this.password, this.username))
                 .build();
+
         System.out.println("Done creating a client config.");
 
         // Everything below depicts the usual flow of reading events. All client-side security configuration is
@@ -66,21 +105,22 @@ public class SecureReader {
         EventStreamReader<String> reader = null;
         try {
             ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
-                    .stream(Stream.of(Constants.SCOPE, Constants.STREAM_NAME))
+                    .stream(Stream.of(this.scope, this.stream))
                     .disableAutomaticCheckpoints()
                     .build();
             System.out.println("Done creating a reader group config with specified scope: [" +
-                    Constants.SCOPE +"] and stream name: [" + Constants.STREAM_NAME + "].");
+                    this.scope +"] and stream name: [" + this.stream + "].");
 
-            readerGroupManager = ReaderGroupManager.withScope(Constants.SCOPE, clientConfig);
-            readerGroupManager.createReaderGroup(Constants.READER_GROUP_NAME, readerGroupConfig);
+            String readerGroupName = UUID.randomUUID().toString().replace("-", "");
+            readerGroupManager = ReaderGroupManager.withScope(this.scope, clientConfig);
+            readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
             System.out.println("Done creating a reader group with specified name  and config.");
 
-            clientFactory = ClientFactory.withScope(Constants.SCOPE, clientConfig);
+            clientFactory = ClientFactory.withScope(this.scope, clientConfig);
             System.out.println("Done creating a client factory with the specified scope and client config.");
 
-            reader = clientFactory.createReader("readerId", Constants.READER_GROUP_NAME,
-                    new JavaSerializer<String>(), ReaderConfig.builder().build());
+            reader = clientFactory.createReader("readerId", readerGroupName,
+                    new JavaSerializer<>(), ReaderConfig.builder().build());
             System.out.println("Done creating a reader.");
 
             String readMessage = reader.readNextEvent(2000).getEvent();
@@ -92,5 +132,59 @@ public class SecureReader {
             if (readerGroupManager != null) readerGroupManager.close();
         }
         System.err.println("All done with reading! Exiting...");
+    }
+
+    public static void main(String[] args) throws ReinitializationRequiredException {
+        Options options = getOptions();
+
+        CommandLine cmd = null;
+        try {
+            cmd = parseCommandLineArgs(options, args);
+        } catch (ParseException e) {
+            System.out.format("%s.%n", e.getMessage());
+            final HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("HelloWorldReader", options);
+            System.exit(1);
+        }
+
+        final String scope = cmd.getOptionValue("scope") == null ? Constants.DEFAULT_SCOPE : cmd.getOptionValue("scope");
+        final String stream = cmd.getOptionValue("stream") == null ? Constants.DEFAULT_STREAM_NAME : cmd.getOptionValue("stream");
+
+        final String uriString = cmd.getOptionValue("uri") == null ? Constants.DEFAULT_CONTROLLER_URI : cmd.getOptionValue("uri");
+        final URI controllerURI = URI.create(uriString);
+
+        final String truststorePath =
+                cmd.getOptionValue("truststore") == null ? Constants.DEFAULT_TRUSTSTORE_PATH : cmd.getOptionValue("truststore");
+        final boolean validateHostname = cmd.getOptionValue("validatehost") == null ? false : true;
+
+        final String username = cmd.getOptionValue("username") == null ? Constants.DEFAULT_USERNAME : cmd.getOptionValue("accountname");
+        final String password = cmd.getOptionValue("password") == null ? Constants.DEFAULT_PASSWORD : cmd.getOptionValue("password");
+
+        SecureReader reader = new SecureReader(scope, stream, controllerURI,
+                truststorePath, validateHostname,
+                username, password);
+        reader.read();
+    }
+
+    private static Options getOptions() {
+        final Options options = new Options();
+        options.addOption("s", "scope", true, "The scope name of the stream to read from.");
+        options.addOption("n", "stream", true, "The name of the stream to read from.");
+        options.addOption("u", "uri", true, "The URI to the controller in the form tls://host:port");
+        options.addOption("t", "truststore", true,
+                "The location of .pem truststore file in the file system to use by this application process.");
+        options.addOption("v", "validatehost", false,
+                "The account username to use by the client for authenticating to the server.");
+        options.addOption("a", "accountname", true,
+                "The account username to use by the client for authenticating to the server.");
+        options.addOption("p", "password", true,
+                "The account password to use by the client for authenticating to the server.");
+        return options;
+    }
+
+    private static CommandLine parseCommandLineArgs(Options options, String[] args) throws ParseException {
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args);
+        return cmd;
     }
 }
