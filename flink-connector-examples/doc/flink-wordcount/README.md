@@ -72,7 +72,7 @@ Point your browser to `http://<your_flink_host>:8081` to make sure Flink is runn
 ### Start WordCountWriter
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ flink run -m localhost:6123 -c io.pravega.examples.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
+$ flink run -m localhost:6123 -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
 ```
 The `WordCountWriter` job should show up on the Flink UI as a running job.
 
@@ -80,7 +80,7 @@ The `WordCountWriter` job should show up on the Flink UI as a running job.
 In a different window:
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ flink run -m localhost:6123 -c io.pravega.examples.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
+$ flink run -m localhost:6123 -c io.pravega.example.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
 ```
 The `WordCountReader` job should show up on the Flink UI as a running job.
 
@@ -109,7 +109,7 @@ Submit `WordCountWriter` job
 - Browser to flink-examples/build/install/pravega-flink-examples/lib and select the uber jar file: pravega-flink-examples-0.2.0-SNAPSHOT-**all**.jar
 - Click **Upload** button
 - Click the checkbox next to the uploaded jar file.
-- In the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountWriter```
+- In the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountWriter```
 - In the **Program Arguments** field, enter: ```--host localhost --port 9999 --controller tcp://localhost:9090```
 - Click **Submit** button
 
@@ -118,7 +118,7 @@ Submit `WordCountWriter` job
 Submit `WordCountReader` job
 
 Repeat the steps above except
-- in the **Entry Class** field, enter: ```io.pravega.examples.flink.wordcount.WordCountReader```
+- in the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountReader```
 - in the **Program Arguments** field, enter: ```--controller tcp://localhost:9090```
 
 ## IDE Setup
