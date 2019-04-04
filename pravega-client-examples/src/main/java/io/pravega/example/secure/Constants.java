@@ -19,9 +19,8 @@ public class Constants {
     static final String DEFAULT_CONTROLLER_URI = "tls://localhost:9090";
 
     // Replace the value of the DEFAULT_TRUSTSTORE_PATH with "./pravega-client-examples/src/main/resources/cert.pem"
-    // if you are running the tests directly from the IDE (as opposed to .
-    //static final String DEFAULT_TRUSTSTORE_PATH = "conf/cert.pem";
-    static final String DEFAULT_TRUSTSTORE_PATH = "./pravega-client-examples/src/main/resources/cert.pem";
+    // if you are running the tests directly from the IDE (as opposed to CLI).
+    static final String DEFAULT_TRUSTSTORE_PATH = "conf/cert.pem";
 
     static final String DEFAULT_USERNAME = "admin";
     static final String DEFAULT_PASSWORD = "1111_aaaa";
