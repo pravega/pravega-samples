@@ -140,3 +140,53 @@ To demonstrate the use of `StreamCut`s, we provide a CLI. To use it, please exec
 $ bin/streamCutsCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
 ```
 
+## `secure`
+This example includes two applications `SecureReader` and `SecureWriter`. These applications illustrate
+how to setup clients connecting to a security-enabled Pravega cluster. Specifically, they show how to:
+* Enable SSL/TLS (HTTPS) communications with a Pravega cluster for data-in-transit encryption and server authentication.
+* Pass credentials to a Pravega cluster for client authentication and authorization.
+
+### Execution
+
+First, ensure that the Pravega cluster that the applications are going to work with, has both TLS and
+Auth (authentication and authorization) enabled. See Pravega documentation for how to enable TLS and Auth.
+
+Now, you might want to run `SecureWriter` in one window and `SecureReader` in another window.
+
+To run `SecureWriter`, you can execute the following command:
+
+```
+$ bin/secureWriter [-scope myScope] [-stream myStream] [-uri tls://127.0.0.1:9090] \
+              [-routingkey myKey] [-message "hello world!"] \
+              [-truststore conf/cert.pem] [-validatehost] \
+              [-username admin] [-password 1111_aaaa]
+```
+
+All args are optional. If not included, the defaults are:
+
+ * scope - "myscope"
+ * name - "mystream"
+ * uri - "tls://localhost:9090" (the URI to one of the controller nodes)
+ * routingkey - "myroutingkey"
+ * message - "hello secure world!"
+ * truststore - "conf/cert.pem"
+ * username - "admin"
+ * password - "1111_aaaa"
+
+Note that, by default TLS host name verification is disabled. This is because the default server certificate for
+standalone mode, which is provided in the source, is not assigned to any specific server: enabling TLS host
+name verification when using that certificate will result in failure to communicate with the server. If your
+server(s) is/are using a CA-signed certificate which has the servers' DNS name or IP addresses, you may copy and
+use the CA's certificate as the truststore and enable hostname verification by specifying the flag [-validateHost].
+
+
+To run `SecureReader`, you can execute:
+
+```
+$ bin/secureWriter [-scope myScope] [-stream myStream] [-uri tls://127.0.0.1:9090] \
+              [-truststore conf/cert.pem] [-validatehost] \
+              [-username admin] [-password 1111_aaaa]
+```
+
+All args are optional. If not included, the default values are same as the defaults mentioned earlier for
+`bin\secureWriter`.
