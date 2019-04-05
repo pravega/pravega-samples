@@ -13,10 +13,20 @@ package io.pravega.example.secure;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.stream.*;
+import io.pravega.client.stream.EventStreamReader;
+import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.ReinitializationRequiredException;
+import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.impl.DefaultCredentials;
 import io.pravega.client.stream.impl.JavaSerializer;
-import org.apache.commons.cli.*;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import java.net.URI;
 import java.util.UUID;
@@ -153,7 +163,7 @@ public class SecureReader {
                 cmd.getOptionValue("truststore") == null ? Constants.DEFAULT_TRUSTSTORE_PATH : cmd.getOptionValue("truststore");
         final boolean validateHostname = cmd.getOptionValue("validatehost") == null ? false : true;
 
-        final String username = cmd.getOptionValue("username") == null ? Constants.DEFAULT_USERNAME : cmd.getOptionValue("accountname");
+        final String username = cmd.getOptionValue("username") == null ? Constants.DEFAULT_USERNAME : cmd.getOptionValue("username");
         final String password = cmd.getOptionValue("password") == null ? Constants.DEFAULT_PASSWORD : cmd.getOptionValue("password");
 
         SecureReader reader = new SecureReader(scope, stream, controllerURI,
@@ -169,9 +179,8 @@ public class SecureReader {
         options.addOption("u", "uri", true, "The URI to the controller in the form tls://host:port");
         options.addOption("t", "truststore", true,
                 "The location of .pem truststore file in the file system to use by this application process.");
-        options.addOption("v", "validatehost", false,
-                "The account username to use by the client for authenticating to the server.");
-        options.addOption("a", "accountname", true,
+        options.addOption("v", "validatehost", false, "Whether to verify server's hostname.");
+        options.addOption("a", "username", true,
                 "The account username to use by the client for authenticating to the server.");
         options.addOption("p", "password", true,
                 "The account password to use by the client for authenticating to the server.");

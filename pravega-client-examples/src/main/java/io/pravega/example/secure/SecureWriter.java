@@ -19,7 +19,13 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.DefaultCredentials;
 import io.pravega.client.stream.impl.JavaSerializer;
-import org.apache.commons.cli.*;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import java.net.URI;
 
@@ -159,7 +165,7 @@ public class SecureWriter {
                 cmd.getOptionValue("truststore") == null ? Constants.DEFAULT_TRUSTSTORE_PATH : cmd.getOptionValue("truststore");
         final boolean validateHostname = cmd.getOptionValue("validatehost") == null ? false : true;
 
-        final String username = cmd.getOptionValue("accountname") == null ? Constants.DEFAULT_USERNAME : cmd.getOptionValue("accountname");
+        final String username = cmd.getOptionValue("username") == null ? Constants.DEFAULT_USERNAME : cmd.getOptionValue("username");
         final String password = cmd.getOptionValue("password") == null ? Constants.DEFAULT_PASSWORD : cmd.getOptionValue("password");
 
         final String routingKey = cmd.getOptionValue("routingKey") == null ? Constants.DEFAULT_ROUTING_KEY : cmd.getOptionValue("routingKey");
@@ -181,8 +187,7 @@ public class SecureWriter {
         options.addOption("m", "message", true, "The message to write.");
         options.addOption("t", "truststore", true,
                 "The location of .pem truststore file in the file system to use by this application process.");
-        options.addOption("v", "validatehost", false,
-                "The account username to use by the client for authenticating to the server.");
+        options.addOption("v", "validatehost", false, "Whether to verify server's hostname.");
         options.addOption("a", "username", true,
                 "The account username to use by the client for authenticating to the server.");
         options.addOption("p", "password", true,
