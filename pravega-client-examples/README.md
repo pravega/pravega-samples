@@ -156,10 +156,10 @@ Now, you might want to run `SecureWriter` in one window and `SecureReader` in an
 To run `SecureWriter`, you can execute the following command:
 
 ```
-$ bin/secureWriter [-scope myScope] [-stream myStream] [-uri tls://127.0.0.1:9090] \
-              [-routingkey myKey] [-message "hello world!"] \
-              [-truststore conf/cert.pem] [-validatehost] \
-              [-username admin] [-password 1111_aaaa]
+$ bin/secureWriter [-scope "myScope"] [-stream "myStream"] [-uri "tls://localhost:9090"] \
+              [-routingkey "myKey"] [-message "hello world!"] \
+              [-truststore "conf/cert.pem"] [-validatehost] \
+              [-username "admin"] [-password "1111_aaaa"]
 ```
 
 All args are optional. If not included, the defaults are:
@@ -183,9 +183,9 @@ use the CA's certificate as the truststore and enable hostname verification by s
 To run `SecureReader`, you can execute:
 
 ```
-$ bin/secureWriter [-scope myScope] [-stream myStream] [-uri tls://127.0.0.1:9090] \
-              [-truststore conf/cert.pem] [-validatehost] \
-              [-username admin] [-password 1111_aaaa]
+$ bin/secureReader [-scope "myScope"] [-stream "myStream"] [-uri "tls://localhost:9090"] \
+              [-truststore "conf/cert.pem"] [-validatehost] \
+              [-username "admin"] [-password "1111_aaaa"]
 ```
 
 All args are optional. If not included, the default values are same as the defaults mentioned earlier for
