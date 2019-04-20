@@ -10,6 +10,7 @@
 
 package io.pravega.example.hadoop.wordcount;
 
+import io.pravega.client.ClientConfig;
 import io.pravega.connectors.hadoop.PravegaInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -26,6 +27,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.StringTokenizer;
 
 import org.slf4j.Logger;
@@ -135,7 +137,8 @@ public class WordCount {
         if (otherArgs.length >= 7) {
             endPos = otherArgs[6];
         } else {
-            endPos = PravegaInputFormat.fetchLatestPosition(uri, scope, stream);
+            ClientConfig clientConfig = ClientConfig.builder().controllerURI(URI.create(uri)).build();
+            endPos = PravegaInputFormat.fetchLatestPosition(clientConfig, scope, stream);
         }
         conf.setStrings("input.pravega.endpositions", endPos);
 
