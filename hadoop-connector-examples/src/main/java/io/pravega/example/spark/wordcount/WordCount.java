@@ -18,6 +18,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -46,7 +47,8 @@ public final class WordCount {
         conf.setStrings(PravegaConfig.INPUT_STREAM_NAME, remainingArgs[2]);
         conf.setStrings(PravegaConfig.INPUT_DESERIALIZER, TextSerializer.class.getName());
 
-        JavaSparkContext sc = new JavaSparkContext(new SparkConf());
+        SparkConf sparkConf = new SparkConf().setAppName("wordcount").setMaster("local[1]");
+        JavaSparkContext sc = new JavaSparkContext(SparkContext.getOrCreate(sparkConf));
 
         JavaPairRDD<EventKey, Text> lines = sc.newAPIHadoopRDD(conf, PravegaInputFormat.class, EventKey.class, Text.class);
         JavaRDD<String> words = lines.map(x -> x._2).flatMap(s -> Arrays.asList(SPACE.split(s.toString())).iterator());

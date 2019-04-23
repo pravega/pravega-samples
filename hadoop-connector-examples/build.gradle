@@ -35,10 +35,13 @@ repositories {
 }
 
 dependencies {
-    compile     "io.pravega:pravega-connectors-hadoop:${hadoopConnectorVersion}"
-    compileOnly "org.apache.hadoop:hadoop-common:${hadoopVersion}"
-    compileOnly "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
-    compileOnly "org.apache.spark:spark-core_2.11:${sparkVersion}"
+    compile "io.pravega:pravega-connectors-hadoop:${hadoopConnectorVersion}"
+    compile "org.apache.hadoop:hadoop-common:${hadoopVersion}"
+    compile "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
+    compile "org.apache.spark:spark-core_2.11:${sparkVersion}"
+    if (includePravegaCredentials.toBoolean()) {
+        compile "io.pravega:pravega-keycloak-credentials:${pravegaCredentialsVersion}"
+    }
 }
 
 shadowJar {

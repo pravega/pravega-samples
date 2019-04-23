@@ -27,6 +27,9 @@ dependencies {
     compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_$flinkScalaVersion:${flinkVersion}"
     compile "org.slf4j:slf4j-log4j12:1.7.14"
+    if (includePravegaCredentials.toBoolean()) {
+        compile "io.pravega:pravega-keycloak-credentials:${pravegaCredentialsVersion}"
+    }
 }
 
 shadowJar {
