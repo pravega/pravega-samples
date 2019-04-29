@@ -26,7 +26,6 @@ import java.util.Map;
 /**
  * Serializer for handling Guava ImmutableMap used in StreamCutImpl
  */
-
 public class GuavaImmutableMapSerializer extends Serializer<ImmutableMap<Object, ? extends Object>> {
 
     private static final boolean DOES_NOT_ACCEPT_NULL = true;
