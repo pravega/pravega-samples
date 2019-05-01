@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.streamprocessing;
 
 import io.pravega.client.ClientFactory;
@@ -19,7 +29,6 @@ import java.util.concurrent.Callable;
 public class ExactlyOnceMultithreadedProcessorWorker implements Callable<Void> {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExactlyOnceMultithreadedProcessorWorker.class);
 
-    private static final String STATE_FILE_NAME_PREFIX = "state-worker-";
     private static final int READER_TIMEOUT_MS = 2000;
 
     private final int workerIndex;

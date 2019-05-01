@@ -134,6 +134,8 @@ public class NonRecoverableSingleThreadedProcessor {
                     log.info("eventCounter={}, event={}",
                             String.format("%06d", eventCounter),
                             message);
+                    // Note that writeEvent returns a future. When the event has been durably persisted
+                    // to Pravega, the future will complete.
                     final CompletableFuture writeFuture = writer.writeEvent(routingKey, message);
                 }
             }

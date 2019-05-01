@@ -72,12 +72,13 @@ public class EventGenerator {
                      EventWriterConfig.builder().build())) {
             long eventCounter = 0;
             long sum = 0;
+            final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
             for (;;) {
                 eventCounter++;
-                String routingKey = String.format("rk%02d", eventCounter % 10);
                 long intData = rand.nextInt(100);
+                String routingKey = Long.toString(intData);
                 sum += intData;
-                String generatedTimestampStr = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
+                String generatedTimestampStr = dateFormat.format(new Date());
                 String message = String.join(",",
                         String.format("%06d", eventCounter),
                         routingKey,

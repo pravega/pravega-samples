@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.streamprocessing;
 
 import io.pravega.client.ClientFactory;
@@ -111,7 +121,8 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
                 new UTF8StringSerializer(),
                 EventWriterConfig.builder().build());
 
-        // Create a reader group manager. It must remain open to allow manual checkpoints to work.
+        // Create a reader group manager.
+        // It must remain open so that readerGroup.initiateCheckpoint returns.
         readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI);
 
         final ReaderGroupConfig readerGroupConfig = builder.build();
@@ -125,7 +136,7 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
     }
 
     /**
-     * Commit all transactions that are part of a checkpoint.
+     * Commit all transactions that have been opened since the last checkpoint.
      *
      * @param checkpointName
      */
