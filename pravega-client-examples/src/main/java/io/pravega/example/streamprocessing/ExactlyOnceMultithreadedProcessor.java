@@ -17,6 +17,7 @@ import io.pravega.client.stream.*;
 import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -136,7 +137,7 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
     }
 
     /**
-     * Commit all transactions that have been opened since the last checkpoint.
+     * Commit all transactions that are part of a checkpoint.
      *
      * @param checkpointName
      */
@@ -146,21 +147,23 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
         // Read the contents of all pravega-transactions-worker-XX files.
         // These files contain the Pravega transaction IDs that must be committed now.
         Path checkpointDirPath = checkpointRootPath.resolve(checkpointName);
-        List<UUID> txnIds = IntStream
-                .range(0, numWorkers)
-                .parallel()
-                .boxed()
-                .map(workerIndex -> checkpointDirPath.resolve(CHECKPOINT_TRANSACTION_ID_FILE_NAME_PREFIX + workerIndex))
-                .filter(Files::exists)
-                .flatMap(path -> {
-                    try {
-                        return Files.readAllLines(path, StandardCharsets.UTF_8).stream();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .map(UUID::fromString)
-                .collect(Collectors.toList());
+        List<UUID> txnIds = null;
+        try {
+            txnIds = Files.list(checkpointDirPath)
+                    .filter(path -> path.getFileName().toString().startsWith(CHECKPOINT_TRANSACTION_ID_FILE_NAME_PREFIX))
+                    .parallel()
+                    .flatMap(path -> {
+                        try {
+                            return Files.readAllLines(path, StandardCharsets.UTF_8).stream();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .map(UUID::fromString)
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         log.info("commitTransactions: txnIds={}", txnIds);
 
@@ -214,7 +217,8 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
     }
 
     /**
-     * Initiate a checkpoint, wait for it to complete, and write the checkpoint to the state.
+     * Initiate a checkpoint, wait for it to complete, write the checkpoint to the state,
+     * and commit transactions.
      */
     private void performCheckpoint() {
         final String checkpointName = UUID.randomUUID().toString();
@@ -254,8 +258,9 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
 
             cleanCheckpointDirectory(checkpointDirPath);
         } catch (final Exception e) {
-            log.warn("performCheckpoint: Error performing checkpoint", e);
-            // Ignore error. We will retry when we are scheduled again.
+            // If any exception occurs, this application will abnormally terminate.
+            // Upon restart, it will resume from the last successful checkpoint.
+            panic(e);
         }
         log.info("performCheckpoint: END: checkpointName={}", checkpointName);
     }
@@ -295,8 +300,15 @@ public class ExactlyOnceMultithreadedProcessor implements Callable<Void> {
                         }
                     });
         } catch (IOException e) {
+            // Any errors here are non-fatal. The next call to this function
+            // will attempt to clean anything that was missed.
             log.warn("cleanCheckpointDirectory", e);
         }
+    }
+
+    private void panic(Exception e) {
+        log.error("Aborting due to fatal exception", e);
+        System.exit(1);
     }
 
     public static void main(String[] args) throws Exception {

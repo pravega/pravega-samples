@@ -76,7 +76,7 @@ public class EventGenerator {
             for (;;) {
                 eventCounter++;
                 long intData = rand.nextInt(100);
-                String routingKey = Long.toString(intData);
+                String routingKey = String.format("%02d", intData);
                 sum += intData;
                 String generatedTimestampStr = dateFormat.format(new Date());
                 String message = String.join(",",
