@@ -22,7 +22,7 @@ sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-examples'
 
 dependencies {
-    compile "de.javakaffee:kryo-serializers:$kryoSerializerVersion"
+    compile "de.javakaffee:kryo-serializers:${kryoSerializerVersion}"
     compile "org.scala-lang.modules:scala-java8-compat_$flinkScalaVersion:${scalaJava8CompatVersion}"
     compile "io.pravega:pravega-connectors-flink_$flinkScalaVersion:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
