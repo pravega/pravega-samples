@@ -48,14 +48,14 @@ public class PravegaTeraSortOutputFormat<V> extends PravegaFixedSegmentsOutputFo
     public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context) throws IOException {
 
         Configuration conf = context.getConfiguration();
-        final String scopeName = Optional.ofNullable(conf.get(SCOPE_NAME)).orElseThrow(() ->
-                new IOException("The output scope name must be configured (" + SCOPE_NAME + ")"));
+        final String scopeName = Optional.ofNullable(conf.get(OUTPUT_SCOPE_NAME)).orElseThrow(() ->
+                new IOException("The output scope name must be configured (" + OUTPUT_SCOPE_NAME + ")"));
         final String outputStreamPrefix = Optional.ofNullable(conf.get(OUTPUT_STREAM_PREFIX)).orElseThrow(() ->
                 new IOException("The output stream prefix must be configured (" + OUTPUT_STREAM_PREFIX + ")"));
-        final URI controllerURI = Optional.ofNullable(conf.get(URI_STRING)).map(URI::create).orElseThrow(() ->
-                new IOException("The Pravega controller URI must be configured (" + URI_STRING + ")"));
-        final String deserializerClassName = Optional.ofNullable(conf.get(DESERIALIZER)).orElseThrow(() ->
-                new IOException("The event deserializer must be configured (" + DESERIALIZER + ")"));
+        final URI controllerURI = Optional.ofNullable(conf.get(OUTPUT_URI_STRING)).map(URI::create).orElseThrow(() ->
+                new IOException("The Pravega controller URI must be configured (" + OUTPUT_URI_STRING + ")"));
+        final String deserializerClassName = Optional.ofNullable(conf.get(OUTPUT_DESERIALIZER)).orElseThrow(() ->
+                new IOException("The event deserializer must be configured (" + OUTPUT_DESERIALIZER + ")"));
 
         final String outputStreamName = outputStreamPrefix + context.getTaskAttemptID().getTaskID().getId();
 

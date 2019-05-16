@@ -23,6 +23,7 @@ import io.pravega.connectors.flink.serialization.PravegaSerialization;
 import io.pravega.example.flink.Utils;
 import io.pravega.example.flink.streamcuts.Constants;
 import io.pravega.example.flink.streamcuts.SensorStreamSlice;
+import io.pravega.example.flink.streamcuts.serialization.GuavaImmutableMapSerializer;
 import io.pravega.example.flink.streamcuts.serialization.Tuple2DeserializationSchema;
 import java.io.IOException;
 import java.net.URI;
@@ -93,6 +94,7 @@ public class StreamBookmarker {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
                                                                          .enableCheckpointing(CHECKPOINT_INTERVAL);
         env.getCheckpointConfig().setCheckpointTimeout(CHECKPOINT_INTERVAL);
+        GuavaImmutableMapSerializer.registerSerializers(env.getConfig());
 
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
