@@ -80,6 +80,7 @@ object TurbineHeatProcessorScala {
     // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+    env.setParallelism(1) // required since on a multi core CPU machine, the watermark is not advancing due to idle sources and causing window not to trigger
 
     // 1. read and decode the sensor events from a Pravega stream
     val source = FlinkPravegaReader.builder()

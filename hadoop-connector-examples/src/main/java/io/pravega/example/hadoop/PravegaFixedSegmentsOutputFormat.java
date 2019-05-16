@@ -60,15 +60,15 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
     private static final Logger log = LoggerFactory.getLogger(PravegaFixedSegmentsOutputFormat.class);
 
     // Pravega scope name
-    public static final String SCOPE_NAME = "pravega.scope";
+    public static final String OUTPUT_SCOPE_NAME = "output.pravega.scope";
     // Pravega stream name
-    public static final String STREAM_NAME = "pravega.stream";
+    public static final String OUTPUT_STREAM_NAME = "output.pravega.stream";
     // Pravega stream segments
-    public static final String STREAM_SEGMENTS = "pravega.stream.segments";
+    public static final String OUTPUT_STREAM_SEGMENTS = "output.pravega.stream.segments";
     // Pravega uri string
-    public static final String URI_STRING = "pravega.uri";
+    public static final String OUTPUT_URI_STRING = "output.pravega.uri";
     // Pravega deserializer class name
-    public static final String DESERIALIZER = "pravega.deserializer";
+    public static final String OUTPUT_DESERIALIZER = "output.pravega.deserializer";
 
     static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
 
@@ -87,15 +87,15 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
     public RecordWriter<String, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
 
         Configuration conf = context.getConfiguration();
-        final String scopeName = Optional.ofNullable(conf.get(SCOPE_NAME)).orElseThrow(() ->
-                new IOException("The input scope name must be configured (" + SCOPE_NAME + ")"));
-        final String streamName = Optional.ofNullable(conf.get(STREAM_NAME)).orElseThrow(() ->
-                new IOException("The input stream name must be configured (" + STREAM_NAME + ")"));
-        final URI controllerURI = Optional.ofNullable(conf.get(URI_STRING)).map(URI::create).orElseThrow(() ->
-                new IOException("The Pravega controller URI must be configured (" + URI_STRING + ")"));
-        final String deserializerClassName = Optional.ofNullable(conf.get(DESERIALIZER)).orElseThrow(() ->
-                new IOException("The event deserializer must be configured (" + DESERIALIZER + ")"));
-        final int segments = Integer.parseInt(conf.get(STREAM_SEGMENTS, "3"));
+        final String scopeName = Optional.ofNullable(conf.get(OUTPUT_SCOPE_NAME)).orElseThrow(() ->
+                new IOException("The input scope name must be configured (" + OUTPUT_SCOPE_NAME + ")"));
+        final String streamName = Optional.ofNullable(conf.get(OUTPUT_STREAM_NAME)).orElseThrow(() ->
+                new IOException("The input stream name must be configured (" + OUTPUT_STREAM_NAME + ")"));
+        final URI controllerURI = Optional.ofNullable(conf.get(OUTPUT_URI_STRING)).map(URI::create).orElseThrow(() ->
+                new IOException("The Pravega controller URI must be configured (" + OUTPUT_URI_STRING + ")"));
+        final String deserializerClassName = Optional.ofNullable(conf.get(OUTPUT_DESERIALIZER)).orElseThrow(() ->
+                new IOException("The event deserializer must be configured (" + OUTPUT_DESERIALIZER + ")"));
+        final int segments = Integer.parseInt(conf.get(OUTPUT_STREAM_SEGMENTS, "3"));
 
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scopeName);

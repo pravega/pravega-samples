@@ -55,6 +55,15 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_DESERIALIZER;
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_SCOPE_NAME;
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_STREAM_NAME;
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_URI_STRING;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_DESERIALIZER;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_SCOPE_NAME;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_URI_STRING;
+import static io.pravega.example.hadoop.PravegaTeraSortOutputFormat.OUTPUT_STREAM_PREFIX;
+
 /**
  * This class is copied from apache/hadoop and modified by adding logic to
  * support PravegaInputFormat and PravegaOutputFormat
@@ -324,11 +333,16 @@ public class TeraSort extends Configured implements Tool {
     LOG.info("starting");
     Path inputDir = new Path(args[0]);
     Path outputDir = new Path(args[1]);
-    getConf().setStrings("input.pravega.uri", args[2]);
-    getConf().setStrings("input.pravega.scope", args[3]);
-    getConf().setStrings("input.pravega.stream", args[4]);
-    getConf().setStrings("input.pravega.output.stream.prefix", args[5]);
-    getConf().setStrings("input.pravega.deserializer", TextSerializer.class.getName());
+    getConf().setStrings(INPUT_URI_STRING, args[2]);
+    getConf().setStrings(INPUT_SCOPE_NAME, args[3]);
+    getConf().setStrings(INPUT_STREAM_NAME, args[4]);
+    getConf().setStrings(INPUT_DESERIALIZER, TextSerializer.class.getName());
+
+    getConf().setStrings(OUTPUT_SCOPE_NAME, args[3]);
+    getConf().setStrings(OUTPUT_URI_STRING, args[2]);
+    getConf().setStrings(OUTPUT_DESERIALIZER, TextSerializer.class.getName());
+    getConf().setStrings(OUTPUT_STREAM_PREFIX, args[5]);
+
     Job job = Job.getInstance(getConf());
 
     boolean useSimplePartitioner = getUseSimplePartitioner(job);

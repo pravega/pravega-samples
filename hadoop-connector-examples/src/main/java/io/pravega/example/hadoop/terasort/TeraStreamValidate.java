@@ -37,6 +37,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_DESERIALIZER;
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_SCOPE_NAME;
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_STREAM_NAME;
+import static io.pravega.connectors.hadoop.PravegaConfig.INPUT_URI_STRING;
+
 /**
  *  The class is to dump events from a Pravega stream into a hdfs file for manual validation
  *  of terasort results, e.g. checking whether events are sorted in a stream, as well as crossing streams.
@@ -61,10 +66,10 @@ public class TeraStreamValidate extends Configured implements Tool {
     LOG.info("starting");
     Path inputDir = new Path(args[0]);
     Path outputDir = new Path(args[1]);
-    getConf().setStrings("input.pravega.uri", args[2]);
-    getConf().setStrings("input.pravega.scope", args[3]);
-    getConf().setStrings("input.pravega.stream", args[4]);
-    getConf().setStrings("input.pravega.deserializer", TextSerializer.class.getName());
+    getConf().setStrings(INPUT_URI_STRING, args[2]);
+    getConf().setStrings(INPUT_SCOPE_NAME, args[3]);
+    getConf().setStrings(INPUT_STREAM_NAME, args[4]);
+    getConf().setStrings(INPUT_DESERIALIZER, TextSerializer.class.getName());
 
     getConf().setInt(MRJobConfig.NUM_MAPS, 1);
     Job job = Job.getInstance(getConf());

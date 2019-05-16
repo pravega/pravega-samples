@@ -61,6 +61,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.Checksum;
 
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_DESERIALIZER;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_SCOPE_NAME;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_STREAM_NAME;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_STREAM_SEGMENTS;
+import static io.pravega.example.hadoop.PravegaFixedSegmentsOutputFormat.OUTPUT_URI_STRING;
+
 /**
  * This class is copied from apache/hadoop and modified by adding logic to
  * support PravegaInputFormat
@@ -305,11 +311,11 @@ public class TeraGen extends Configured implements Tool {
       return 2;
     }
     Path outputDir = new Path(args[1]);
-    getConf().setStrings("pravega.uri", args[2]);
-    getConf().setStrings("pravega.scope", args[3]);
-    getConf().setStrings("pravega.stream", args[4]);
-    getConf().setStrings("pravega.stream.segments", args[5]);
-    getConf().setStrings("pravega.deserializer", TextSerializer.class.getName());
+    getConf().setStrings(OUTPUT_URI_STRING, args[2]);
+    getConf().setStrings(OUTPUT_SCOPE_NAME, args[3]);
+    getConf().setStrings(OUTPUT_STREAM_NAME, args[4]);
+    getConf().setStrings(OUTPUT_STREAM_SEGMENTS, args[5]);
+    getConf().setStrings(OUTPUT_DESERIALIZER, TextSerializer.class.getName());
 
     Job job = Job.getInstance(getConf());
     setNumberOfRows(job, parseHumanLong(args[0]));
