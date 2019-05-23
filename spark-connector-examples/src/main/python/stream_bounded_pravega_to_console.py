@@ -9,7 +9,7 @@ spark = (SparkSession
          .getOrCreate()
          )
 
-(spark
+(spark 
     .readStream 
     .format("pravega") 
     .option("controller", controller) 
@@ -17,16 +17,16 @@ spark = (SparkSession
     .option("stream", "streamprocessing1")
     # If there is no checkpoint, start at the earliest event.
     .option("start_stream_cut", "earliest")
+    # Do not read past the last event as of the job start time. The job will continue to run but will not receive any new records.
+    .option("end_stream_cut", "latest")
     .load()
-    .selectExpr("event", "cast(event as string) as routing_key") 
+    .selectExpr("cast(event as string)", "scope", "stream", "segment_id", "offset")
     .writeStream 
     .trigger(processingTime="3 seconds") 
     .outputMode("append") 
-    .format("pravega") 
-    .option("controller", controller) 
-    .option("scope", scope) 
-    .option("stream", "streamprocessing2") 
-    .option("checkpointLocation", "/tmp/spark-checkpoints-stream_pravega_to_pravega") 
+    .format("console")
+    .option("truncate", "false")
+    .option("checkpointLocation", "/tmp/spark-checkpoints-stream_bounded_pravega_to_console")
     .start() 
     .awaitTermination()
  )
