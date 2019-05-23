@@ -9,24 +9,19 @@ spark = (SparkSession
          .getOrCreate()
          )
 
-(spark
+(spark 
     .readStream 
-    .format('pravega') 
-    .option('controller', controller) 
-    .option('scope', scope) 
-    .option('stream', 'streamprocessing1')
-    # If there is no checkpoint, start at the earliest event.
-    .option('start_stream_cut', 'earliest')
-    .load()
-    .selectExpr('event', 'cast(event as string) as routing_key') 
+    .format('rate') 
+    .load() 
+    .selectExpr('cast(timestamp as string) as event', 'cast(value as string) as routing_key') 
     .writeStream 
     .trigger(processingTime='3 seconds') 
     .outputMode('append') 
     .format('pravega') 
     .option('controller', controller) 
     .option('scope', scope) 
-    .option('stream', 'streamprocessing2') 
-    .option('checkpointLocation', '/tmp/spark-checkpoints-stream_pravega_to_pravega') 
+    .option('stream', 'streamprocessing1') 
+    .option('checkpointLocation', '/tmp/spark-checkpoints-stream_generated_data_to_pravega') 
     .start() 
     .awaitTermination()
  )

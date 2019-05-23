@@ -53,8 +53,8 @@ Download https://www.apache.org/dyn/closer.lua/spark/spark-2.4.0/spark-2.4.0-bin
 ```
 mkdir -p ~/spark
 cd ~/spark
-tar -xzvf ~/Downloads/spark-2.4.0-bin-hadoop2.7.tgz
-ln -s spark-2.4.0-bin-hadoop2.7 current
+tar -xzvf ~/Downloads/spark-2.4.1-bin-hadoop2.7.tgz
+ln -s spark-2.4.1-bin-hadoop2.7 current
 export PATH="$HOME/spark/current/bin:$PATH"
 ~/spark/current/sbin/start-all.sh
 ```
@@ -69,27 +69,40 @@ This will build the Spark Connector and publish it to your local Maven repositor
 cd
 git clone https://github.com/pravega/spark-connectors
 cd spark-connectors
-./gradlew publishToMavenLocal
+./gradlew install
 ls -lhR ~/.m2/repository/io/pravega/pravega-connectors-spark
 ```
 
 ### Run Examples
 
-Run a Spark Streaming job that writes test data to a Pravega stream.
+Run a Spark Streaming job that writes generated data to a Pravega stream.
 ```
 cd ~/pravega-samples/spark-connector-examples
-export HOST_IP=x.x.x.x
-./write_test_to_pravega.sh
-```
-
-Run a Spark Streaming job that reads from a Pravega stream and writes to another Pravega stream.
-```
-./stream_pravega_to_pravega.sh
+./run_pyspark_app.sh src/main/python/stream_generated_data_to_pravega.py
 ```
 
 Run a Spark Streaming job that reads from a Pravega stream writes to the console.
 ```
-./stream_pravega_to_console.sh
+./run_pyspark_app.sh src/main/python/stream_pravega_to_console.py
+```
+
+You should see output similar to the following every 3 seconds:
+```
+-------------------------------------------
+Batch: 6
+-------------------------------------------
++--------------------+--------+-----------------+----------+------+
+|               event|   scope|           stream|segment_id|offset|
++--------------------+--------+-----------------+----------+------+
+|2019-05-22 17:08:...|examples|streamprocessing1|         0| 60822|
+|2019-05-22 17:08:...|examples|streamprocessing1|         0| 60853|
+|2019-05-22 17:08:...|examples|streamprocessing1|         0| 60884|
++--------------------+--------+-----------------+----------+------+
+```
+
+Run a Spark Streaming job that reads from a Pravega stream and writes to another Pravega stream.
+```
+./run_spark_app.sh src/main/python/stream_pravega_to_pravega.py
 ```
 
 ## (Optional) Configure Anaconda Python
