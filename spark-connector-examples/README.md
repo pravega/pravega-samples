@@ -56,10 +56,10 @@ cd ~/spark
 tar -xzvf ~/Downloads/spark-2.4.1-bin-hadoop2.7.tgz
 ln -s spark-2.4.1-bin-hadoop2.7 current
 export PATH="$HOME/spark/current/bin:$PATH"
-~/spark/current/sbin/start-all.sh
 ```
 
-Confirm that you can browse to the Spark Master UI at http://localhost:8080/.
+By default, the script `run_spark_ap.sh` will use an in-process Spark mini-cluster
+that is started with the Spark job ("--master local[2]"). 
 
 ### Build and Install the Spark Connector
 
@@ -182,6 +182,23 @@ You should see output similar to the following every 3 seconds:
 |2019-05-23 14:46:01.329|examples|streamprocessing1|0         |192665|
 |2019-05-23 14:46:00.329|examples|streamprocessing1|0         |192696|
 +-----------------------+--------+-----------------+----------+------+
+```
+
+#### Run a PySpark Streaming job in a Spark Cluster
+
+Start a separate Spark server process.
+
+```
+~/spark/current/sbin/start-all.sh
+```
+
+Confirm that you can browse to the Spark Master UI at http://localhost:8080/.
+
+Submit the job.
+
+```
+USE_IN_PROCESS_SPARK=0 ./run_pyspark_app.sh src/main/python/stream_generated_data_to_pravega.py
+USE_IN_PROCESS_SPARK=0 ./run_java_spark_p.sh io.pravega.example.spark.StreamPravegaToConsole
 ```
 
 ## (Optional) Configure Anaconda Python
