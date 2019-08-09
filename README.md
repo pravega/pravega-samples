@@ -166,17 +166,17 @@ pravega-samples/pravega-client-examples/build/install/pravega-client-examples/bi
 
 There is a Linux/Mac script and a Windows (.bat) script for each separate executable.
 
-_Working with `develop` branch_: If you are curious about the most recent sample applications, 
-you may like to try the `develop` version of `pravega-samples` as well. To do so, just clone the 
-`develop` branch instead of `master` (default): 
+_Working with `dev` branch_: If you are curious about the most recent sample applications, 
+you may like to try the `dev` version of `pravega-samples` as well. To do so, just clone the 
+`dev` branch instead of `master` (default): 
 
 ```
-$ git clone -b develop https://github.com/pravega/pravega-samples.git
+$ git clone -b dev https://github.com/pravega/pravega-samples.git
 $ cd pravega-samples
 $ ./gradlew clean installDist
 ```
 
-The `develop` branch works with Pravega snapshots artifacts published in 
+The `dev` branch works with Pravega snapshots artifacts published in 
 our [JFrog repository](https://oss.jfrog.org/artifactory/jfrog-dependencies/io/pravega/) instead of 
 using release versions.
 
