@@ -45,6 +45,7 @@ public class TurbineHeatProcessor {
         // set up the streaming execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setParallelism(1); // required since on a multi core CPU machine, the watermark is not advancing due to idle sources and causing window not to trigger
 
         // 1. read and decode the sensor events from a Pravega stream
         FlinkPravegaReader<String> source = FlinkPravegaReader.<String>builder()
