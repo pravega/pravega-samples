@@ -17,6 +17,7 @@ apply plugin: "scala"
 apply plugin: "distribution"
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-examples'
@@ -28,6 +29,9 @@ dependencies {
     compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_$flinkScalaVersion:${flinkVersion}"
     compile "org.slf4j:slf4j-log4j12:${slf4jLog4JVersion}"
+    if (includePravegaCredentials.toBoolean()) {
+        compile "io.pravega:pravega-keycloak-credentials:${pravegaCredentialsVersion}"
+    }
 }
 
 shadowJar {
@@ -35,6 +39,8 @@ shadowJar {
         include dependency("org.scala-lang.modules:scala-java8-compat_$flinkScalaVersion")
         include dependency("io.pravega:pravega-connectors-flink_$flinkScalaVersion")
     }
+    classifier = ""
+    zip64 true
 }
 
 task scriptWordCountWriter(type: CreateStartScripts) {
@@ -105,6 +111,24 @@ distributions {
                 from project.scriptStreamCutsStreamBookmarker
                 from project.scriptStreamCutsSliceProcessor
             }
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            credentials {
+                username username
+                password password
+            }
+            url projectRepoUrl
+        }
+    }
+
+    publications {
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
         }
     }
 }
