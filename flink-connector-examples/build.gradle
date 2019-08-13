@@ -119,10 +119,10 @@ publishing {
     repositories {
         maven {
             credentials {
-                username "nautilus"
-                password "password"
+                username username
+                password password
             }
-            url = "http://repo/maven2"
+            url projectRepoUrl
         }
     }
 
