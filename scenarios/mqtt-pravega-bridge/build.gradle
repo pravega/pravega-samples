@@ -1,0 +1,55 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
+}
+
+apply plugin: 'java'
+apply plugin: "distribution"
+apply plugin: 'application'
+
+version = samplesVersion
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+mainClassName = 'io.pravega.example.mqtt.ApplicationMain'
+applicationDefaultJvmArgs = ["-Dlog4j.configuration=file:conf/log4j.properties"]
+archivesBaseName = 'pravega-mqtt-bridge'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repository.apache.org/snapshots"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+dependencies {
+    compile "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${pahoClientMqttv3Version}"
+    compile "org.slf4j:slf4j-api:${slf4jApiVersion}"
+    compile "ch.qos.logback:logback-classic:${qosLogbackVersion}"
+    compile "com.google.guava:guava:${guavaVersion}"
+    compile "io.pravega:pravega-client:${pravegaVersion}"
+    testCompile "junit:junit:${junitVersion}"
+}
+
+shadowJar {
+    dependencies {
+        include dependency("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0")
+    }
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+            }
+        }
+    }
+}
+
+run {
+    args = ["src/main/dist/conf"]
+}
