@@ -17,8 +17,12 @@ package io.pravega.example.flink.watermark;
 public class Constants {
     public static final String CONTROLLER_ADDRESS = "tcp://localhost:9090";
     public static final String CONTROLLER_ADDRESS_PARAM = "controller";
+    public static final int EVENTS_NUMBER = 10000;
+    public static final int PARALLELISM = 3;
     public static final String STREAM_PARAM = "stream";
     public static final String DEFAULT_SCOPE = "examples";
-    public static final String DEFAULT_STREAM = "wordcount";
-    public static final String WORD_SEPARATOR = " ";
+    public static final String INPUT_STREAM = "input";
+    public static final String OUTPUT_STREAM = "output";
+    public static final String DEFAULT_HOST = "127.0.0.1";
+    public static final int DEFAULT_PORT = 9999;
 }
