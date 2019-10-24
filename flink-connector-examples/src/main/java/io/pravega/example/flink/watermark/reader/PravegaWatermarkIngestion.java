@@ -28,13 +28,14 @@ import java.net.URI;
 
 /*
  * Parameters
- *     -stream Pravega stream
  *     -controller tcp://<controller_host>:<port>, e.g., tcp://localhost:9090
  *
+ * Functionality
+ *     - Ingest simulated sine-wave sensor data with event timestamp into a Pravega stream(watermark-examples/input).
  */
-public class PravegaIngestion {
+public class PravegaWatermarkIngestion {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PravegaIngestion.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PravegaWatermarkIngestion.class);
 
     private static final double EVENT_VALUE_INCREMENT = 0.01; // Should be < 1
     private static final int WRITER_SLEEP_MS = 100;
@@ -83,6 +84,7 @@ public class PravegaIngestion {
                 writer.flush();
                 Thread.sleep(WRITER_SLEEP_MS);
 
+                // Notify the event time every 20 events
                 if (i % 20 == 0) {
                     writer.noteTime(System.currentTimeMillis());
                 }

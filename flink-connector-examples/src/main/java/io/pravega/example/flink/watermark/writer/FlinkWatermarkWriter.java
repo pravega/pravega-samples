@@ -14,6 +14,10 @@ import org.apache.flink.streaming.api.functions.IngestionTimeExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/*
+ * Functionality
+ *     - Read data from a socket(127.0.0.1:9999) and write it into a Pravega stream(watermark-examples/output) with watermark.
+ */
 public class FlinkWatermarkWriter {
     // Logger initialization
     private static final Logger LOG = LoggerFactory.getLogger(FlinkWatermarkWriter.class);
@@ -32,10 +36,6 @@ public class FlinkWatermarkWriter {
                 pravegaConfig,
                 params.get(Constants.STREAM_PARAM, Constants.OUTPUT_STREAM));
 
-        // set the socket information to read the incoming data from
-        String host = Constants.DEFAULT_HOST;
-        int port = Constants.DEFAULT_PORT;
-
         // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -43,10 +43,11 @@ public class FlinkWatermarkWriter {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.getConfig().setAutoWatermarkInterval(2000);
 
-        // count each word over a 10 second time period
-        DataStream<String> dataStream = env.socketTextStream(host, port)
+        // Get the data from socket and assign timestamp and a periodic watermark strategy onto the DataStream
+        DataStream<String> dataStream = env.socketTextStream(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT)
                 .assignTimestampsAndWatermarks(new IngestionTimeExtractor<>());
 
+        // Register a Flink Pravega writer with watermark enabled
         FlinkPravegaWriter<String> writer = FlinkPravegaWriter.<String>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
@@ -54,6 +55,7 @@ public class FlinkWatermarkWriter {
                 .withSerializationSchema(PravegaSerialization.serializationFor(String.class))
                 .build();
 
+        // Write into the sink
         dataStream.addSink(writer).name("Pravega Stream");
 
         // execute within the Flink environment

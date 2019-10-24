@@ -4,6 +4,7 @@ import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.watermark.LowerBoundAssigner;
 import io.pravega.example.flink.Utils;
 import io.pravega.example.flink.watermark.Constants;
 import io.pravega.example.flink.watermark.SensorData;
@@ -42,19 +43,29 @@ public class FlinkWatermarkReader {
 
         // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        // Using event time characteristic
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.getConfig().setAutoWatermarkInterval(2000);
 
-        // create the Pravega source to read a stream of text
+        // create the Pravega source to read a stream of SensorData with Pravega watermark
         FlinkPravegaReader<SensorData> source = FlinkPravegaReader.<SensorData>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
                 .withDeserializationSchema(PravegaSerialization.deserializationFor(SensorData.class))
+                // provide a implementation of AssignerWithTimeWindows<T>
+                .withTimestampAssigner(new LowerBoundAssigner<SensorData>() {
+                    @Override
+                    public long extractTimestamp(SensorData sensorData, long previousTimestamp) {
+                        return sensorData.getTimestamp();
+                    }
+                })
                 .build();
 
-        // count each word over a 10 second time period
-        DataStream<SensorData> dataStream = env.addSource(source).name("Pravega Stream").setParallelism(Constants.PARALLELISM);
+        DataStream<SensorData> dataStream = env.addSource(source).name("Pravega Stream")
+                .setParallelism(Constants.PARALLELISM);
 
+        // Calculating the average of each sensor in a 10 second period upon event-time clock.
         dataStream.keyBy("sensorId")
                 .timeWindow(Time.seconds(10))
                 .aggregate(new WindowAverage(), new WindowProcess())

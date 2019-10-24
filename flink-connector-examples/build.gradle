@@ -86,6 +86,27 @@ task scriptStreamCutsSliceProcessor(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+task scriptPravegaWatermarkIngestion(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.watermark.reader.PravegaWatermarkIngestion'
+    applicationName = 'pravegaWatermarkIngestion'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptFlinkWatermarkReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.watermark.reader.FlinkWatermarkReader'
+    applicationName = 'flinkWatermarkReader'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptFlinkWatermarkWriter(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.flink.watermark.writer.FlinkWatermarkWriter'
+    applicationName = 'flinkWatermarkWriter'
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 distributions {
     main {
         baseName = archivesBaseName
@@ -104,6 +125,9 @@ distributions {
                 from project.scriptStreamCutsDataProducer
                 from project.scriptStreamCutsStreamBookmarker
                 from project.scriptStreamCutsSliceProcessor
+                from project.scriptPravegaWatermarkIngestion
+                from project.scriptFlinkWatermarkReader
+                from project.scriptFlinkWatermarkWriter
             }
         }
     }
