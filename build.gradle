@@ -24,6 +24,15 @@ allprojects {
 }
 
 subprojects {
+    if (file("src/main/java").isDirectory()) {
+	apply plugin: 'java'
+    	dependencies {
+            compileOnly 'org.projectlombok:lombok:' + lombokVersion
+            testCompileOnly 'org.projectlombok:lombok:' + lombokVersion
+            annotationProcessor 'org.projectlombok:lombok:' + lombokVersion
+            testAnnotationProcessor 'org.projectlombok:lombok:' + lombokVersion
+        }
+    }
     repositories {
         mavenLocal()
         jcenter()
@@ -38,7 +47,6 @@ subprojects {
             url "https://oss.jfrog.org/jfrog-dependencies"
         }
     }
-    
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
         group "io.pravega"
         version samplesVersion
