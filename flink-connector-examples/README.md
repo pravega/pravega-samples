@@ -46,3 +46,8 @@ See [Exactly Once Sample](doc/exactly-once/README.md) for instructions.
 
 This sample demonstrates the use of Pravega StreamCuts in Flink applications.
 See [StreamCuts Sample](doc/streamcuts/README.md) for instructions.
+
+## Pravega Watermark Sample
+
+This sample demonstrates the use of Pravega Watermarks in Flink applications.
+See [Watermark Sample](doc/watermark/README.md) for instructions.
