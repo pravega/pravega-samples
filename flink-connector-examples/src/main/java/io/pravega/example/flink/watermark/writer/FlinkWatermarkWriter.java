@@ -45,18 +45,21 @@ public class FlinkWatermarkWriter {
 
         // Get the data from socket and assign timestamp and a periodic watermark strategy onto the DataStream
         DataStream<String> dataStream = env.socketTextStream(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT)
-                .assignTimestampsAndWatermarks(new IngestionTimeExtractor<>());
+                .uid("Socket Stream")
+                .assignTimestampsAndWatermarks(new IngestionTimeExtractor<>())
+                .uid("Timestamps/Watermarks");
 
         // Register a Flink Pravega writer with watermark enabled
         FlinkPravegaWriter<String> writer = FlinkPravegaWriter.<String>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
                 .enableWatermark(true)
+                .withEventRouter(event -> event)
                 .withSerializationSchema(PravegaSerialization.serializationFor(String.class))
                 .build();
 
         // Write into the sink
-        dataStream.addSink(writer).name("Pravega Stream");
+        dataStream.addSink(writer).name("Pravega Writer").uid("Pravega Writer");
 
         // execute within the Flink environment
         env.execute("Watermark Writer");

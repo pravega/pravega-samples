@@ -66,19 +66,18 @@ public class FlinkWatermarkReader {
                 .setParallelism(Constants.PARALLELISM);
 
         // Calculating the average of each sensor in a 10 second period upon event-time clock.
-        dataStream.keyBy("sensorId")
+        DataStream<Tuple4<Integer, Long, Long, Double>> avgStream = dataStream.keyBy("sensorId")
                 .timeWindow(Time.seconds(10))
                 .aggregate(new WindowAverage(), new WindowProcess())
-                .uid("Count Event-time Average")
-                .print();
+                .uid("Count Event-time Average");
 
         // create an output sink to print to stdout for verification
-        dataStream.print().uid("Print to Std. Out");
+        avgStream.print().uid("Print to Std. Out");
 
         // execute within the Flink environment
         env.execute("Sensor Watermark Reader");
 
-        LOG.info("Ending FlinkWatermarkReader...");
+        LOG.info("Ending Watermark Reader...");
     }
 
     private static class WindowAverage implements AggregateFunction<SensorData, Tuple2<Integer, Double>, Double> {
