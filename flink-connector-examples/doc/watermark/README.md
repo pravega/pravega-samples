@@ -61,7 +61,7 @@ As data comes into the socket, the pipeline will write these data into Pravega s
 
 ## Further readings
 Flink implements many techniques from the Dataflow Model, and Pravega aligns with it.
-For a better knowledge about event time and watermarks, the following articles can be helpful.
+For a better knowledge about event time and watermarks, the following articles can be really helpful.
 
 - [Streaming 101](https://www.oreilly.com/ideas/the-world-beyond-batch-streaming-101) by Tyler Akidau
 - The [Dataflow Model paper](https://research.google.com/pubs/archive/43864.pdf)

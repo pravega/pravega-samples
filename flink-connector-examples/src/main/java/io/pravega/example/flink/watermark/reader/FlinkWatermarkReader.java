@@ -62,22 +62,23 @@ public class FlinkWatermarkReader {
                 })
                 .build();
 
-        DataStream<SensorData> dataStream = env.addSource(source).name("Pravega Stream")
+        DataStream<SensorData> dataStream = env.addSource(source).name("Pravega Reader").uid("Pravega Reader")
                 .setParallelism(Constants.PARALLELISM);
 
         // Calculating the average of each sensor in a 10 second period upon event-time clock.
         dataStream.keyBy("sensorId")
                 .timeWindow(Time.seconds(10))
                 .aggregate(new WindowAverage(), new WindowProcess())
+                .uid("Count Event-time Average")
                 .print();
 
         // create an output sink to print to stdout for verification
-        dataStream.print();
+        dataStream.print().uid("Print to Std. Out");
 
         // execute within the Flink environment
-        env.execute("WordCountReader");
+        env.execute("Sensor Watermark Reader");
 
-        LOG.info("Ending WordCountReader...");
+        LOG.info("Ending FlinkWatermarkReader...");
     }
 
     private static class WindowAverage implements AggregateFunction<SensorData, Tuple2<Integer, Double>, Double> {
