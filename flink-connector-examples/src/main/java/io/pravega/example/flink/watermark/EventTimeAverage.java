@@ -1,17 +1,15 @@
-package io.pravega.example.flink.watermark.reader;
+package io.pravega.example.flink.watermark;
 
 import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaReader;
+import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaSerialization;
 import io.pravega.connectors.flink.watermark.LowerBoundAssigner;
 import io.pravega.example.flink.Utils;
-import io.pravega.example.flink.watermark.Constants;
-import io.pravega.example.flink.watermark.SensorData;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -23,9 +21,17 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FlinkWatermarkReader {
+/*
+ * Parameters
+ *     --controller tcp://<controller_host>:<port>, e.g., tcp://localhost:9090
+ *     --input input Stream name
+ *     --output output Stream name
+ *     --window event time window length in seconds
+ */
+
+public class EventTimeAverage {
     // Logger initialization
-    private static final Logger LOG = LoggerFactory.getLogger(FlinkWatermarkReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EventTimeAverage.class);
 
     public static void main(String[] args) throws Exception {
         LOG.info("Starting Watermark Reader...");
@@ -36,24 +42,31 @@ public class FlinkWatermarkReader {
                 .fromParams(params)
                 .withDefaultScope(Constants.DEFAULT_SCOPE);
 
-        // create the Pravega input stream (if necessary)
-        Stream stream = Utils.createStream(
+        // Get or create the Pravega input/output stream
+        Stream inputStream = Utils.createStream(
                 pravegaConfig,
-                params.get(Constants.STREAM_PARAM, Constants.INPUT_STREAM));
+                params.get(Constants.INPUT_STREAM_PARAM, Constants.RAW_DATA_STREAM));
+        Stream outputStream = Utils.createStream(
+                pravegaConfig,
+                params.getRequired(Constants.OUTPUT_STREAM_PARAM));
+
+        // Get window length (in seconds) from parameters
+        long windowLength = params.getInt(Constants.WINDOW_LENGTH_PARAM, 10);
 
         // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Using event time characteristic
+        // Use event time characteristic
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        // Set the auto watermark interval to 2 seconds
         env.getConfig().setAutoWatermarkInterval(2000);
 
         // create the Pravega source to read a stream of SensorData with Pravega watermark
         FlinkPravegaReader<SensorData> source = FlinkPravegaReader.<SensorData>builder()
                 .withPravegaConfig(pravegaConfig)
-                .forStream(stream)
+                .forStream(inputStream)
                 .withDeserializationSchema(PravegaSerialization.deserializationFor(SensorData.class))
-                // provide a implementation of AssignerWithTimeWindows<T>
+                // provide an implementation of AssignerWithTimeWindows<T>
                 .withTimestampAssigner(new LowerBoundAssigner<SensorData>() {
                     @Override
                     public long extractTimestamp(SensorData sensorData, long previousTimestamp) {
@@ -65,14 +78,27 @@ public class FlinkWatermarkReader {
         DataStream<SensorData> dataStream = env.addSource(source).name("Pravega Reader").uid("Pravega Reader")
                 .setParallelism(Constants.PARALLELISM);
 
-        // Calculating the average of each sensor in a 10 second period upon event-time clock.
-        DataStream<Tuple4<Integer, Long, Long, Double>> avgStream = dataStream.keyBy("sensorId")
-                .timeWindow(Time.seconds(10))
+        // Calculate the average of each sensor in a 10 second period upon event-time clock.
+        DataStream<SensorData> avgStream = dataStream.keyBy("sensorId")
+                .timeWindow(Time.seconds(windowLength))
                 .aggregate(new WindowAverage(), new WindowProcess())
                 .uid("Count Event-time Average");
 
         // create an output sink to print to stdout for verification
         avgStream.print().uid("Print to Std. Out");
+
+        // Register a Flink Pravega writer with watermark enabled
+        FlinkPravegaWriter<SensorData> writer = FlinkPravegaWriter.<SensorData>builder()
+                .withPravegaConfig(pravegaConfig)
+                .forStream(outputStream)
+                // enable watermark propagation
+                .enableWatermark(true)
+                .withEventRouter(event -> String.valueOf(event.getSensorId()))
+                .withSerializationSchema(PravegaSerialization.serializationFor(SensorData.class))
+                .build();
+
+        // Print to pravega sink for further usage
+        avgStream.addSink(writer).name("Pravega Writer").uid("Pravega Writer");
 
         // execute within the Flink environment
         env.execute("Sensor Watermark Reader");
@@ -104,14 +130,16 @@ public class FlinkWatermarkReader {
     }
 
     private static class WindowProcess extends ProcessWindowFunction<Double,
-            Tuple4<Integer, Long, Long, Double>, Tuple, TimeWindow> {
+            SensorData, Tuple, TimeWindow> {
 
         @Override
         public void process(Tuple key, Context context, Iterable<Double> iterable,
-                            Collector<Tuple4<Integer, Long, Long, Double>> collector) throws Exception {
+                            Collector<SensorData> collector) throws Exception {
             Double avg = iterable.iterator().next();
             int sensorId = key.getField(0);
-            collector.collect(new Tuple4<>(sensorId, context.window().getStart(), context.window().getEnd(), avg));
+            // Set the event timestamp to the middle timestamp of the window
+            long eventTime = (context.window().getStart() + context.window().getEnd()) / 2;
+            collector.collect(new SensorData(sensorId, avg, eventTime));
         }
     }
 }

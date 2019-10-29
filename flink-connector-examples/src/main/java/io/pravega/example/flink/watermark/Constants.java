@@ -15,16 +15,27 @@ package io.pravega.example.flink.watermark;
  *
  */
 public class Constants {
-    public static final String CONTROLLER_ADDRESS = "tcp://localhost:9090";
-    public static final String CONTROLLER_ADDRESS_PARAM = "controller";
-    public static final int SENSOR_NUMBER = 3;
+
+    protected static final String CONTROLLER_ADDRESS = "tcp://localhost:9090";
+    protected static final String CONTROLLER_ADDRESS_PARAM = "controller";
+    protected static final int SENSOR_NUMBER = 3;
     // event number for each sensor
-    public static final int EVENTS_NUMBER = 10000;
-    public static final int PARALLELISM = 3;
-    public static final String STREAM_PARAM = "stream";
-    public static final String DEFAULT_SCOPE = "watermark-examples";
-    public static final String INPUT_STREAM = "input";
-    public static final String OUTPUT_STREAM = "output";
-    public static final String DEFAULT_HOST = "127.0.0.1";
-    public static final int DEFAULT_PORT = 9999;
+    protected static final int EVENTS_NUMBER = 10000;
+    // ensure it covers a whole period of sine
+    protected static final double EVENT_VALUE_INCREMENT = 0.01 * Math.PI;
+    // one second for each event
+    protected static final long EVENT_TIME_PERIOD = 1L;
+    // Unix timestamp for 2017/7/14 10:40:00
+    protected static final long STARTING_EVENT_TIME = 1500000000L;
+    protected static final int WRITER_SLEEP_MS = 100;
+
+    protected static final int PARALLELISM = 3;
+    protected static final String INPUT_STREAM_PARAM = "input";
+    protected static final String OUTPUT_STREAM_PARAM = "output";
+    protected static final String WINDOW_LENGTH_PARAM = "window";
+    protected static final String DEFAULT_SCOPE = "watermark-examples";
+    protected static final String RAW_DATA_STREAM = "raw-data";
+    protected static final String OUTPUT_STREAM = "output";
+    protected static final String DEFAULT_HOST = "127.0.0.1";
+    protected static final int DEFAULT_PORT = 9999;
 }
