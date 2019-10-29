@@ -22,8 +22,8 @@ In order to enable Pravega watermark to transfer into Flink, Flink readers accep
 1. How to extract timestamp from each record
 2. How to leverage the watermark timestamp given the time bound from Pravega readers.
 
-This example consists of three applications.
-1. `PravegaIngestion` is to generate synthetic sensor data with event time and ingest into a Pravega stream.
+This example consists of two applications.
+1. `PravegaIngestion` is a Pravega writer to generate synthetic sensor data with event time and ingest into a Pravega stream.
 2. `FlinkWatermarkReader` reads data from the stream with Pravega watermark, calculates an average value for each sensor under a 10-second window under event-time clock and prints the summary.
 
 The scripts can be found under the flink-examples directory in:

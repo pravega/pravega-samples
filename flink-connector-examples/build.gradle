@@ -23,17 +23,17 @@ archivesBaseName = 'pravega-flink-examples'
 
 dependencies {
     compile "de.javakaffee:kryo-serializers:${kryoSerializerVersion}"
-    compile "org.scala-lang.modules:scala-java8-compat_$flinkScalaVersion:${scalaJava8CompatVersion}"
-    compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_$flinkScalaVersion:${flinkConnectorVersion}"
-    compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
-    compile "org.apache.flink:flink-streaming-scala_$flinkScalaVersion:${flinkVersion}"
+    compile "org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}:${scalaJava8CompatVersion}"
+    compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
     compile "org.slf4j:slf4j-log4j12:${slf4jLog4JVersion}"
 }
 
 shadowJar {
     dependencies {
-        include dependency("org.scala-lang.modules:scala-java8-compat_$flinkScalaVersion")
-        include dependency("io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_$flinkScalaVersion")
+        include dependency("org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}")
+        include dependency("io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}")
     }
 }
 

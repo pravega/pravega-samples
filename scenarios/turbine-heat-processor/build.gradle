@@ -22,17 +22,17 @@ sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-scenario-turbineheatprocessor'
 
 dependencies {
-    compile "org.scala-lang.modules:scala-java8-compat_$flinkScalaVersion:${scalaJava8CompatVersion}"
-    compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_$flinkScalaVersion:${flinkConnectorVersion}"
-    compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
-    compile "org.apache.flink:flink-streaming-scala_$flinkScalaVersion:${flinkVersion}"
+    compile "org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}:${scalaJava8CompatVersion}"
+    compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
     compile "org.slf4j:slf4j-log4j12:1.7.14"
 }
 
 shadowJar {
     dependencies {
-        include dependency("org.scala-lang.modules:scala-java8-compat_$flinkScalaVersion")
-        include dependency("io.pravega:pravega-connectors-flink_$flinkScalaVersion")
+        include dependency("org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}")
+        include dependency("io.pravega:pravega-connectors-flink_${flinkScalaVersion}")
     }
 }
 

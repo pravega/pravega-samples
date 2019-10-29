@@ -17,6 +17,8 @@ package io.pravega.example.flink.watermark;
 public class Constants {
     public static final String CONTROLLER_ADDRESS = "tcp://localhost:9090";
     public static final String CONTROLLER_ADDRESS_PARAM = "controller";
+    public static final int SENSOR_NUMBER = 3;
+    // event number for each sensor
     public static final int EVENTS_NUMBER = 10000;
     public static final int PARALLELISM = 3;
     public static final String STREAM_PARAM = "stream";

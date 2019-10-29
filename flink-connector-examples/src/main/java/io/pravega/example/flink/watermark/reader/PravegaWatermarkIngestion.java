@@ -72,9 +72,9 @@ public class PravegaWatermarkIngestion {
                     Constants.INPUT_STREAM,
                     new JavaSerializer<>(), EventWriterConfig.builder().build());
 
-            for (double i = 1; i <= numEvents; i++) {
+            for (int i = 1; i <= numEvents; i++) {
                 // Write an event for each sensor.
-                for (int sensorId = 0; sensorId < io.pravega.example.flink.streamcuts.Constants.PARALLELISM; sensorId++) {
+                for (int sensorId = 0; sensorId < Constants.SENSOR_NUMBER; sensorId++) {
                     // Different starting values per sensor.
                     final SensorData value = new SensorData(sensorId, Math.sin(i * EVENT_VALUE_INCREMENT + sensorId), System.currentTimeMillis());
                     writer.writeEvent(String.valueOf(sensorId), value);
