@@ -8,7 +8,6 @@ import io.pravega.connectors.flink.serialization.PravegaSerialization;
 import io.pravega.connectors.flink.watermark.LowerBoundAssigner;
 import io.pravega.example.flink.Utils;
 import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -34,7 +33,7 @@ public class EventTimeAverage {
     private static final Logger LOG = LoggerFactory.getLogger(EventTimeAverage.class);
 
     public static void main(String[] args) throws Exception {
-        LOG.info("Starting Watermark Reader...");
+        LOG.info("Starting Event Time Average...");
 
         // initialize the parameter utility tool in order to retrieve input parameters
         ParameterTool params = ParameterTool.fromArgs(args);
@@ -79,12 +78,13 @@ public class EventTimeAverage {
                 .setParallelism(Constants.PARALLELISM);
 
         // Calculate the average of each sensor in a 10 second period upon event-time clock.
-        DataStream<SensorData> avgStream = dataStream.keyBy("sensorId")
+        DataStream<SensorData> avgStream = dataStream
+                .keyBy(SensorData::getSensorId)
                 .timeWindow(Time.seconds(windowLength))
                 .aggregate(new WindowAverage(), new WindowProcess())
                 .uid("Count Event-time Average");
 
-        // create an output sink to print to stdout for verification
+        // Print to stdout for verification
         avgStream.print().uid("Print to Std. Out");
 
         // Register a Flink Pravega writer with watermark enabled
@@ -101,9 +101,9 @@ public class EventTimeAverage {
         avgStream.addSink(writer).name("Pravega Writer").uid("Pravega Writer");
 
         // execute within the Flink environment
-        env.execute("Sensor Watermark Reader");
+        env.execute("Sensor Event Time Average");
 
-        LOG.info("Ending Watermark Reader...");
+        LOG.info("Ending Event Time Average...");
     }
 
     private static class WindowAverage implements AggregateFunction<SensorData, Tuple2<Integer, Double>, Double> {
@@ -130,16 +130,15 @@ public class EventTimeAverage {
     }
 
     private static class WindowProcess extends ProcessWindowFunction<Double,
-            SensorData, Tuple, TimeWindow> {
+            SensorData, Integer, TimeWindow> {
 
         @Override
-        public void process(Tuple key, Context context, Iterable<Double> iterable,
+        public void process(Integer key, Context context, Iterable<Double> iterable,
                             Collector<SensorData> collector) throws Exception {
             Double avg = iterable.iterator().next();
-            int sensorId = key.getField(0);
-            // Set the event timestamp to the middle timestamp of the window
-            long eventTime = (context.window().getStart() + context.window().getEnd()) / 2;
-            collector.collect(new SensorData(sensorId, avg, eventTime));
+            // Set the event timestamp to the ending timestamp of the window
+            long eventTime = context.window().getEnd();
+            collector.collect(new SensorData(key, avg, eventTime));
         }
     }
 }

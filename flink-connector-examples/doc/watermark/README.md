@@ -1,5 +1,6 @@
 # Pravega Watermark Flink Example 
 
+## Event time and Watermark Introduction
 Flink offers [event-time characteristic](https://ci.apache.org/projects/flink/flink-docs-stable/dev/event_time.html).
 The mechanism in Flink to measure progress in event time is watermarks.
 Watermarks flow as part of the data stream and carry a timestamp `t`.
@@ -12,56 +13,82 @@ The new Pravega watermark API enables the writer to provide event time informati
 
 This approach is integrated with Flink API.
 
-The following two examples will show how to utilize Pravega watermark in Flink applications.
+The following examples will show how to utilize Pravega watermark in Flink applications.
 
-## Readers
+## Application: Raw Data Ingestion
 
+`PravegaWatermarkIngestion` is a Pravega writer to generate synthetic sensor data with event time and ingest into a Pravega stream.
+It mocks a sine wave for three sensors and emits data every second in event time.
+
+## Application: Event Time Window Average
+
+### Usage of Pravega source with watermark 
 There is a slight difference that Flink forces that event timestamp can be extracted from each record, while Pravega as a streaming storage doesn't have that limitation.
 
 In order to enable Pravega watermark to transfer into Flink, Flink readers accepts an implementation of
 1. How to extract timestamp from each record
 2. How to leverage the watermark timestamp given the time bound from Pravega readers.
 
-This example consists of two applications.
-1. `PravegaIngestion` is a Pravega writer to generate synthetic sensor data with event time and ingest into a Pravega stream.
-2. `FlinkWatermarkReader` reads data from the stream with Pravega watermark, calculates an average value for each sensor under a 10-second window under event-time clock and prints the summary.
+This thought is abstracted into an interface called `AssignerWithTimeWindows`. It's up to you to implement it.
+While building the reader, please use `withTimestampAssigner(new MyAssignerWithTimeWindows())` to register the assigner. 
 
+### Usage of Pravega sink with watermark 
+The application reads text from a socket, assigns the event time and then propagating the Flink watermark into Pravega with `enableWatermark(true)` in the Flink writer.
+
+### Our Recursive Application
+`EventTimeAverage` reads sensor data from the stream with Pravega watermark, calculates an average value for each sensor under an fixed-length event-time window and generates the summary sensor data back into another Pravega stream.
+You can run it recursively by reusing the result of the smaller window.
+
+## How to run the application and verify
 The scripts can be found under the flink-examples directory in:
 ```
 flink-connector-examples/build/install/pravega-flink-examples/bin
 ```
 
-Start the FlinkWatermarkReader app in one window by
-```
-$ bin/flinkWatermarkReader [-controller tcp://localhost:9090]
-```
-
-and then start PravegaWatermarkIngestion app in another
+Start the `PravegaWatermarkIngestion` app in one window by
 ```
 $ bin/pravegaWatermarkIngestion [-controller tcp://localhost:9090]
 ```
 
-Every around 10 seconds, the average result for each sensor will be printed out.
+and then start several `EventTimeAverage` applications in parallel
 
-## Writers
-
-The application reads text from a socket, assigns the event time and then propagating the Flink watermark into Pravega with `enableWatermark(true)` in the Flink writer.
-
-First, use `netcat` to start local server via
+Required parameters:
+1. `input` for input stream Name, default is `raw-data` which contains data from `PravegaWatermarkIngestion`
+2. `output` for output stream Name
+3. `window` for event time window length, set it increasingly in the recursive runs.
+For example,
 ```
-$ nc -lk 9999
-```
-
-Then start the `FlinkWatermarkWriter`:
-```
-$ bin/flinkWatermarkWriter [-controller tcp://localhost:9090]
+$ bin/eventTimeAverage [-controller tcp://localhost:9090] --input raw-data --output avg-10s --window 10
+$ bin/eventTimeAverage [-controller tcp://localhost:9090] --input avg-10s --output avg-500s --window 500
+$ bin/eventTimeAverage [-controller tcp://localhost:9090] --input avg-500s --output avg-final --window 10000
 ```
 
-As data comes into the socket, the pipeline will write these data into Pravega stream with watermark.
+You can see the windowing average statistics recursively output for each job with different window lengths.
+All the jobs are running under event time clock perfectly.
+
+Sample output:
+
+```
+// 10s avg
+...
+2> SensorData{sensorId=0, value=-0.17122998340916468, timestamp=1500010000000}
+2> SensorData{sensorId=1, value=0.7330542299427434, timestamp=1500010000000}
+2> SensorData{sensorId=2, value=0.9633717649380801, timestamp=1500010000000}
+```
+
+```
+// 500s avg from 10s
+...
+2> SensorData{sensorId=2, value=-0.05116250806600923, timestamp=1500009500000}
+2> SensorData{sensorId=0, value=0.12731348232574283, timestamp=1500009500000}
+2> SensorData{sensorId=1, value=0.07047071003831529, timestamp=1500009500000}
+```
+
+
 
 ## Further readings
 Flink implements many techniques from the Dataflow Model, and Pravega aligns with it.
-For a better knowledge about event time and watermarks, the following articles can be really helpful.
+For a better knowledge about event time and watermarks, the following articles can be helpful.
 
 - [Streaming 101](https://www.oreilly.com/ideas/the-world-beyond-batch-streaming-101) by Tyler Akidau
 - The [Dataflow Model paper](https://research.google.com/pubs/archive/43864.pdf)

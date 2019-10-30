@@ -88,22 +88,15 @@ task scriptStreamCutsSliceProcessor(type: CreateStartScripts) {
 
 task scriptPravegaWatermarkIngestion(type: CreateStartScripts) {
     outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.example.flink.watermark.reader.PravegaWatermarkIngestion'
+    mainClassName = 'io.pravega.example.flink.watermark.PravegaWatermarkIngestion'
     applicationName = 'pravegaWatermarkIngestion'
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
-task scriptFlinkWatermarkReader(type: CreateStartScripts) {
+task scriptEventTimeAverage(type: CreateStartScripts) {
     outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.example.flink.watermark.reader.FlinkWatermarkReader'
-    applicationName = 'flinkWatermarkReader'
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task scriptFlinkWatermarkWriter(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.example.flink.watermark.writer.FlinkWatermarkWriter'
-    applicationName = 'flinkWatermarkWriter'
+    mainClassName = 'io.pravega.example.flink.watermark.EventTimeAverage'
+    applicationName = 'eventTimeAverage'
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
@@ -126,8 +119,7 @@ distributions {
                 from project.scriptStreamCutsStreamBookmarker
                 from project.scriptStreamCutsSliceProcessor
                 from project.scriptPravegaWatermarkIngestion
-                from project.scriptFlinkWatermarkReader
-                from project.scriptFlinkWatermarkWriter
+                from project.scriptEventTimeAverage
             }
         }
     }
