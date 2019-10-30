@@ -137,7 +137,7 @@ public class EventTimeAverage {
                             Collector<SensorData> collector) throws Exception {
             Double avg = iterable.iterator().next();
             // Set the event timestamp to the ending timestamp of the window
-            long eventTime = context.window().getEnd();
+            long eventTime = context.window().maxTimestamp();
             collector.collect(new SensorData(key, avg, eventTime));
         }
     }

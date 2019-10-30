@@ -1,11 +1,15 @@
 package io.pravega.example.flink.watermark;
 
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class SensorData implements Serializable {
     private int sensorId;
     private double value;
     private long timestamp;
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss.SSS");
 
     public SensorData() {
     }
@@ -45,7 +49,7 @@ public class SensorData implements Serializable {
         return "SensorData{" +
                 "sensorId=" + sensorId +
                 ", value=" + value +
-                ", timestamp=" + timestamp +
+                ", timestamp=" + dateFormat.format(new Date(timestamp)) +
                 '}';
     }
 }
