@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.flink.watermark;
 
 import io.pravega.client.stream.Stream;
@@ -137,7 +147,7 @@ public class EventTimeAverage {
                             Collector<SensorData> collector) throws Exception {
             Double avg = iterable.iterator().next();
             // Set the event timestamp to the ending timestamp of the window
-            long eventTime = context.window().maxTimestamp();
+            long eventTime = context.window().getEnd();
             collector.collect(new SensorData(key, avg, eventTime));
         }
     }

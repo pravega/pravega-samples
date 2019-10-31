@@ -71,20 +71,26 @@ Sample output:
 ```
 // 10s avg
 ...
-2> SensorData{sensorId=0, value=-0.17122998340916468, timestamp=1500010000000}
-2> SensorData{sensorId=1, value=0.7330542299427434, timestamp=1500010000000}
-2> SensorData{sensorId=2, value=0.9633717649380801, timestamp=1500010000000}
+2> SensorData{sensorId=2, value=-0.05747643363915676, timestamp=2017-07-14T11:19:00.000+0800}
+2> SensorData{sensorId=0, value=-0.8801719658380192, timestamp=2017-07-14T11:19:00.000+0800}
+2> SensorData{sensorId=1, value=-0.8677071977053602, timestamp=2017-07-14T11:19:00.000+0800}
+2> SensorData{sensorId=2, value=0.25258416246753035, timestamp=2017-07-14T11:19:10.000+0800}
+2> SensorData{sensorId=1, value=-0.674177582371591, timestamp=2017-07-14T11:19:10.000+0800}
+2> SensorData{sensorId=0, value=-0.9811035671074867, timestamp=2017-07-14T11:19:10.000+0800}
+...
 ```
 
 ```
 // 500s avg from 10s
 ...
-2> SensorData{sensorId=2, value=-0.05116250806600923, timestamp=1500009500000}
-2> SensorData{sensorId=0, value=0.12731348232574283, timestamp=1500009500000}
-2> SensorData{sensorId=1, value=0.07047071003831529, timestamp=1500009500000}
+2> SensorData{sensorId=2, value=-0.012627637468484046, timestamp=2017-07-14T11:05:00.000+0800}
+2> SensorData{sensorId=1, value=0.09979287923602662, timestamp=2017-07-14T11:05:00.000+0800}
+2> SensorData{sensorId=0, value=0.12046428298937613, timestamp=2017-07-14T11:05:00.000+0800}
+2> SensorData{sensorId=1, value=-0.09979287923602662, timestamp=2017-07-14T11:13:20.000+0800}
+2> SensorData{sensorId=0, value=-0.12046428298937613, timestamp=2017-07-14T11:13:20.000+0800}
+2> SensorData{sensorId=2, value=0.012627637468484188, timestamp=2017-07-14T11:13:20.000+0800}
+...
 ```
-
-
 
 ## Further readings
 Flink implements many techniques from the Dataflow Model, and Pravega aligns with it.
