@@ -16,7 +16,6 @@ import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.sources.tsextractors.ExistingField;
@@ -54,7 +53,7 @@ public class PopularDestinationQuery extends AbstractHandler {
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
         // create a TableEnvironment
-        StreamTableEnvironment tEnv = TableEnvironment.getTableEnvironment(env);
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
         tEnv.registerTableSource("TaxiRide", source);
 
         String query =
