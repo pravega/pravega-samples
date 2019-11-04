@@ -25,20 +25,21 @@ archivesBaseName = 'pravega-flink-scenario-anomaly-detection'
 dependencies {
     compile "io.pravega:pravega-client:${pravegaVersion}"
     compile "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
-    compile "io.pravega:pravega-connectors-flink_$flinkScalaVersion:${flinkConnectorVersion}"
-    compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
-    compile "org.apache.flink:flink-connector-elasticsearch5_$flinkScalaVersion:${flinkVersion}"
+
+    compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-connector-elasticsearch5_${flinkScalaVersion}:${flinkVersion}"
     compile "ch.qos.logback:logback-classic:1.1.7"
 }
 
 shadowJar {
     dependencies {
-        include dependency("io.pravega:pravega-connectors-flink_$flinkScalaVersion")
+        include dependency("io.pravega:pravega-connectors-flink_${flinkScalaVersion}")
         include dependency("io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}")
 
         //All below dependencies are from Elastic Search 5 connector
-        include dependency("org.apache.flink:flink-connector-elasticsearch5_$flinkScalaVersion:${flinkVersion}")
-        include dependency("org.apache.flink:flink-connector-elasticsearch-base_$flinkScalaVersion:${flinkVersion}")
+        include dependency("org.apache.flink:flink-connector-elasticsearch5_${flinkScalaVersion}:${flinkVersion}")
+        include dependency("org.apache.flink:flink-connector-elasticsearch-base_${flinkScalaVersion}:${flinkVersion}")
         include dependency("org.elasticsearch.client:transport:5.1.2")
         include dependency("org.elasticsearch:elasticsearch:5.1.2")
         include dependency("org.apache.lucene:lucene-core:6.3.0")
