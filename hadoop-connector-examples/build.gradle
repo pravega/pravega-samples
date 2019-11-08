@@ -36,7 +36,6 @@ repositories {
 
 dependencies {
     compile     "io.pravega:pravega-connectors-hadoop:${hadoopConnectorVersion}"
-    compile     "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
     compileOnly "org.apache.hadoop:hadoop-common:${hadoopVersion}"
     compileOnly "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
     compileOnly "org.apache.spark:spark-core_2.11:${sparkVersion}"
@@ -46,7 +45,6 @@ shadowJar {
     version = version
     dependencies {
         include dependency("io.pravega:pravega-connectors-hadoop")
-        include dependency("io.pravega:pravega-keycloak-client")
     }
     manifest {
         attributes(

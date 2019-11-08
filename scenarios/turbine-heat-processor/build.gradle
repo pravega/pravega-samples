@@ -22,9 +22,6 @@ sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-scenario-turbineheatprocessor'
 
 dependencies {
-    compile "io.pravega:pravega-client:${pravegaVersion}"
-    compile "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
-
     compile "org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}:${scalaJava8CompatVersion}"
     compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
@@ -37,7 +34,6 @@ shadowJar {
     dependencies {
         include dependency("org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}")
         include dependency("io.pravega:pravega-connectors-flink_${flinkScalaVersion}")
-        include dependency("io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}")
     }
 }
 

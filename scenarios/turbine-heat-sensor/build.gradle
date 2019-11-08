@@ -29,7 +29,6 @@ dependencies {
 
     compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
-            "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}",
             "commons-cli:commons-cli:${commonsCLIVersion}"
 
     compile "org.slf4j:slf4j-api:1.7.14"
