@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
+import io.pravega.client.ClientConfig;
+import io.pravega.client.SynchronizerClientFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -28,7 +30,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.StreamManager;
 
 /*
@@ -56,14 +57,14 @@ public class SharedConfigCli implements AutoCloseable{
     
     private final String configName; //corresponds to the stream name used by the synchronizer behind the shared config
     
-    private final ClientFactory clientFactory;
+    private final SynchronizerClientFactory clientFactory;
     private final StreamManager streamManager;
     private final SharedConfig<String, String> config;
 
     public SharedConfigCli(String scope, String configName, URI controllerURI) {
         this.configName = configName;
         
-        this.clientFactory = ClientFactory.withScope(scope, controllerURI);
+        this.clientFactory = SynchronizerClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build());
         this.streamManager = StreamManager.create(controllerURI);
         
         this.config = new SharedConfig<>(clientFactory, streamManager, scope, configName);
