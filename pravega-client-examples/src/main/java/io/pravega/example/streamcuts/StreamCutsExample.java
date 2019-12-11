@@ -11,7 +11,9 @@
 package io.pravega.example.streamcuts;
 
 import com.google.common.collect.Lists;
-import io.pravega.client.ClientFactory;
+import io.pravega.client.BatchClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.batch.BatchClient;
@@ -89,7 +91,7 @@ public class StreamCutsExample implements Closeable {
 
         // Free resources after execution.
         try (ReaderGroupManager manager = ReaderGroupManager.withScope(scope, controllerURI);
-             ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build())) {
 
             // Create a reader group and a reader to read from the stream.
             final String readerGroupName = streamName + randomId;
@@ -145,7 +147,7 @@ public class StreamCutsExample implements Closeable {
         StringBuilder result = new StringBuilder();
         final String randomId = String.valueOf(new Random(System.nanoTime()).nextInt());
         try (ReaderGroupManager manager = ReaderGroupManager.withScope(scope, controllerURI);
-             ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build())) {
             final String readerGroupName = "RG" + randomId;
             manager.createReaderGroup(readerGroupName, config);
             @Cleanup
@@ -183,8 +185,7 @@ public class StreamCutsExample implements Closeable {
      */
     public int sumBoundedStreams(Map<Stream, List<StreamCut>> streamCuts) {
         int totalSumValuesInDay = 0;
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
-            final BatchClient batchClient = clientFactory.createBatchClient();
+        try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build())) {
             for (Stream myStream: streamCuts.keySet()) {
 
                 // Get the cuts for this stream that will bound the number of events to read.
@@ -236,7 +237,7 @@ public class StreamCutsExample implements Closeable {
             streamManager.createStream(scope, streamName, streamConfig);
 
             // Note that we use the try-with-resources statement for those classes that should be closed after usage.
-            try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+            try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build());
                  EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                          new JavaSerializer<>(), EventWriterConfig.builder().build())) {
 

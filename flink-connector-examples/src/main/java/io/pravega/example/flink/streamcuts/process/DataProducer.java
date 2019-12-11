@@ -50,8 +50,6 @@ public class DataProducer {
 
         // Here we configure the new stream (e.g., name, scope, scaling policy, retention policy).
         StreamConfiguration streamConfiguration = StreamConfiguration.builder()
-                                                                     .scope(Constants.DEFAULT_SCOPE)
-                                                                     .streamName(Constants.PRODUCER_STREAM)
                                                                      .scalingPolicy(ScalingPolicy.fixed(Constants.PARALLELISM))
                                                                      .build();
 

@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
+import io.pravega.client.ClientConfig;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -29,7 +29,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -409,15 +409,13 @@ public class ConsoleWriter implements AutoCloseable {
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scope);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
         streamManager.createStream(scope, streamName, streamConfig);
         
-        try(
-            ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
-
+        try(EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build());
             EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                     new JavaSerializer<String>(),
                     EventWriterConfig.builder()

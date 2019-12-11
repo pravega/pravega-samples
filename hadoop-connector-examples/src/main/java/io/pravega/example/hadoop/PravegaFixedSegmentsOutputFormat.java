@@ -29,7 +29,8 @@
 package io.pravega.example.hadoop;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -73,13 +74,13 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
     static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
 
     // client factory
-    private ClientFactory externalClientFactory;
+    private EventStreamClientFactory externalClientFactory;
 
     public PravegaFixedSegmentsOutputFormat() {
     }
 
     @VisibleForTesting
-    protected PravegaFixedSegmentsOutputFormat(ClientFactory externalClientFactory) {
+    protected PravegaFixedSegmentsOutputFormat(EventStreamClientFactory externalClientFactory) {
         this.externalClientFactory = externalClientFactory;
     }
 
@@ -100,12 +101,13 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scopeName);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scopeName).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(segments))
                 .build();
 
         streamManager.createStream(scopeName, streamName, streamConfig);
-        ClientFactory clientFactory = (externalClientFactory != null) ? externalClientFactory : ClientFactory.withScope(scopeName, controllerURI);
+        EventStreamClientFactory clientFactory = (externalClientFactory != null) ? externalClientFactory :
+                EventStreamClientFactory.withScope(scopeName, ClientConfig.builder().controllerURI(controllerURI).build());
 
         Serializer deserializer;
         try {

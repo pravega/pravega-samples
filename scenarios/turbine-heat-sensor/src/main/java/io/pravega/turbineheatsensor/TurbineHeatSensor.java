@@ -10,7 +10,8 @@
  */
 package io.pravega.turbineheatsensor;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.*;
@@ -21,7 +22,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -84,10 +84,10 @@ public class TurbineHeatSensor {
         ExecutorService executor = Executors.newFixedThreadPool(producerCount + 10);
 
         URI controllerUri;
-        ClientFactory clientFactory;
+        EventStreamClientFactory clientFactory;
         try {
             controllerUri = new URI(TurbineHeatSensor.controllerUri);
-            clientFactory = ClientFactory.withScope(scopeName, controllerUri);
+            clientFactory = EventStreamClientFactory.withScope(scopeName, ClientConfig.builder().controllerURI(controllerUri).build());
             streamManager = StreamManager.create(controllerUri);
             readerGroupManager = ReaderGroupManager.withScope(scopeName, controllerUri);
 
@@ -95,8 +95,6 @@ public class TurbineHeatSensor {
 
             ScalingPolicy policy = ScalingPolicy.fixed(producerCount);
             StreamConfiguration config = StreamConfiguration.builder()
-                    .scope(scopeName)
-                    .streamName(streamName)
                     .scalingPolicy(policy)
                     .build();
             streamManager.createStream(scopeName, streamName, config);
@@ -292,7 +290,7 @@ public class TurbineHeatSensor {
         private final boolean isTransaction;
 
         TemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean isTransaction,
-                           ClientFactory factory) {
+                           EventStreamClientFactory factory) {
             this.sensor = sensor;
             this.eventsPerSec = eventsPerSec;
             this.secondsToRun = secondsToRun;
@@ -397,7 +395,7 @@ public class TurbineHeatSensor {
         private final Transaction<String> transaction;
 
         TransactionTemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean
-                isTransaction, ClientFactory factory) {
+                isTransaction, EventStreamClientFactory factory) {
             super(sensor, eventsPerSec, secondsToRun, isTransaction, factory);
             transaction = producer.beginTxn();
         }
@@ -424,7 +422,7 @@ public class TurbineHeatSensor {
         final EventStreamReader<String> reader;
         private int totalEvents;
 
-        public SensorReader(int totalEvents, ClientFactory clientFactory) {
+        public SensorReader(int totalEvents, EventStreamClientFactory clientFactory) {
         	this.totalEvents = totalEvents;
         	reader = createReader(clientFactory);
         }
@@ -451,7 +449,7 @@ public class TurbineHeatSensor {
             }
         }
 
-        public EventStreamReader<String> createReader(ClientFactory clientFactory) {
+        public EventStreamReader<String> createReader(EventStreamClientFactory clientFactory) {
             String readerName = "Reader";
 
             //reusing a reader group name doesn't work (probably because the sequence is already consumed)

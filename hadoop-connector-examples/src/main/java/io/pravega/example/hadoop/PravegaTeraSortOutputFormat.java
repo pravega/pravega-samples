@@ -10,7 +10,8 @@
 
 package io.pravega.example.hadoop;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -62,12 +63,13 @@ public class PravegaTeraSortOutputFormat<V> extends PravegaFixedSegmentsOutputFo
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scopeName);
 
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scopeName).streamName(outputStreamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build();
 
         streamManager.createStream(scopeName, outputStreamName, streamConfig);
-        ClientFactory clientFactory = ClientFactory.withScope(scopeName, controllerURI);
+        EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scopeName,
+                ClientConfig.builder().controllerURI(controllerURI).build());
 
         Serializer deserializer;
         try {

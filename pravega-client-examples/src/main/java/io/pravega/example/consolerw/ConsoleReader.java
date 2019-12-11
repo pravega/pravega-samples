@@ -292,7 +292,7 @@ public class ConsoleReader implements Closeable {
 
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scope);
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                                                               .scalingPolicy(ScalingPolicy.fixed(1))
                                                               .build();
         streamManager.createStream(scope, streamName, streamConfig);
