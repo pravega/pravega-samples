@@ -81,9 +81,8 @@ public class PravegaTeraSortOutputFormat<V> extends PravegaFixedSegmentsOutputFo
                     "Unable to create the event deserializer (" + deserializerClassName + ")", e);
         }
 
-        EventStreamWriter<V> writer = clientFactory.createEventWriter(outputStreamName, deserializer, EventWriterConfig.builder()
-                .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                .build());
+        EventStreamWriter<V> writer = clientFactory.createEventWriter(outputStreamName, deserializer,
+                EventWriterConfig.builder().build());
 
         return new PravegaOutputRecordWriter<V>(writer);
     }

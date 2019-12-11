@@ -71,8 +71,6 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
     // Pravega deserializer class name
     public static final String OUTPUT_DESERIALIZER = "pravega.deserializer";
 
-    static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
-
     // client factory
     private EventStreamClientFactory externalClientFactory;
 
@@ -119,9 +117,7 @@ public class PravegaFixedSegmentsOutputFormat<V> extends OutputFormat<String, V>
                     "Unable to create the event deserializer (" + deserializerClassName + ")", e);
         }
 
-        EventStreamWriter<V> writer = clientFactory.createEventWriter(streamName, deserializer, EventWriterConfig.builder()
-                .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                .build());
+        EventStreamWriter<V> writer = clientFactory.createEventWriter(streamName, deserializer, EventWriterConfig.builder().build());
 
         return new PravegaOutputRecordWriter<V>(writer);
     }

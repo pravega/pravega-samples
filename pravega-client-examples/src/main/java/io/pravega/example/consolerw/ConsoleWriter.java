@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import io.pravega.client.ClientConfig;
+import io.pravega.client.stream.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -31,13 +32,7 @@ import org.apache.commons.cli.ParseException;
 
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.EventStreamWriter;
-import io.pravega.client.stream.EventWriterConfig;
-import io.pravega.client.stream.ScalingPolicy;
-import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.Transaction;
 import io.pravega.client.stream.Transaction.Status;
-import io.pravega.client.stream.TxnFailedException;
 import io.pravega.client.stream.impl.JavaSerializer;
 
 /**
@@ -46,10 +41,6 @@ import io.pravega.client.stream.impl.JavaSerializer;
  */
 
 public class ConsoleWriter implements AutoCloseable {
-    private static final long DEFAULT_TXN_TIMEOUT_MS = 30000L;
-    private static final long DEFAULT_TXN_MAX_EXECUTION_TIME_MS = 30000L;
-
-    private static final long DEFAULT_PING_LEASE_MS = 30000L;
     
     private static final String[] HELP_TEXT = {
             "Enter one of the following commands at the command line prompt:",
@@ -71,13 +62,15 @@ public class ConsoleWriter implements AutoCloseable {
     private final String scope;
     private final String streamName; 
     private final EventStreamWriter<String> writer;
-    private Transaction<String> txn = null;
+    private final TransactionalEventStreamWriter<String> writerTxn;
+    private Transaction<String> txn;
     
     
-    public ConsoleWriter(String scope, String streamName, EventStreamWriter<String> writer) {
+    public ConsoleWriter(String scope, String streamName, EventStreamWriter<String> writer, TransactionalEventStreamWriter<String> writerTxn) {
         this.scope = scope;
         this.streamName = streamName;
         this.writer = writer;
+        this.writerTxn = writerTxn;
         
         this.txn = null;  //by default, the ConsoleWriter is not in TXN mode
         
@@ -239,7 +232,7 @@ public class ConsoleWriter implements AutoCloseable {
     private void doBeginTxn(List<String> parms) {
         if (txn == null) {
             try {
-                txn = writer.beginTxn();
+                txn = writerTxn.beginTxn();
             } catch (Exception e) {
                 warn("Failed to begin a new transaction.%n");
                 output(e);
@@ -416,14 +409,10 @@ public class ConsoleWriter implements AutoCloseable {
         streamManager.createStream(scope, streamName, streamConfig);
         
         try(EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build());
-            EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                    new JavaSerializer<String>(),
-                    EventWriterConfig.builder()
-                            .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                            .build());
-
-            ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer);
-           ){
+            EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName, new JavaSerializer<>(), EventWriterConfig.builder().build());
+            TransactionalEventStreamWriter<String> writerTxn = clientFactory.createTransactionalEventWriter(streamName, new JavaSerializer<>(),
+                    EventWriterConfig.builder().build());
+            ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer, writerTxn)){
             cw.run();
         } catch (IOException e) {
             e.printStackTrace();

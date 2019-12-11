@@ -281,7 +281,7 @@ public class TurbineHeatSensor {
 
     private static class TemperatureSensors implements Runnable {
 
-        private final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
+        final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
 
         final EventStreamWriter<String> producer;
         private final TemperatureSensor sensor;
@@ -295,12 +295,7 @@ public class TurbineHeatSensor {
             this.eventsPerSec = eventsPerSec;
             this.secondsToRun = secondsToRun;
             this.isTransaction = isTransaction;
-
-            EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
-                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                    .build();
-            this.producer = factory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
-
+            this.producer = factory.createEventWriter(streamName, SERIALIZER, EventWriterConfig.builder().build());
         }
 
         /**
@@ -308,7 +303,7 @@ public class TurbineHeatSensor {
          * @return A function which takes String key and data and returns a future object.
          */
         BiFunction<String, String, Future> sendFunction() {
-            return  ( key, data) -> producer.writeEvent(key, data);
+            return  (key, data) -> producer.writeEvent(key, data);
         }
 
         public static <T> CompletableFuture<T> makeCompletableFuture(Future<T> future) {
@@ -392,12 +387,17 @@ public class TurbineHeatSensor {
 
     private static class TransactionTemperatureSensors extends TemperatureSensors {
 
+        final TransactionalEventStreamWriter<String> producerTxn;
         private final Transaction<String> transaction;
 
         TransactionTemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean
                 isTransaction, EventStreamClientFactory factory) {
             super(sensor, eventsPerSec, secondsToRun, isTransaction, factory);
-            transaction = producer.beginTxn();
+            EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
+                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                    .build();
+            this.producerTxn = factory.createTransactionalEventWriter(streamName, SERIALIZER, eventWriterConfig);
+            transaction = producerTxn.beginTxn();
         }
 
         BiFunction<String, String, Future> sendFunction() {
