@@ -10,7 +10,8 @@
  */
 package io.pravega.example.flink.streamcuts.process;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -57,7 +58,8 @@ public class DataProducer {
         streamManager.createStream(Constants.DEFAULT_SCOPE, Constants.PRODUCER_STREAM, streamConfiguration);
 
         // Create the client factory to instantiate writers and readers.
-        try (ClientFactory clientFactory = ClientFactory.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI)) {
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(Constants.DEFAULT_SCOPE,
+                ClientConfig.builder().controllerURI(pravegaControllerURI).build())) {
 
             // Create a writer to write events in the stream.
             EventStreamWriter<Tuple2<Integer, Double>> writer = clientFactory.createEventWriter(Constants.PRODUCER_STREAM,

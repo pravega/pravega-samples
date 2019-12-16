@@ -117,12 +117,10 @@ public class TurbineHeatSensor {
             TemperatureSensor sensor =
                     new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
             TemperatureSensors worker;
-            if ( isTransaction ) {
-                worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
-                        isTransaction, clientFactory);
+            if (isTransaction) {
+                worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec, isTransaction, clientFactory);
             } else {
-                worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
-                        isTransaction, clientFactory);
+                worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec, isTransaction, clientFactory);
             }
             executor.execute(worker);
         }
@@ -155,7 +153,6 @@ public class TurbineHeatSensor {
         options.addOption("stream", true, "Stream name");
         options.addOption("writeonly", true, "Just produce vs read after produce");
         options.addOption("blocking", true, "Block for each ack");
-//        options.addOption("zipkin", true, "Enable zipkin trace");
         options.addOption("reporting", true, "Reporting internval");
 
         options.addOption("help", false, "Help message");
@@ -202,12 +199,17 @@ public class TurbineHeatSensor {
                 if (commandline.hasOption("writeonly")) {
                     onlyWrite = Boolean.parseBoolean(commandline.getOptionValue("writeonly"));
                 }
+
                 if (commandline.hasOption("blocking")) {
                     blocking = Boolean.parseBoolean(commandline.getOptionValue("blocking"));
                 }
 
                 if (commandline.hasOption("reporting")) {
                     reportingInterval = Integer.parseInt(commandline.getOptionValue("reporting"));
+                }
+
+                if (commandline.hasOption("transaction")) {
+                    isTransaction = Boolean.parseBoolean(commandline.getOptionValue("transaction"));
                 }
             }
         } catch (Exception nfe) {

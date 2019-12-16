@@ -18,16 +18,6 @@ import io.pravega.connectors.flink.PravegaConfig;
 public class Utils {
 
     /**
-     * Creates a Pravega stream with a default configuration.
-     *
-     * @param pravegaConfig the Pravega configuration.
-     * @param streamName the stream name (qualified or unqualified).
-     */
-    public static Stream createStream(PravegaConfig pravegaConfig, String streamName) {
-        return createStream(pravegaConfig, streamName, StreamConfiguration.builder().build());
-    }
-
-    /**
      * Creates a Pravega stream with a given configuration.
      *
      * @param pravegaConfig the Pravega configuration.
