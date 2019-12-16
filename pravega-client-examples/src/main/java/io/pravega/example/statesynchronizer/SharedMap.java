@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.state.InitialUpdate;
 import io.pravega.client.state.Revision;
@@ -208,12 +208,12 @@ public class SharedMap<K extends Serializable, V extends Serializable> {
     /**
      * Creates the shared state using a synchronizer based on the given stream name.
      * 
-     * @param clientFactory - the Pravega ClientFactory to use to create the StateSynchronizer.
+     * @param clientFactory - the Pravega EventStreamClientFactory to use to create the StateSynchronizer.
      * @param streamManager - the Pravega StreamManager to use to create the Scope and the Stream used by the StateSynchronizer
      * @param scope - the Scope to use to create the Stream used by the StateSynchronizer.
      * @param name - the name of the Stream to be used by the StateSynchronizer.
      */
-    public SharedMap(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
+    public SharedMap(SynchronizerClientFactory clientFactory, StreamManager streamManager, String scope, String name){
         streamManager.createScope(scope);
         
         StreamConfiguration streamConfig = StreamConfiguration.builder()
