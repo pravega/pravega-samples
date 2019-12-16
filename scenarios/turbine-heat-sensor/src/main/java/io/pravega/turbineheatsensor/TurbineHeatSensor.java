@@ -10,7 +10,8 @@
  */
 package io.pravega.turbineheatsensor;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.*;
@@ -21,7 +22,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -84,10 +84,10 @@ public class TurbineHeatSensor {
         ExecutorService executor = Executors.newFixedThreadPool(producerCount + 10);
 
         URI controllerUri;
-        ClientFactory clientFactory;
+        EventStreamClientFactory clientFactory;
         try {
             controllerUri = new URI(TurbineHeatSensor.controllerUri);
-            clientFactory = ClientFactory.withScope(scopeName, controllerUri);
+            clientFactory = EventStreamClientFactory.withScope(scopeName, ClientConfig.builder().controllerURI(controllerUri).build());
             streamManager = StreamManager.create(controllerUri);
             readerGroupManager = ReaderGroupManager.withScope(scopeName, controllerUri);
 
@@ -95,8 +95,6 @@ public class TurbineHeatSensor {
 
             ScalingPolicy policy = ScalingPolicy.fixed(producerCount);
             StreamConfiguration config = StreamConfiguration.builder()
-                    .scope(scopeName)
-                    .streamName(streamName)
                     .scalingPolicy(policy)
                     .build();
             streamManager.createStream(scopeName, streamName, config);
@@ -119,12 +117,10 @@ public class TurbineHeatSensor {
             TemperatureSensor sensor =
                     new TemperatureSensor(i, locations[i % locations.length], baseTemperature, 20, startEventTime);
             TemperatureSensors worker;
-            if ( isTransaction ) {
-                worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec,
-                        isTransaction, clientFactory);
+            if (isTransaction) {
+                worker = new TransactionTemperatureSensors(sensor, eventsPerSec, runtimeSec, isTransaction, clientFactory);
             } else {
-                worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec,
-                        isTransaction, clientFactory);
+                worker = new TemperatureSensors(sensor, eventsPerSec, runtimeSec, isTransaction, clientFactory);
             }
             executor.execute(worker);
         }
@@ -157,7 +153,6 @@ public class TurbineHeatSensor {
         options.addOption("stream", true, "Stream name");
         options.addOption("writeonly", true, "Just produce vs read after produce");
         options.addOption("blocking", true, "Block for each ack");
-//        options.addOption("zipkin", true, "Enable zipkin trace");
         options.addOption("reporting", true, "Reporting internval");
 
         options.addOption("help", false, "Help message");
@@ -204,12 +199,17 @@ public class TurbineHeatSensor {
                 if (commandline.hasOption("writeonly")) {
                     onlyWrite = Boolean.parseBoolean(commandline.getOptionValue("writeonly"));
                 }
+
                 if (commandline.hasOption("blocking")) {
                     blocking = Boolean.parseBoolean(commandline.getOptionValue("blocking"));
                 }
 
                 if (commandline.hasOption("reporting")) {
                     reportingInterval = Integer.parseInt(commandline.getOptionValue("reporting"));
+                }
+
+                if (commandline.hasOption("transaction")) {
+                    isTransaction = Boolean.parseBoolean(commandline.getOptionValue("transaction"));
                 }
             }
         } catch (Exception nfe) {
@@ -283,7 +283,7 @@ public class TurbineHeatSensor {
 
     private static class TemperatureSensors implements Runnable {
 
-        private final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
+        final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
 
         final EventStreamWriter<String> producer;
         private final TemperatureSensor sensor;
@@ -292,17 +292,12 @@ public class TurbineHeatSensor {
         private final boolean isTransaction;
 
         TemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean isTransaction,
-                           ClientFactory factory) {
+                           EventStreamClientFactory factory) {
             this.sensor = sensor;
             this.eventsPerSec = eventsPerSec;
             this.secondsToRun = secondsToRun;
             this.isTransaction = isTransaction;
-
-            EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
-                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
-                    .build();
-            this.producer = factory.createEventWriter(streamName, SERIALIZER, eventWriterConfig);
-
+            this.producer = factory.createEventWriter(streamName, SERIALIZER, EventWriterConfig.builder().build());
         }
 
         /**
@@ -310,7 +305,7 @@ public class TurbineHeatSensor {
          * @return A function which takes String key and data and returns a future object.
          */
         BiFunction<String, String, Future> sendFunction() {
-            return  ( key, data) -> producer.writeEvent(key, data);
+            return  (key, data) -> producer.writeEvent(key, data);
         }
 
         public static <T> CompletableFuture<T> makeCompletableFuture(Future<T> future) {
@@ -394,12 +389,17 @@ public class TurbineHeatSensor {
 
     private static class TransactionTemperatureSensors extends TemperatureSensors {
 
+        final TransactionalEventStreamWriter<String> producerTxn;
         private final Transaction<String> transaction;
 
         TransactionTemperatureSensors(TemperatureSensor sensor, int eventsPerSec, int secondsToRun, boolean
-                isTransaction, ClientFactory factory) {
+                isTransaction, EventStreamClientFactory factory) {
             super(sensor, eventsPerSec, secondsToRun, isTransaction, factory);
-            transaction = producer.beginTxn();
+            EventWriterConfig eventWriterConfig =  EventWriterConfig.builder()
+                    .transactionTimeoutTime(DEFAULT_TXN_TIMEOUT_MS)
+                    .build();
+            this.producerTxn = factory.createTransactionalEventWriter(streamName, SERIALIZER, eventWriterConfig);
+            transaction = producerTxn.beginTxn();
         }
 
         BiFunction<String, String, Future> sendFunction() {
@@ -424,7 +424,7 @@ public class TurbineHeatSensor {
         final EventStreamReader<String> reader;
         private int totalEvents;
 
-        public SensorReader(int totalEvents, ClientFactory clientFactory) {
+        public SensorReader(int totalEvents, EventStreamClientFactory clientFactory) {
         	this.totalEvents = totalEvents;
         	reader = createReader(clientFactory);
         }
@@ -451,7 +451,7 @@ public class TurbineHeatSensor {
             }
         }
 
-        public EventStreamReader<String> createReader(ClientFactory clientFactory) {
+        public EventStreamReader<String> createReader(EventStreamClientFactory clientFactory) {
             String readerName = "Reader";
 
             //reusing a reader group name doesn't work (probably because the sequence is already consumed)

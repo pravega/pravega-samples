@@ -12,7 +12,7 @@ package io.pravega.example.statesynchronizer;
 
 import java.io.Serializable;
 import java.util.Map;
-import io.pravega.client.ClientFactory;
+import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.admin.StreamManager;
 
 /**
@@ -24,7 +24,7 @@ import io.pravega.client.admin.StreamManager;
 public class SharedConfig<K extends Serializable, V extends Serializable> {
     private final SharedMap<K,V> properties; //This is the shared state
     
-    public SharedConfig(ClientFactory clientFactory, StreamManager streamManager, String scope, String name){
+    public SharedConfig(SynchronizerClientFactory clientFactory, StreamManager streamManager, String scope, String name){
         this.properties = new SharedMap<K, V>(clientFactory, streamManager, scope, name);
     }
 

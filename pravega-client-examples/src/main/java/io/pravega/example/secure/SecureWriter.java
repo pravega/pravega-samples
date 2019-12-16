@@ -11,7 +11,7 @@
 package io.pravega.example.secure;
 
 import io.pravega.client.ClientConfig;
-import io.pravega.client.ClientFactory;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -106,7 +106,7 @@ public class SecureWriter {
         System.out.println("Done creating client config.");
 
         StreamManager streamManager = null;
-        ClientFactory clientFactory = null;
+        EventStreamClientFactory clientFactory = null;
         EventStreamWriter<String> writer = null;
 
         try {
@@ -125,7 +125,7 @@ public class SecureWriter {
             System.out.println("Done creating a stream with the specified name: [" + this.stream
                     + "] and stream configuration.");
 
-            clientFactory = ClientFactory.withScope(this.scope, clientConfig);
+            clientFactory = EventStreamClientFactory.withScope(this.scope, clientConfig);
             System.out.println("Done creating a client factory with the specified scope and client config.");
 
             writer = clientFactory.createEventWriter(this.stream, new JavaSerializer<String>(),
