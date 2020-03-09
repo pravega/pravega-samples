@@ -24,7 +24,6 @@ archivesBaseName = 'pravega-flink-examples'
 dependencies {
     compile "de.javakaffee:kryo-serializers:${kryoSerializerVersion}"
 
-    compile "io.pravega:pravega-client:${pravegaVersion}"
     compile "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
 
     compile "org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}:${scalaJava8CompatVersion}"
