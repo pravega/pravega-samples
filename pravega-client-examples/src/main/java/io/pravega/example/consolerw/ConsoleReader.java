@@ -10,6 +10,7 @@
  */
 package io.pravega.example.consolerw;
 
+import io.pravega.client.ClientConfig;
 import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
@@ -40,7 +41,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import io.pravega.client.ClientFactory;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
@@ -183,7 +184,7 @@ public class ConsoleReader implements Closeable {
     }
 
     /**
-     * This method uses {@link ReaderGroupConfig#startingStreamCuts} method to define a start boundary on the events to
+     * This method uses {@link ReaderGroupConfig#builder()} to set a StreamCut as a start boundary on the events to
      * be read by readers. This means that a reader will only read events from the point represented by streamCut
      * variable until the tail of the {@link Stream}.
      */
@@ -198,7 +199,7 @@ public class ConsoleReader implements Closeable {
     }
 
     /**
-     * This method uses {@link ReaderGroupConfig#endingStreamCuts} method to define a terminal boundary on the events to
+     * This method uses {@link ReaderGroupConfig#builder()} to set a StreamCut as a terminal boundary on the events to
      * be read by readers. This means that a reader will only read events from the head of the {@link Stream} up to the
      * point represented by streamCut variable.
      */
@@ -227,7 +228,8 @@ public class ConsoleReader implements Closeable {
             readerGroupManager.createReaderGroup(readerGroup, config);
         }
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamReader<String> reader = clientFactory.createReader("streamcut-reader",
                      readerGroup, new JavaSerializer<>(), ReaderConfig.builder().build())) {
 
@@ -292,7 +294,7 @@ public class ConsoleReader implements Closeable {
 
         StreamManager streamManager = StreamManager.create(controllerURI);
         streamManager.createScope(scope);
-        StreamConfiguration streamConfig = StreamConfiguration.builder().scope(scope).streamName(streamName)
+        StreamConfiguration streamConfig = StreamConfiguration.builder()
                                                               .scalingPolicy(ScalingPolicy.fixed(1))
                                                               .build();
         streamManager.createStream(scope, streamName, streamConfig);
@@ -352,7 +354,8 @@ class BackgroundReader implements Closeable, Runnable {
                                                                      .stream(Stream.of(scope, streamName)).build();
 
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI);
-             ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                     ClientConfig.builder().controllerURI(controllerURI).build())) {
 
             // Create the ReaderGroup to which readers will belong to.
             readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);

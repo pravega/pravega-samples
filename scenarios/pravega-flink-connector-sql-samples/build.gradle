@@ -23,7 +23,6 @@ sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-connector-sql-samples'
 
 dependencies {
-    compile "io.pravega:pravega-client:${pravegaVersion}"
     compile "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
 
     compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"

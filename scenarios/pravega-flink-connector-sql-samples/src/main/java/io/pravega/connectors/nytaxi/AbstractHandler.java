@@ -59,8 +59,6 @@ public abstract class AbstractHandler {
         ClientConfig clientConfig = ClientConfig.builder().controllerURI(URI.create(getControllerUri())).build();
 
         StreamConfiguration streamConfiguration = StreamConfiguration.builder()
-                .scope(getScope())
-                .streamName(getStream())
                 .scalingPolicy(ScalingPolicy.fixed(DEFAULT_NO_SEGMENTS))
                 .build();
 
