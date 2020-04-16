@@ -144,7 +144,7 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
                 .field("destLocationZone", DataTypes.STRING())
                 .field("destLocationServiceZone", DataTypes.STRING())
                 .field("dropOffTime", DataTypes.TIMESTAMP(3).bridgedTo(Timestamp.class))
-                .rowtime(new Rowtime().timestampsFromField("pickupTime").watermarksPeriodicBounded(30000L));
+                .rowtime(new Rowtime().timestampsFromField("dropOffTime").watermarksPeriodicBounded(30000L));
     }
 
     public static Row transform(TripRecord tripRecord) {
