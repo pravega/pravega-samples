@@ -12,16 +12,26 @@ package io.pravega.connectors.nytaxi;
 
 import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaJsonTableSource;
+import io.pravega.connectors.flink.Pravega;
 import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.api.Tumble;
+import org.apache.flink.table.descriptors.ConnectTableDescriptor;
+import org.apache.flink.table.descriptors.Json;
+import org.apache.flink.table.descriptors.Schema;
+import org.apache.flink.table.factories.StreamTableSourceFactory;
+import org.apache.flink.table.factories.TableFactoryService;
+import org.apache.flink.table.sources.TableSource;
 import org.apache.flink.table.sources.tsextractors.ExistingField;
 import org.apache.flink.table.sources.wmstrategies.BoundedOutOfOrderTimestamps;
 import org.apache.flink.types.Row;
+
+import java.util.Map;
 
 /**
  * Find maximum number of travellers who travelled to a destination point for a given window interval.
@@ -37,27 +47,38 @@ public class MaxTravellersPerDestination extends AbstractHandler {
     @Override
     public void handleRequest() {
 
-        TableSchema tableSchema = TripRecord.getTableSchema();
-
-        FlinkPravegaJsonTableSource source = FlinkPravegaJsonTableSource.builder()
-                .forStream(Stream.of(getScope(), getStream()).getScopedName())
-                .withPravegaConfig(getPravegaConfig())
-                .failOnMissingField(true)
-                .withRowtimeAttribute("dropOffTime", new ExistingField("dropOffTime"), new BoundedOutOfOrderTimestamps(30000L))
-                .withSchema(tableSchema)
-                .withReaderGroupScope(getScope())
-                .build();
+        Schema schema = TripRecord.getSchemaWithDropOffTimeAsRowTime();
 
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
         // create a TableEnvironment
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(
+                env,
+                EnvironmentSettings.newInstance()
+                        .useBlinkPlanner()
+                        .inStreamingMode()
+                        .build()
+        );
+
+        Pravega pravega = new Pravega();
+        pravega.tableSourceReaderBuilder()
+                .forStream(Stream.of(getScope(), getStream()).getScopedName())
+                .withPravegaConfig(getPravegaConfig());
+
+        ConnectTableDescriptor desc = tEnv.connect(pravega)
+                .withFormat(new Json().failOnMissingField(true))
+                .withSchema(schema)
+                .inAppendMode();
+
+        final Map<String, String> propertiesMap = desc.toProperties();
+        final TableSource<?> source = TableFactoryService.find(StreamTableSourceFactory.class, propertiesMap)
+                .createStreamTableSource(propertiesMap);
         tEnv.registerTableSource("TaxiRide", source);
 
         String fields = "passengerCount, dropOffTime, destLocationZone";
 
         Table noOfTravelersPerDest = tEnv
-                .scan("TaxiRide")
+                .from("TaxiRide")
                 .select(fields)
                 .window(Tumble.over("1.hour").on("dropOffTime").as("w"))
                 .groupBy("destLocationZone, w")

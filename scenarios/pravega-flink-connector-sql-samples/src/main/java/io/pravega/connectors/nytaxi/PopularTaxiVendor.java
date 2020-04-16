@@ -12,16 +12,26 @@ package io.pravega.connectors.nytaxi;
 
 import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaJsonTableSource;
+import io.pravega.connectors.flink.Pravega;
 import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.Slide;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.descriptors.ConnectTableDescriptor;
+import org.apache.flink.table.descriptors.Json;
+import org.apache.flink.table.descriptors.Schema;
+import org.apache.flink.table.factories.StreamTableSourceFactory;
+import org.apache.flink.table.factories.TableFactoryService;
+import org.apache.flink.table.sources.TableSource;
 import org.apache.flink.table.sources.tsextractors.ExistingField;
 import org.apache.flink.table.sources.wmstrategies.BoundedOutOfOrderTimestamps;
 import org.apache.flink.types.Row;
+
+import java.util.Map;
 
 /**
  * Identify the popular taxi vendor based on total trips travelled on specific window interval.
@@ -37,27 +47,38 @@ public class PopularTaxiVendor extends AbstractHandler {
     @Override
     public void handleRequest() {
 
-        TableSchema tableSchema = TripRecord.getTableSchema();
-
-        FlinkPravegaJsonTableSource source = FlinkPravegaJsonTableSource.builder()
-                .forStream(Stream.of(getScope(), getStream()).getScopedName())
-                .withPravegaConfig(getPravegaConfig())
-                .failOnMissingField(true)
-                .withRowtimeAttribute("pickupTime", new ExistingField("pickupTime"), new BoundedOutOfOrderTimestamps(30000L))
-                .withSchema(tableSchema)
-                .withReaderGroupScope(getScope())
-                .build();
+        Schema schema = TripRecord.getSchemaWithPickupTimeAsRowTime();
 
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
         // create a TableEnvironment
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(
+                env,
+                EnvironmentSettings.newInstance()
+                        .useBlinkPlanner()
+                        .inStreamingMode()
+                        .build()
+        );
+
+        Pravega pravega = new Pravega();
+        pravega.tableSourceReaderBuilder()
+                .forStream(Stream.of(getScope(), getStream()).getScopedName())
+                .withPravegaConfig(getPravegaConfig());
+
+        ConnectTableDescriptor desc = tEnv.connect(pravega)
+                .withFormat(new Json().failOnMissingField(true))
+                .withSchema(schema)
+                .inAppendMode();
+
+        final Map<String, String> propertiesMap = desc.toProperties();
+        final TableSource<?> source = TableFactoryService.find(StreamTableSourceFactory.class, propertiesMap)
+                .createStreamTableSource(propertiesMap);
         tEnv.registerTableSource("TaxiRide", source);
 
         String fields = "vendorId, pickupTime, startLocationId, destLocationId, startLocationBorough, startLocationZone, destLocationBorough, destLocationZone";
 
         Table popularRides = tEnv
-                .scan("TaxiRide")
+                .from("TaxiRide")
                 .select(fields)
                 .window(Slide.over("15.minutes").every("5.minutes").on("pickupTime").as("w"))
                 .groupBy("vendorId, w")
