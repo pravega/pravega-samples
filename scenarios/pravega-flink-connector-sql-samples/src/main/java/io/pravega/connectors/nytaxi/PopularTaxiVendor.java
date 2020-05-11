@@ -65,15 +65,11 @@ public class PopularTaxiVendor extends AbstractHandler {
                 .forStream(Stream.of(getScope(), getStream()).getScopedName())
                 .withPravegaConfig(getPravegaConfig());
 
-        ConnectTableDescriptor desc = tEnv.connect(pravega)
+        tEnv.connect(pravega)
                 .withFormat(new Json().failOnMissingField(true))
                 .withSchema(schema)
-                .inAppendMode();
-
-        final Map<String, String> propertiesMap = desc.toProperties();
-        final TableSource<?> source = TableFactoryService.find(StreamTableSourceFactory.class, propertiesMap)
-                .createStreamTableSource(propertiesMap);
-        tEnv.registerTableSource("TaxiRide", source);
+                .inAppendMode()
+                .registerTableSource("TaxiRide");
 
         String fields = "vendorId, pickupTime, startLocationId, destLocationId, startLocationBorough, startLocationZone, destLocationBorough, destLocationZone";
 
