@@ -11,7 +11,7 @@
 package io.pravega.connectors.nytaxi;
 
 import io.pravega.client.stream.Stream;
-import io.pravega.connectors.flink.Pravega;
+import io.pravega.connectors.flink.table.descriptors.Pravega;
 import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
