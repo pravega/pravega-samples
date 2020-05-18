@@ -1,0 +1,43 @@
+version: '2.1'
+services:
+  pravega:
+    image: pravega/pravega
+    ports:
+        - "9090:9090"
+        - "12345:12345"
+    command: "standalone"
+    network_mode: host
+  datagen:
+    image: brianzhou/pravega-demo-datagen:0.1
+    command: "java -classpath /opt/datagen/datagen.jar sender --input /opt/datagen/user_behavior.log --speedup 1000"
+    depends_on:
+      - pravega
+    network_mode: host
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.0
+    ports:
+      - "5601:5601"
+  mysql:
+    image: brianzhou/pravega-demo-mysql:0.1
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    network_mode: host
