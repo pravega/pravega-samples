@@ -12,6 +12,7 @@
 include 'pravega-client-examples'
 include 'flink-connector-examples'
 include 'hadoop-connector-examples'
+include 'flinkSQL-pravega-es-examples'
 
 // Build scenarios
 include 'scenarios/turbine-heat-sensor'
