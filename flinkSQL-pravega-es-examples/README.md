@@ -1,8 +1,10 @@
 # Pravega-FlinkSQL-Es-Demo
 
-Demo: Streaming application with Flink SQL and Pravega
+Demo: Streaming application with Flink SQL and Pravega.
 
 This demo aims to build a streaming analytical application based on Pravega, MySQL, Elasticsearch, Kibana and Flink SQL.
+
+This demo is inspired by @wuchong 's' excellent work. [Flink-SQL demo](https://github.com/wuchong/flink-sql-demo)
 
 Final Result
 ![result](https://github.com/AlexanderChiuluvB/Pravega-FlinkSQL-Es-Demo/blob/master/pic/Screenshot%20from%202020-04-19%2000-07-37.png)
