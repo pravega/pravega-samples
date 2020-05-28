@@ -12,17 +12,20 @@ package io.pravega.connectors.nytaxi;
 
 import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
-import io.pravega.connectors.flink.serialization.JsonRowSerializationSchema;
 import io.pravega.connectors.nytaxi.common.Helper;
 import io.pravega.connectors.nytaxi.common.TripRecord;
 import io.pravega.connectors.nytaxi.common.ZoneLookup;
 import io.pravega.connectors.nytaxi.source.TaxiDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.formats.json.JsonRowSerializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.flink.types.Row;
 
 import java.io.IOException;
@@ -47,10 +50,12 @@ public class PrepareMain extends AbstractHandler {
 
         Stream streamInfo = getPravegaConfig().resolve(Stream.of(getScope(), getStream()).getScopedName());
 
+        TypeInformation<Row> typeInfo = (RowTypeInfo) TypeConversions.fromDataTypeToLegacyInfo(TripRecord.getTableSchema().toRowDataType());
+
         FlinkPravegaWriter<Row> writer = FlinkPravegaWriter.<Row>builder()
                 .withPravegaConfig(getPravegaConfig())
                 .forStream(streamInfo)
-                .withSerializationSchema(new JsonRowSerializationSchema(TripRecord.getFieldNames()))
+                .withSerializationSchema(new JsonRowSerializationSchema.Builder(typeInfo).build())
                 .withEventRouter(event -> String.valueOf(event.getField(6)))
                 .build();
 
