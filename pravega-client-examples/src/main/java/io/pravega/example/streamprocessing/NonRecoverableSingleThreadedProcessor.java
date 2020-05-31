@@ -10,17 +10,23 @@
  */
 package io.pravega.example.streamprocessing;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.*;
+import io.pravega.client.stream.EventRead;
+import io.pravega.client.stream.EventStreamReader;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -64,6 +70,7 @@ public class NonRecoverableSingleThreadedProcessor {
     }
 
     public void run() throws Exception {
+        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(controllerURI).build();
         try (StreamManager streamManager = StreamManager.create(controllerURI)) {
             streamManager.createScope(scope);
             StreamConfiguration streamConfig = StreamConfiguration.builder()
@@ -85,7 +92,7 @@ public class NonRecoverableSingleThreadedProcessor {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         }
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
              EventStreamReader<String> reader = clientFactory.createReader(
                      "reader",
                      readerGroup,

@@ -10,7 +10,8 @@
  */
 package io.pravega.example.streamprocessing;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -52,6 +53,7 @@ public class EventGenerator {
     }
 
     public void run() throws Exception {
+        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(controllerURI).build();
         try (StreamManager streamManager = StreamManager.create(controllerURI)) {
             streamManager.createScope(scope);
             StreamConfiguration streamConfig = StreamConfiguration.builder()
@@ -64,8 +66,7 @@ public class EventGenerator {
         }
 
         Random rand = new Random(42);
-
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
              EventStreamWriter<String> writer = clientFactory.createEventWriter(
                      outputStreamName,
                      new UTF8StringSerializer(),
@@ -90,7 +91,7 @@ public class EventGenerator {
                         String.format("%06d", eventCounter),
                         String.format("%08d", sum),
                         message);
-                final CompletableFuture writeFuture = writer.writeEvent(routingKey, message);
+                final CompletableFuture<Void> writeFuture = writer.writeEvent(routingKey, message);
                 Thread.sleep(1000);
             }
         }
