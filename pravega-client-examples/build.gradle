@@ -20,12 +20,16 @@ archivesBaseName = 'pravega-client-examples'
 resources
 
 ext {
+//    junitJupiterVersion = '5.3.1'
     junitVersion = '4.11'
     commonsCLIVersion = '1.4'
 }
 
 dependencies {
     testCompile "junit:junit:${junitVersion}"
+//    testCompile "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
+    testCompile "io.pravega:pravega-standalone:${pravegaVersion}"
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
 
     compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
