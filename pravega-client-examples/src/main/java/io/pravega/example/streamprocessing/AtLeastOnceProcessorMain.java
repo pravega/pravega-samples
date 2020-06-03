@@ -12,6 +12,7 @@ package io.pravega.example.streamprocessing;
 
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
+import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
@@ -19,6 +20,7 @@ import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
@@ -31,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 /**
  * A simple example that demonstrates reading events from a Pravega stream, processing each event,
@@ -49,12 +52,14 @@ public class AtLeastOnceProcessorMain {
     private static final int READER_TIMEOUT_MS = 2000;
 
     private final String scope;
+    private final String readerGroupName;
     private final String inputStreamName;
     private final String outputStreamName;
     private final URI controllerURI;
 
-    public AtLeastOnceProcessorMain(String scope, String inputStreamName, String outputStreamName, URI controllerURI) {
+    public AtLeastOnceProcessorMain(String scope, String readerGroupName, String inputStreamName, String outputStreamName, URI controllerURI) {
         this.scope = scope;
+        this.readerGroupName = readerGroupName;
         this.inputStreamName = inputStreamName;
         this.outputStreamName = outputStreamName;
         this.controllerURI = controllerURI;
@@ -63,6 +68,7 @@ public class AtLeastOnceProcessorMain {
     public static void main(String[] args) throws Exception {
         AtLeastOnceProcessorMain processor = new AtLeastOnceProcessorMain(
                 Parameters.getScope(),
+                Parameters.getStream1Name() + "-rg",
                 Parameters.getStream1Name(),
                 Parameters.getStream2Name(),
                 Parameters.getControllerURI());
@@ -71,9 +77,10 @@ public class AtLeastOnceProcessorMain {
 
     public void run() throws Exception {
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(controllerURI).build();
-        try (StreamManager streamManager = StreamManager.create(controllerURI)) {
+        final String membershipSynchronizerStreamName = readerGroupName + "-membership";
+        try (StreamManager streamManager = StreamManager.create(clientConfig)) {
             streamManager.createScope(scope);
-            StreamConfiguration streamConfig = StreamConfiguration.builder()
+            final StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .scalingPolicy(ScalingPolicy.byEventRate(
                             Parameters.getTargetRateEventsPerSec(),
                             Parameters.getScaleFactor(),
@@ -81,89 +88,35 @@ public class AtLeastOnceProcessorMain {
                     .build();
             streamManager.createStream(scope, inputStreamName, streamConfig);
             streamManager.createStream(scope, outputStreamName, streamConfig);
+            streamManager.createStream(
+                    scope,
+                    membershipSynchronizerStreamName,
+                    StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
         }
-
-        // Create a reader group that begins at the earliest event.
-        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
+        final String readerGroupName = UUID.randomUUID().toString().replace("-", "");
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(scope, inputStreamName))
                 .build();
-        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
-            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-        }
-
-        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig)) {
-            final AtLeastOnceProcessor processor = new AtLeastOnceProcessor() {
-                @Override
-                public EventStreamReader<String> createReader() {
-                    return clientFactory.createReader(
-                            readerId,
-                            readerGroup,
-                            new UTF8StringSerializer(),
-                            ReaderConfig.builder().build());;
-                }
-
-                @Override
-                public void write(EventRead<String> eventRead) {
-
-                }
-            };
-            processor.call();
-        }
-
-        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
-             EventStreamReader<String> reader = clientFactory.createReader(
-                     "reader",
-                     readerGroup,
-                     new UTF8StringSerializer(),
-                     ReaderConfig.builder().build());
-             EventStreamWriter<String> writer = clientFactory.createEventWriter(
-                     outputStreamName,
-                     new UTF8StringSerializer(),
-                     EventWriterConfig.builder().build())) {
-
-            long eventCounter = 0;
-
-            for (; ; ) {
-                // Read input event.
-                EventRead<String> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
-                log.debug("readEvents: eventRead={}", eventRead);
-
-                if (eventRead.getEvent() != null) {
-                    eventCounter++;
-                    log.debug("Read eventCounter={}, event={}", String.format("%06d", eventCounter), eventRead.getEvent());
-
-                    // Parse input event.
-                    String[] cols = eventRead.getEvent().split(",");
-                    long generatedEventCounter = Long.parseLong(cols[0]);
-                    String routingKey = cols[1];
-                    long intData = Long.parseLong(cols[2]);
-                    long generatedSum = Long.parseLong(cols[3]);
-                    String generatedTimestampStr = cols[4];
-
-                    // Process the input event.
-                    String processedTimestampStr = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
-
-                    // Build the output event.
-                    String message = String.join(",",
-                            String.format("%06d", generatedEventCounter),
-                            String.format("%06d", eventCounter),
-                            routingKey,
-                            String.format("%02d", intData),
-                            String.format("%08d", generatedSum),
-                            String.format("%03d", 0),
-                            generatedTimestampStr,
-                            processedTimestampStr,
-                            "");
-
-                    // Write the output event.
-                    log.info("eventCounter={}, event={}",
-                            String.format("%06d", eventCounter),
-                            message);
-                    // Note that writeEvent returns a future. When the event has been durably persisted
-                    // to Pravega, the future will complete.
-                    final CompletableFuture writeFuture = writer.writeEvent(routingKey, message);
-                }
+        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig)) {
+            readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
+            final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(readerGroupName);
+            try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+                 SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(scope, clientConfig)) {
+                final AtLeastOnceProcessor processor = new AtLeastOnceProcessor(
+                        readerGroup,
+                        membershipSynchronizerStreamName,
+                        new UTF8StringSerializer(),
+                        ReaderConfig.builder().build(),
+                        eventStreamClientFactory,
+                        synchronizerClientFactory,
+                        Executors.newScheduledThreadPool(1),
+                        500,
+                        1000) {
+                    @Override
+                    public void write(EventRead<String> eventRead) {
+                    }
+                };
+                processor.call();
             }
         }
     }

@@ -18,6 +18,7 @@ abstract public class AtLeastOnceProcessor implements Callable<Void> {
     private static final Logger log = LoggerFactory.getLogger(AtLeastOnceProcessor.class);
 
     private final ReaderGroup readerGroup;
+    private final String membershipSynchronizerStreamName;
     private final Serializer<String> serializer;
     private final ReaderConfig readerConfig;
     private final EventStreamClientFactory eventStreamClientFactory;
@@ -26,15 +27,24 @@ abstract public class AtLeastOnceProcessor implements Callable<Void> {
     private final long heartbeatIntervalMillis;
     private final long readTimeoutMillis;
 
-
-
+    public AtLeastOnceProcessor(ReaderGroup readerGroup, String membershipSynchronizerStreamName, Serializer<String> serializer, ReaderConfig readerConfig, EventStreamClientFactory eventStreamClientFactory, SynchronizerClientFactory synchronizerClientFactory, ScheduledExecutorService executor, long heartbeatIntervalMillis, long readTimeoutMillis) {
+        this.readerGroup = readerGroup;
+        this.membershipSynchronizerStreamName = membershipSynchronizerStreamName;
+        this.serializer = serializer;
+        this.readerConfig = readerConfig;
+        this.eventStreamClientFactory = eventStreamClientFactory;
+        this.synchronizerClientFactory = synchronizerClientFactory;
+        this.executor = executor;
+        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
+        this.readTimeoutMillis = readTimeoutMillis;
+    }
 
     @Override
     public Void call() throws Exception {
-        // TODO: handle case when reader dies (if checkpoint timeout occurs, reset reader group to last successful checkpoint)
         final String readerId = UUID.randomUUID().toString();
         try (final ReaderGroupPruner pruner = ReaderGroupPruner.create(
                 readerGroup,
+                membershipSynchronizerStreamName,
                 readerId,
                 synchronizerClientFactory,
                 executor,

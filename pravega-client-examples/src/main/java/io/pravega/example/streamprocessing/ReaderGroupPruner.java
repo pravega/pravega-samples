@@ -19,19 +19,17 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
 
     private ScheduledFuture<?> task;
 
-    public static ReaderGroupPruner create(ReaderGroup readerGroup, String readerId, SynchronizerClientFactory clientFactory,
-                                           ScheduledExecutorService executor, long heartbeatIntervalMillis) {
-        final ReaderGroupPruner pruner = new ReaderGroupPruner(readerGroup, readerId, clientFactory, executor, heartbeatIntervalMillis);
+    public static ReaderGroupPruner create(ReaderGroup readerGroup, String membershipSynchronizerStreamName, String readerId, SynchronizerClientFactory clientFactory, ScheduledExecutorService executor, long heartbeatIntervalMillis) {
+        final ReaderGroupPruner pruner = new ReaderGroupPruner(readerGroup, membershipSynchronizerStreamName, readerId, clientFactory,
+                executor, heartbeatIntervalMillis);
         pruner.startAsync();
         pruner.awaitRunning();
         return pruner;
     }
 
-    public ReaderGroupPruner(ReaderGroup readerGroup, String readerId, SynchronizerClientFactory clientFactory,
+    public ReaderGroupPruner(ReaderGroup readerGroup, String membershipSynchronizerStreamName, String readerId, SynchronizerClientFactory clientFactory,
                              ScheduledExecutorService executor, long heartbeatIntervalMillis) {
         this.readerGroup = readerGroup;
-
-        final String membershipSynchronizerStreamName = readerGroup.getGroupName() + "-membership";
 
         // No-op listener
         final MembershipSynchronizer.MembershipListener membershipListener = new MembershipSynchronizer.MembershipListener() {
@@ -76,6 +74,7 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
     protected void doStop() {
         task.cancel(false);
         membershipSynchronizer.stopAsync();
+        // TODO: Can we safely delete the membershipSynchronizer stream?
     }
 
     @Override

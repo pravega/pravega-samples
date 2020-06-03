@@ -16,6 +16,7 @@ import io.pravega.client.state.InitialUpdate;
 import io.pravega.client.state.Revision;
 import io.pravega.client.state.Revisioned;
 import io.pravega.client.state.StateSynchronizer;
+import io.pravega.client.state.SynchronizerConfig;
 import io.pravega.client.state.Update;
 import io.pravega.client.stream.impl.JavaSerializer;
 import lombok.Data;
@@ -79,7 +80,7 @@ public class MembershipSynchronizer extends AbstractService {
         stateSync = clientFactory.createStateSynchronizer(streamName,
                                                     new JavaSerializer<HeartbeatUpdate>(),
                                                     new JavaSerializer<LiveInstances>(),
-                                                    null);
+                                                    SynchronizerConfig.builder().build());
     }
 
     @Data
@@ -233,6 +234,7 @@ public class MembershipSynchronizer extends AbstractService {
     protected void doStart() {
         // Try to ensure that this instance is considered healthy before returning.
         stateSync.fetchUpdates();
+        Preconditions.checkNotNull(stateSync.getState());
         stateSync.updateStateUnconditionally(new HeartBeat(instanceId, stateSync.getState().vectorTime));
         stateSync.fetchUpdates();
         notifyListener();

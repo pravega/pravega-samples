@@ -65,35 +65,35 @@ public class StreamProcessingTest {
                 .build();
         final EventWriterConfig eventWriterConfig = EventWriterConfig.builder().build();
 
-        try (StreamManager streamManager = StreamManager.create(clientConfig)) {
-            streamManager.createScope(scope);
-
-            StreamConfiguration streamConfig = StreamConfiguration.builder()
-                    .scalingPolicy(ScalingPolicy.fixed(3))
-                    .build();
-            streamManager.createStream(scope, inputStreamName, streamConfig);
-
-            try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig)) {
-                readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-            }
-            try (final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
-                 final EventStreamWriter<String> inputWriter = clientFactory.createEventWriter( inputStreamName, serializer, eventWriterConfig)) {
-
-                inputWriter.writeEvent("CLAUDIO1");
-
-                AtLeastOnceProcessor processor = new AtLeastOnceProcessor() {
-                    @Override
-                    public EventStreamReader<String> createReader() {
-                        return clientFactory.createReader(readerId, readerGroup, serializer, readerConfig);
-                    }
-
-                    @Override
-                    public void write(EventRead<String> eventRead) {
-                    }
-                };
-                processor.call();
-                // TODO: Wait for correct result and then terminate.
-            }
-        }
+//        try (StreamManager streamManager = StreamManager.create(clientConfig)) {
+//            streamManager.createScope(scope);
+//
+//            StreamConfiguration streamConfig = StreamConfiguration.builder()
+//                    .scalingPolicy(ScalingPolicy.fixed(3))
+//                    .build();
+//            streamManager.createStream(scope, inputStreamName, streamConfig);
+//
+//            try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig)) {
+//                readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
+//            }
+//            try (final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+//                 final EventStreamWriter<String> inputWriter = clientFactory.createEventWriter( inputStreamName, serializer, eventWriterConfig)) {
+//
+//                inputWriter.writeEvent("CLAUDIO1");
+//
+//                AtLeastOnceProcessor processor = new AtLeastOnceProcessor() {
+//                    @Override
+//                    public EventStreamReader<String> createReader() {
+//                        return clientFactory.createReader(readerId, readerGroup, serializer, readerConfig);
+//                    }
+//
+//                    @Override
+//                    public void write(EventRead<String> eventRead) {
+//                    }
+//                };
+//                processor.call();
+//                // TODO: Wait for correct result and then terminate.
+//            }
+//        }
     }
 }
