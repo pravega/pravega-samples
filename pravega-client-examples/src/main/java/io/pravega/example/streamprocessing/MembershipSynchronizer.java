@@ -58,7 +58,7 @@ public class MembershipSynchronizer extends AbstractService {
      */
     private static final int DEATH_THRESHOLD = 10;
 
-    private final String instanceId = UUID.randomUUID().toString();
+    private final String instanceId;
 
     private final AtomicBoolean healthy = new AtomicBoolean();
 
@@ -68,11 +68,12 @@ public class MembershipSynchronizer extends AbstractService {
     private final MembershipListener listener;
     private ScheduledFuture<?> task;
 
-    MembershipSynchronizer(String streamName, SynchronizerClientFactory clientFactory, ScheduledExecutorService executor,
+    MembershipSynchronizer(String streamName, String instanceId, SynchronizerClientFactory clientFactory, ScheduledExecutorService executor,
                            MembershipListener listener) {
         Preconditions.checkNotNull(streamName);
         Preconditions.checkNotNull(clientFactory);
         Preconditions.checkNotNull(listener);
+        this.instanceId = instanceId;
         this.executor = executor;
         this.listener = listener;
         stateSync = clientFactory.createStateSynchronizer(streamName,
@@ -218,6 +219,7 @@ public class MembershipSynchronizer extends AbstractService {
     }
 
     public Set<String> getCurrentMembers() {
+        stateSync.fetchUpdates();
         return stateSync.getState().getLiveInstances();
     }
 
@@ -229,10 +231,17 @@ public class MembershipSynchronizer extends AbstractService {
 
     @Override
     protected void doStart() {
+        // Try to ensure that this instance is considered healthy before returning.
+        stateSync.fetchUpdates();
+        stateSync.updateStateUnconditionally(new HeartBeat(instanceId, stateSync.getState().vectorTime));
+        stateSync.fetchUpdates();
+        notifyListener();
+
         task = executor.scheduleAtFixedRate(new HeartBeater(),
                                             UPDATE_INTERVAL_MILLIS,
                                             UPDATE_INTERVAL_MILLIS,
                                             TimeUnit.MILLISECONDS);
+        notifyStarted();
     }
 
     @Override
