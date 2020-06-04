@@ -30,18 +30,12 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
     public ReaderGroupPruner(ReaderGroup readerGroup, String membershipSynchronizerStreamName, String readerId, SynchronizerClientFactory clientFactory,
                              ScheduledExecutorService executor, long heartbeatIntervalMillis) {
         this.readerGroup = readerGroup;
-
-        // No-op listener
-        final MembershipSynchronizer.MembershipListener membershipListener = new MembershipSynchronizer.MembershipListener() {
-            @Override
-            public void healthy() {
-            }
-
-            @Override
-            public void unhealthy() {
-            }
-        };
-        this.membershipSynchronizer = new MembershipSynchronizer(membershipSynchronizerStreamName, readerId, clientFactory, executor, membershipListener);
+        this.membershipSynchronizer = new MembershipSynchronizer(
+                membershipSynchronizerStreamName,
+                readerId,
+                clientFactory,
+                executor,
+                new MembershipSynchronizer.MembershipListener() {});
         this.executor = executor;
         this.heartbeatIntervalMillis = heartbeatIntervalMillis;
     }
@@ -52,10 +46,15 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
             try {
                 Set<String> rgMembers = readerGroup.getOnlineReaders();
                 Set<String> msMembers = membershipSynchronizer.getCurrentMembers();
+                log.info("rgMembers={}", rgMembers);
+                log.info("msMembers={}", msMembers);
                 rgMembers.removeAll(msMembers);
-                rgMembers.forEach(readerId -> readerGroup.readerOffline(readerId, null));
+                rgMembers.forEach(readerId -> {
+                    log.info("Removing dead reader {} from reader group {}", readerId, readerGroup.getGroupName());
+                    readerGroup.readerOffline(readerId, null);
+                });
             } catch (Exception e) {
-                log.warn("Encountered an error while pruning reader group {}: ", readerGroup.getGroupName(), e);
+                log.warn("Encountered an error while pruning reader group {}", readerGroup.getGroupName(), e);
                 // Ignore error. It will retry at the next iteration.
             }
         }

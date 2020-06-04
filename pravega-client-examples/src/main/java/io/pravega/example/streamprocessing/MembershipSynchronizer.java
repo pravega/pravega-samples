@@ -134,13 +134,26 @@ public class MembershipSynchronizer extends AbstractService {
         }
     }
 
+    private static class CreateState implements Serializable, InitialUpdate<LiveInstances> {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public LiveInstances create(String scopedStreamName, Revision revision) {
+            return new LiveInstances(scopedStreamName, revision, new HashMap<>(), 0);
+        }
+    }
+
     private class HeartBeater implements Runnable {
         @Override
         public void run() {
             try {
                 stateSync.fetchUpdates();
                 notifyListener();
-                if (stateSync.getState().isOverUnconditionalThreshold(instanceId)) {
+                log.info("run: BEGIN: vectorTime={}, isOverUnconditionalThreshold={}, liveInstances={}",
+                        stateSync.getState().getVectorTime(),
+                        stateSync.getState().isOverUnconditionalThreshold(instanceId),
+                        stateSync.getState().liveInstances);
+                if (!stateSync.getState().isOverUnconditionalThreshold(instanceId)) {
                     stateSync.updateState((state, updates) -> {
                         long vectorTime = state.getVectorTime() + 1;
                         updates.add(new HeartBeat(instanceId, vectorTime));
@@ -155,8 +168,11 @@ public class MembershipSynchronizer extends AbstractService {
                     stateSync.fetchUpdates();
                 }
                 notifyListener();
+                log.info("run: END: vectorTime={}, liveInstances={}",
+                        stateSync.getState().getVectorTime(),
+                        stateSync.getState().liveInstances);
             } catch (Exception e) {
-                log.warn("Encountered an error while heartbeating: " + e);
+                log.warn("Encountered an error while heartbeating", e);
                 if (healthy.compareAndSet(true, false)) {
                     listener.unhealthy();
                 }
@@ -164,12 +180,12 @@ public class MembershipSynchronizer extends AbstractService {
         }
     }
 
-    private abstract class HeartbeatUpdate implements Update<LiveInstances>, Serializable {
+    private static abstract class HeartbeatUpdate implements Update<LiveInstances>, Serializable {
         private static final long serialVersionUID = 1L;
     }
 
     @RequiredArgsConstructor
-    private final class HeartBeat extends HeartbeatUpdate {
+    private static class HeartBeat extends HeartbeatUpdate {
         private static final long serialVersionUID = 1L;
         private final String name;
         private final long timestamp;
@@ -177,7 +193,7 @@ public class MembershipSynchronizer extends AbstractService {
         @Override
         public LiveInstances applyTo(LiveInstances state, Revision newRevision) {
             Map<String, Long> timestamps = new HashMap<>(state.liveInstances);
-            long vectorTime = Long.max(timestamps.values().stream().max(Long::compare).get(), timestamp);
+            long vectorTime = Long.max(timestamps.values().stream().max(Long::compare).orElse(0L), timestamp);
             timestamps.put(name, timestamp);
             return new LiveInstances(state.scopedStreamName,
                     newRevision,
@@ -187,7 +203,7 @@ public class MembershipSynchronizer extends AbstractService {
     }
 
     @RequiredArgsConstructor
-    private final class DeclareDead extends HeartbeatUpdate {
+    private static final class DeclareDead extends HeartbeatUpdate {
         private static final long serialVersionUID = 1L;
         private final String name;
 
@@ -225,13 +241,15 @@ public class MembershipSynchronizer extends AbstractService {
     }
 
     public interface MembershipListener {
-        void healthy();
+        default void healthy() {};
 
-        void unhealthy();
+        default void unhealthy() {};
     }
 
     @Override
     protected void doStart() {
+        // Create initial empty state if stream is empty.
+        stateSync.initialize(new CreateState());
         // Try to ensure that this instance is considered healthy before returning.
         stateSync.fetchUpdates();
         Preconditions.checkNotNull(stateSync.getState());

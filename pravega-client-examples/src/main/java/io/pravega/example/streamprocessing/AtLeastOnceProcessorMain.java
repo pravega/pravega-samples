@@ -93,7 +93,6 @@ public class AtLeastOnceProcessorMain {
                     membershipSynchronizerStreamName,
                     StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
         }
-        final String readerGroupName = UUID.randomUUID().toString().replace("-", "");
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(scope, inputStreamName))
                 .build();
