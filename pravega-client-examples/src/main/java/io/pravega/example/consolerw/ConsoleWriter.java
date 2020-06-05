@@ -48,7 +48,7 @@ public class ConsoleWriter implements AutoCloseable {
             "If no command is entered, the line is treated as a parameter to the WRITE_EVENT command.",
             "",
             "WRITE_EVENT {event} - write the {event} out to the Stream or the current Transaction.",
-            "WRITE_EVENT_RK <<{routingKey}>> , {event} - write the {event} out to the Stream or the current Transaction using {routingKey}. Note << and >> around {routingKey}.",
+            "WRITE_EVENT_RK ({routingKey}) {event} - write the {event} out to the Stream or the current Transaction using {routingKey}. Note ( and ) around {routingKey}.",
             "BEGIN - begin a Transaction. Only one Transaction at a time is supported by the CLI.",
             "GET_TXN_ID - output the current Transaction's Id (if a Transaction is running)",
             "FLUSH - flush the current Transaction (if a Transaction is running)",

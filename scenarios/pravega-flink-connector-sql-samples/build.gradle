@@ -69,7 +69,7 @@ distributions {
 
 shadowJar {
     dependencies {
-        include dependency("io.pravega:pravega-connectors-flink_${flinkScalaVersion}")
+        include dependency("io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}")
         include dependency("io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}")
     }
 }
