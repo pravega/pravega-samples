@@ -53,9 +53,3 @@ The above command uses Table API to group the maximum number of travellers with 
 ## Submitting the job to Flink cluster
 
 If you want to submit the job to Flink cluster, you should change the dependency of `flink-table-planner-blink` from compile to compileOnly since the dependency has been provided by Flink cluster.
-
-As in build.gradle, the correct version should be
-
-```groovy
-compileOnly "org.apache.flink:flink-table-planner-blink_${flinkScalaVersion}:${flinkVersion}"
-```
