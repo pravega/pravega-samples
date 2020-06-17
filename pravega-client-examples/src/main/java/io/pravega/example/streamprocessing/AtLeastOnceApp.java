@@ -88,6 +88,7 @@ public class AtLeastOnceApp {
                          getConfig().getStream2Name(),
                          new UTF8StringSerializer(),
                          EventWriterConfig.builder().build())) {
+
                 final AtLeastOnceProcessor processor = new AtLeastOnceProcessor(
                         readerGroup,
                         getConfig().getMembershipSynchronizerStreamName(),
@@ -98,21 +99,23 @@ public class AtLeastOnceApp {
                         Executors.newScheduledThreadPool(1),
                         getConfig().getHeartbeatIntervalMillis(),
                         1000) {
-                    /**
-                     * Write
-                     * @param eventRead
-                     */
                     @Override
                     public void process(EventRead<String> eventRead) {
                         writer.writeEvent("0", "processed," + eventRead.getEvent());
                     }
 
                     @Override
-                    public void flush(EventRead<String> eventRead) {
+                    public void flush() {
                         writer.flush();
                     }
                 };
-                processor.call();
+
+                processor.startAsync();
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    System.out.println("Running shutdown hook.");
+                    processor.stopAsync();
+                }));
+                processor.awaitTerminated();
             }
         }
     }

@@ -212,6 +212,11 @@ task startExactlyOnceMultithreadedProcessor(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+task startAtLeastOnceApp(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.AtLeastOnceApp"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 task scriptEventDebugSink(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.streamprocessing.EventDebugSink'

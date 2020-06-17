@@ -10,6 +10,7 @@
  */
 package io.pravega.example.streamprocessing;
 
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.stream.EventRead;
@@ -23,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -34,7 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * each instance will get a distinct subset of events.
  * Instances can be in different processes.
  */
-abstract public class AtLeastOnceProcessor implements Callable<Void> {
+abstract public class AtLeastOnceProcessor extends AbstractExecutionThreadService {
     private static final Logger log = LoggerFactory.getLogger(AtLeastOnceProcessor.class);
 
     private final ReaderGroup readerGroup;
@@ -76,7 +76,7 @@ abstract public class AtLeastOnceProcessor implements Callable<Void> {
      * has read and processed events up to the previous {@link Position}.
      */
     @Override
-    public Void call() throws Exception {
+    protected void run() throws Exception {
         final String readerId = UUID.randomUUID().toString();
         try (final ReaderGroupPruner pruner = ReaderGroupPruner.create(
                 readerGroup,
@@ -90,17 +90,24 @@ abstract public class AtLeastOnceProcessor implements Callable<Void> {
                     readerGroup.getGroupName(),
                     serializer,
                     readerConfig)) {
-                for (; ; ) {
+                while (isRunning()) {
                     final EventRead<String> eventRead = reader.readNextEvent(readTimeoutMillis);
                     log.info("call: eventRead={}", eventRead);
                     if (eventRead.isCheckpoint()) {
-                        flush(eventRead);
+                        flush();
                     } else if (eventRead.getEvent() != null) {
                         process(eventRead);
                     }
                 }
+                // Gracefully stop.
+                // Call readNextEvent to indicate that the previous event was processed.
+                // When the reader is closed, it will call readerOffline with the proper position.
+                System.out.println("AtLeastOnceProcessor: Stopping");
+                reader.readNextEvent(0);
+                flush();
             }
         }
+        System.out.println("AtLeastOnceProcessor: Stopped");
     }
 
     /**
@@ -112,12 +119,9 @@ abstract public class AtLeastOnceProcessor implements Callable<Void> {
     abstract public void process(EventRead<String> eventRead);
 
     /**
-     * This will be called when a checkpoint event is received.
-     * If {@link #process} did not completely process prior events, it must do so now.
+     * If {@link #process} did not completely process prior events, it must do so before returning.
      * If writing to a Pravega stream, this should call {@link EventStreamWriter#flush}.
-     *
-     * @param eventRead Identifies the checkpoint name. This can generally be ignored.
      */
-    public void flush(EventRead<String> eventRead) {
+    public void flush() {
     }
 }
