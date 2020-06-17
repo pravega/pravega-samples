@@ -88,7 +88,6 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
     protected void doStop() {
         task.cancel(false);
         membershipSynchronizer.stopAsync();
-        // TODO: Can we safely delete the membershipSynchronizer stream?
     }
 
     @Override

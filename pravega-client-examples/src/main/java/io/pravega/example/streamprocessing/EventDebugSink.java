@@ -69,28 +69,30 @@ public class EventDebugSink {
                 .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI())) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-        }
-
-        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-             EventStreamReader<String> reader = clientFactory.createReader(
-                     "reader",
-                     readerGroup,
-                     new UTF8StringSerializer(),
-                     ReaderConfig.builder().build())) {
-            long eventCounter = 0;
-            long sum = 0;
-            for (;;) {
-                EventRead<String> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
-                if (eventRead.getEvent() != null) {
-                    eventCounter++;
-                    String[] cols = eventRead.getEvent().split(",");
-                    long intData = Long.parseLong(cols[3]);
-                    sum += intData;
-                    log.info("eventCounter={}, sum={}, event={}",
-                            String.format("%06d", eventCounter),
-                            String.format("%08d", sum),
-                            eventRead.getEvent());
+            try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+                 EventStreamReader<String> reader = clientFactory.createReader(
+                         "reader",
+                         readerGroup,
+                         new UTF8StringSerializer(),
+                         ReaderConfig.builder().build())) {
+                long eventCounter = 0;
+                long sum = 0;
+                for (;;) {
+                    EventRead<String> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
+                    if (eventRead.getEvent() != null) {
+                        eventCounter++;
+                        String[] cols = eventRead.getEvent().split(",");
+                        long intData = Long.parseLong(cols[3]);
+                        sum += intData;
+                        log.info("eventCounter={}, sum={}, event={}",
+                                String.format("%06d", eventCounter),
+                                String.format("%08d", sum),
+                                eventRead.getEvent());
+                    }
                 }
+            }
+            finally {
+                readerGroupManager.deleteReaderGroup(readerGroup);
             }
         }
     }

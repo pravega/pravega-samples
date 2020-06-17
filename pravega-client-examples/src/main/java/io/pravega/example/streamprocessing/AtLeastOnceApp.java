@@ -16,6 +16,8 @@ import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.ReaderGroupConfig;
@@ -81,7 +83,11 @@ public class AtLeastOnceApp {
             readerGroupManager.createReaderGroup(getConfig().getReaderGroup(), readerGroupConfig);
             final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
             try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-                 SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig)) {
+                 SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
+                 EventStreamWriter<String> writer = eventStreamClientFactory.createEventWriter(
+                         getConfig().getStream2Name(),
+                         new UTF8StringSerializer(),
+                         EventWriterConfig.builder().build())) {
                 final AtLeastOnceProcessor processor = new AtLeastOnceProcessor(
                         readerGroup,
                         getConfig().getMembershipSynchronizerStreamName(),
@@ -92,8 +98,18 @@ public class AtLeastOnceApp {
                         Executors.newScheduledThreadPool(1),
                         getConfig().getHeartbeatIntervalMillis(),
                         1000) {
+                    /**
+                     * Write
+                     * @param eventRead
+                     */
                     @Override
-                    public void write(EventRead<String> eventRead) {
+                    public void process(EventRead<String> eventRead) {
+                        writer.writeEvent("0", "processed," + eventRead.getEvent());
+                    }
+
+                    @Override
+                    public void flush(EventRead<String> eventRead) {
+                        writer.flush();
                     }
                 };
                 processor.call();
