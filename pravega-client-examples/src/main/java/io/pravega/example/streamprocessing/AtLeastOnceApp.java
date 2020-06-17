@@ -112,8 +112,11 @@ public class AtLeastOnceApp {
 
                 processor.startAsync();
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    System.out.println("Running shutdown hook.");
+                    log.info("Running shutdown hook.");
                     processor.stopAsync();
+                    log.info("Waiting for processor to terminate.");
+                    processor.awaitTerminated();
+                    log.info("Processor terminated.");
                 }));
                 processor.awaitTerminated();
             }

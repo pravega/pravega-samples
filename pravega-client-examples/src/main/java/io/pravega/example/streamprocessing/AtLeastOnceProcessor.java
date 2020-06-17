@@ -102,12 +102,12 @@ abstract public class AtLeastOnceProcessor extends AbstractExecutionThreadServic
                 // Gracefully stop.
                 // Call readNextEvent to indicate that the previous event was processed.
                 // When the reader is closed, it will call readerOffline with the proper position.
-                System.out.println("AtLeastOnceProcessor: Stopping");
+                log.info("Stopping");
                 reader.readNextEvent(0);
                 flush();
             }
         }
-        System.out.println("AtLeastOnceProcessor: Stopped");
+        log.info("Stopped");
     }
 
     /**
