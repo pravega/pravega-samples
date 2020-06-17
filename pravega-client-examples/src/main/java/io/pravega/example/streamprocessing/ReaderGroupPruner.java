@@ -10,6 +10,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class removes unhealthy processes from a Pravega reader group.
+ * It uses {@link MembershipSynchronizer} to identify healthy processes.
+ */
 @Slf4j
 public class ReaderGroupPruner extends AbstractService implements AutoCloseable {
     private final ReaderGroup readerGroup;
@@ -33,6 +37,7 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
         this.membershipSynchronizer = new MembershipSynchronizer(
                 membershipSynchronizerStreamName,
                 readerId,
+                heartbeatIntervalMillis,
                 clientFactory,
                 executor,
                 new MembershipSynchronizer.MembershipListener() {});
@@ -62,7 +67,7 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
 
     @Override
     protected void doStart() {
-        // Must ensure that we add this reader to MS before RG.
+        // MWe must ensure that we add this reader to the membership synchronizer before the reader group.
         membershipSynchronizer.startAsync();
         membershipSynchronizer.awaitRunning();
         task = executor.scheduleAtFixedRate(new PruneRunner(), heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);

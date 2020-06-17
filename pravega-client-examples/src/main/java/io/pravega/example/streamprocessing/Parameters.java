@@ -26,6 +26,14 @@ class Parameters {
         return getEnvVar("PRAVEGA_SCOPE", "examples");
     }
 
+    public static String getReaderGroup() {
+        return getEnvVar("PRAVEGA_READER_GROUP", "streamprocessing-rg1");
+    }
+
+    public static String getMembershipSynchronizerStreamName() {
+        return getReaderGroup() + "-membership";
+    }
+
     public static String getStream1Name() {
         return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1");
     }
@@ -46,14 +54,6 @@ class Parameters {
         return Integer.parseInt(getEnvVar("PRAVEGA_MIN_NUM_SEGMENTS", "3"));
     }
 
-    public static int getNumWorkers() {
-        return Integer.parseInt(getEnvVar("NUM_WORKERS", "2"));
-    }
-
-    public static Path getCheckpointRootPath() {
-        return Paths.get(getEnvVar("CHECKPOINT_ROOT_PATH", "/tmp/checkpoints"));
-    }
-
     public static long getCheckpointPeriodMs() {
         return Long.parseLong(getEnvVar("CHECKPOINT_PERIOD_MS", "3000"));
     }
@@ -64,6 +64,10 @@ class Parameters {
 
     public static long getTransactionTimeoutMs() {
         return Long.parseLong(getEnvVar("TRANSACTION_TIMEOUT_MS", "120000"));
+    }
+
+    public static long getHeartbeatIntervalMillis() {
+        return Long.parseLong(getEnvVar("HEARTBEAT_INTERVAL_MS", "500"));
     }
 
     private static String getEnvVar(String name, String defaultValue) {

@@ -29,20 +29,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+/**
+ * This class maintains a list of process names for processes that are healthy,
+ * as indicated by periodic heartbeat messages.
+ * It uses a Pravega state synchronizer to allow processes to communicate
+ * with each other.
+ */
 @Slf4j
 public class MembershipSynchronizer extends AbstractService {
-
-    /**
-     * How frequently to update the segment using a heartbeat.
-     */
-    private static final int UPDATE_INTERVAL_MILLIS = 1000;
 
     /**
      * Number of intervals behind before switching to unconditional updates.
@@ -61,6 +61,11 @@ public class MembershipSynchronizer extends AbstractService {
 
     private final String instanceId;
 
+    /**
+     * How frequently to update the segment using a heartbeat.
+     */
+    private final long heartbeatIntervalMillis;
+
     private final AtomicBoolean healthy = new AtomicBoolean();
 
     private final ScheduledExecutorService executor;
@@ -69,12 +74,13 @@ public class MembershipSynchronizer extends AbstractService {
     private final MembershipListener listener;
     private ScheduledFuture<?> task;
 
-    MembershipSynchronizer(String streamName, String instanceId, SynchronizerClientFactory clientFactory, ScheduledExecutorService executor,
+    MembershipSynchronizer(String streamName, String instanceId, long heartbeatIntervalMillis, SynchronizerClientFactory clientFactory, ScheduledExecutorService executor,
                            MembershipListener listener) {
         Preconditions.checkNotNull(streamName);
         Preconditions.checkNotNull(clientFactory);
         Preconditions.checkNotNull(listener);
         this.instanceId = instanceId;
+        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
         this.executor = executor;
         this.listener = listener;
         stateSync = clientFactory.createStateSynchronizer(streamName,
@@ -252,15 +258,15 @@ public class MembershipSynchronizer extends AbstractService {
         stateSync.initialize(new CreateState());
         // Try to ensure that this instance is considered healthy before returning.
         stateSync.fetchUpdates();
-        Preconditions.checkNotNull(stateSync.getState());
         stateSync.updateStateUnconditionally(new HeartBeat(instanceId, stateSync.getState().vectorTime));
         stateSync.fetchUpdates();
         notifyListener();
 
-        task = executor.scheduleAtFixedRate(new HeartBeater(),
-                                            UPDATE_INTERVAL_MILLIS,
-                                            UPDATE_INTERVAL_MILLIS,
-                                            TimeUnit.MILLISECONDS);
+        task = executor.scheduleAtFixedRate(
+                new HeartBeater(),
+                heartbeatIntervalMillis,
+                heartbeatIntervalMillis,
+                TimeUnit.MILLISECONDS);
         notifyStarted();
     }
 

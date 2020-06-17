@@ -16,9 +16,6 @@ import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
-import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.EventStreamWriter;
-import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.ReaderGroupConfig;
@@ -29,55 +26,55 @@ import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
 /**
- * A simple example that demonstrates reading events from a Pravega stream, processing each event,
+ * This demonstrates reading events from a Pravega stream, processing each event,
  * and writing each output event to another Pravega stream.
- *
- * This runs only a single thread.
+ * It guarantees that each event is processed at least once.
+ * If multiple instances of this application are executed using the same readerGroupName parameter,
+ * each instance will get a distinct subset of events.
  *
  * Use {@link EventGenerator} to generate input events and {@link EventDebugSink}
  * to view the output events.
- *
- * See {@link ExactlyOnceMultithreadedProcessor} for an improved version.
  */
-public class AtLeastOnceProcessorMain {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(AtLeastOnceProcessorMain.class);
-
-    private static final int READER_TIMEOUT_MS = 2000;
+public class AtLeastOnceApp {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(AtLeastOnceApp.class);
 
     private final String scope;
     private final String readerGroupName;
+    private final String membershipSynchronizerStreamName;
     private final String inputStreamName;
     private final String outputStreamName;
     private final URI controllerURI;
+    private final long heartbeatIntervalMillis;
 
-    public AtLeastOnceProcessorMain(String scope, String readerGroupName, String inputStreamName, String outputStreamName, URI controllerURI) {
+    public AtLeastOnceApp(String scope, String readerGroupName, String membershipSynchronizerStreamName,
+                          String inputStreamName, String outputStreamName, URI controllerURI,
+                          long heartbeatIntervalMillis) {
         this.scope = scope;
         this.readerGroupName = readerGroupName;
+        this.membershipSynchronizerStreamName = membershipSynchronizerStreamName;
         this.inputStreamName = inputStreamName;
         this.outputStreamName = outputStreamName;
         this.controllerURI = controllerURI;
+        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
     }
 
     public static void main(String[] args) throws Exception {
-        AtLeastOnceProcessorMain processor = new AtLeastOnceProcessorMain(
+        AtLeastOnceApp processor = new AtLeastOnceApp(
                 Parameters.getScope(),
-                Parameters.getStream1Name() + "-rg",
+                Parameters.getReaderGroup(),
+                Parameters.getMembershipSynchronizerStreamName(),
                 Parameters.getStream1Name(),
                 Parameters.getStream2Name(),
-                Parameters.getControllerURI());
+                Parameters.getControllerURI(),
+                Parameters.getHeartbeatIntervalMillis());
         processor.run();
     }
 
     public void run() throws Exception {
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(controllerURI).build();
-        final String membershipSynchronizerStreamName = readerGroupName + "-membership";
         try (StreamManager streamManager = StreamManager.create(clientConfig)) {
             streamManager.createScope(scope);
             final StreamConfiguration streamConfig = StreamConfiguration.builder()
@@ -88,6 +85,7 @@ public class AtLeastOnceProcessorMain {
                     .build();
             streamManager.createStream(scope, inputStreamName, streamConfig);
             streamManager.createStream(scope, outputStreamName, streamConfig);
+            // Create stream for the membership state synchronizer.
             streamManager.createStream(
                     scope,
                     membershipSynchronizerStreamName,
@@ -95,6 +93,7 @@ public class AtLeastOnceProcessorMain {
         }
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(scope, inputStreamName))
+                .automaticCheckpointIntervalMillis(Parameters.getCheckpointPeriodMs())
                 .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig)) {
             readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
@@ -109,7 +108,7 @@ public class AtLeastOnceProcessorMain {
                         eventStreamClientFactory,
                         synchronizerClientFactory,
                         Executors.newScheduledThreadPool(1),
-                        500,
+                        heartbeatIntervalMillis,
                         1000) {
                     @Override
                     public void write(EventRead<String> eventRead) {
