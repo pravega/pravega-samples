@@ -77,7 +77,7 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
 
     @Override
     protected void doStart() {
-        // MWe must ensure that we add this reader to the membership synchronizer before the reader group.
+        // We must ensure that we add this reader to the membership synchronizer before the reader group.
         membershipSynchronizer.startAsync();
         membershipSynchronizer.awaitRunning();
         task = executor.scheduleAtFixedRate(new PruneRunner(), heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
