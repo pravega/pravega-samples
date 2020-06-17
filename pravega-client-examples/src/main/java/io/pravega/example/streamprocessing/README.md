@@ -1,10 +1,9 @@
 # Pravega Stream Processing Example
 
-
 # Overview
 
 The examples in this directory are intended to illustrate
-how exactly-once semantics can be achieved with Pravega.
+how at-least-once and exactly-once semantics can be achieved with Pravega.
 To make it clear to the reader, the entirety of the stream processor is defined
 within this package with minimal dependencies.
 In particular, these illustrative examples do *not* use Apache Flink.
@@ -17,7 +16,7 @@ These examples include:
   This application generates new events every 1 second
   and writes them to a Pravega stream (referred to as stream1).
 
-- [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java):
+- (OBSOLETE) [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java):
   This application continuously reads events from stream1, performs a stateless computation
   to generate output events, and writes the output event to another
   Pravega stream (referred to as stream2).
@@ -55,7 +54,7 @@ These examples include:
    PRAVEGA_SCOPE=examples PRAVEGA_CONTROLLER=tcp://localhost:9090 ./gradlew pravega-client-examples:startEventGenerator
    ```
 
-   See [Parameters.java](Parameters.java) for available parameters.
+   See [Parameters.java](Parameters.java) for available appConfiguration.
 
 - In another window, start the stream processor:
   ```
@@ -67,7 +66,7 @@ These examples include:
   ./gradlew pravega-client-examples:startEventDebugSink
   ```
 
-- Note: The [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java)
+- (OBSOLETE) Note: The [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java)
   will automatically restart from the latest checkpoint.
   However, if Pravega streams are truncated or deleted, or checkpoint files in
   /tmp/checkpoints are deleted or otherwise bad, you may need to start over from
@@ -77,7 +76,7 @@ These examples include:
     - Use a new scope (PRAVEGA_SCOPE) or streams (PRAVEGA_STREAM_1 and PRAVEGA_STREAM_2).
 
 
-# Achieving At-Least-Once Semantics
+# (OBSOLETE) Achieving At-Least-Once Semantics
 
 The current position in a Pravega stream is defined by a stream cut.
 A stream cut is essentially a mapping from segment numbers to byte offsets
@@ -132,7 +131,7 @@ by the user as a master. There can be any number of worker processes.
     - Process events as usual.
 
 
-# Achieving Exactly-Once Semantics
+# (OBSOLETE) Achieving Exactly-Once Semantics
 
 Exactly-once semantics can achieved by starting with at-least-once
 semantics and adding write idempotence.

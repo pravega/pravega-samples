@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,62 +11,65 @@
 package io.pravega.example.streamprocessing;
 
 import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
-// All parameters will come from environment variables. This makes it easy
-// to configure on Docker, Kubernetes, etc.
-class Parameters {
+/**
+ * All parameters will come from environment variables.
+ * This makes it easy to configure on Docker, Kubernetes, etc.
+ */
+class AppConfiguration {
+    AppConfiguration(String[] args) {
+    }
+
     // By default, we will connect to a standalone Pravega running on localhost.
-    public static URI getControllerURI() {
+    public URI getControllerURI() {
         return URI.create(getEnvVar("PRAVEGA_CONTROLLER", "tcp://localhost:9090"));
     }
 
-    public static String getScope() {
+    public String getScope() {
         return getEnvVar("PRAVEGA_SCOPE", "examples");
     }
 
-    public static String getReaderGroup() {
+    public String getReaderGroup() {
         return getEnvVar("PRAVEGA_READER_GROUP", "streamprocessing-rg1");
     }
 
-    public static String getMembershipSynchronizerStreamName() {
+    public String getMembershipSynchronizerStreamName() {
         return getReaderGroup() + "-membership";
     }
 
-    public static String getStream1Name() {
+    public String getStream1Name() {
         return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1");
     }
 
-    public static String getStream2Name() {
+    public String getStream2Name() {
         return getEnvVar("PRAVEGA_STREAM_2", "streamprocessing2");
     }
 
-    public static int getTargetRateEventsPerSec() {
+    public int getTargetRateEventsPerSec() {
         return Integer.parseInt(getEnvVar("PRAVEGA_TARGET_RATE_EVENTS_PER_SEC", "10"));
     }
 
-    public static int getScaleFactor() {
+    public int getScaleFactor() {
         return Integer.parseInt(getEnvVar("PRAVEGA_SCALE_FACTOR", "2"));
     }
 
-    public static int getMinNumSegments() {
+    public int getMinNumSegments() {
         return Integer.parseInt(getEnvVar("PRAVEGA_MIN_NUM_SEGMENTS", "3"));
     }
 
-    public static long getCheckpointPeriodMs() {
+    public  long getCheckpointPeriodMs() {
         return Long.parseLong(getEnvVar("CHECKPOINT_PERIOD_MS", "3000"));
     }
 
-    public static long getCheckpointTimeoutMs() {
+    public long getCheckpointTimeoutMs() {
         return Long.parseLong(getEnvVar("CHECKPOINT_TIMEOUT_MS", "120000"));
     }
 
-    public static long getTransactionTimeoutMs() {
+    public long getTransactionTimeoutMs() {
         return Long.parseLong(getEnvVar("TRANSACTION_TIMEOUT_MS", "120000"));
     }
 
-    public static long getHeartbeatIntervalMillis() {
+    public long getHeartbeatIntervalMillis() {
         return Long.parseLong(getEnvVar("HEARTBEAT_INTERVAL_MS", "500"));
     }
 

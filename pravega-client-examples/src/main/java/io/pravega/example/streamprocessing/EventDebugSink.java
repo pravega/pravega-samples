@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,60 +24,54 @@ import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.UUID;
 
 /**
  * A simple example that continuously shows the events in a stream.
- *
- * This reads the output of {@link ExactlyOnceMultithreadedProcessor}.
  */
 public class EventDebugSink {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(EventDebugSink.class);
 
     private static final int READER_TIMEOUT_MS = 2000;
 
-    public final String scope;
-    public final String inputStreamName;
-    public final URI controllerURI;
-
-    public EventDebugSink(String scope, String inputStreamName, URI controllerURI) {
-        this.scope = scope;
-        this.inputStreamName = inputStreamName;
-        this.controllerURI = controllerURI;
-    }
+    private final AppConfiguration config;
 
     public static void main(String[] args) throws Exception {
-        EventDebugSink processor = new EventDebugSink(
-                Parameters.getScope(),
-                Parameters.getStream2Name(),
-                Parameters.getControllerURI());
-        processor.run();
+        EventDebugSink app = new EventDebugSink(new AppConfiguration(args));
+        app.run();
+    }
+
+    public EventDebugSink(AppConfiguration config) {
+        this.config = config;
+    }
+
+    public AppConfiguration getConfig() {
+        return config;
     }
 
     public void run() throws Exception {
-        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(controllerURI).build();
-        try (StreamManager streamManager = StreamManager.create(controllerURI)) {
-            streamManager.createScope(scope);
+        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
+        try (StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
+            streamManager.createScope(getConfig().getScope());
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .scalingPolicy(ScalingPolicy.byEventRate(
-                            Parameters.getTargetRateEventsPerSec(),
-                            Parameters.getScaleFactor(),
-                            Parameters.getMinNumSegments()))
+                            getConfig().getTargetRateEventsPerSec(),
+                            getConfig().getScaleFactor(),
+                            getConfig().getMinNumSegments()))
                     .build();
-            streamManager.createStream(scope, inputStreamName, streamConfig);
+            streamManager.createStream(getConfig().getScope(), getConfig().getStream2Name(), streamConfig);
         }
 
         // Create a reader group that begins at the earliest event.
         final String readerGroup = UUID.randomUUID().toString().replace("-", "");
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
-                .stream(Stream.of(scope, inputStreamName))
+                .stream(Stream.of(getConfig().getScope(), getConfig().getStream2Name()))
                 .build();
-        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, controllerURI)) {
+        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI())) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         }
 
-        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
              EventStreamReader<String> reader = clientFactory.createReader(
                      "reader",
                      readerGroup,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.concurrent.Executors;
 
 /**
@@ -40,75 +39,58 @@ import java.util.concurrent.Executors;
  */
 public class AtLeastOnceApp {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(AtLeastOnceApp.class);
-
-    private final String scope;
-    private final String readerGroupName;
-    private final String membershipSynchronizerStreamName;
-    private final String inputStreamName;
-    private final String outputStreamName;
-    private final URI controllerURI;
-    private final long heartbeatIntervalMillis;
-
-    public AtLeastOnceApp(String scope, String readerGroupName, String membershipSynchronizerStreamName,
-                          String inputStreamName, String outputStreamName, URI controllerURI,
-                          long heartbeatIntervalMillis) {
-        this.scope = scope;
-        this.readerGroupName = readerGroupName;
-        this.membershipSynchronizerStreamName = membershipSynchronizerStreamName;
-        this.inputStreamName = inputStreamName;
-        this.outputStreamName = outputStreamName;
-        this.controllerURI = controllerURI;
-        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
-    }
+    
+    private final AppConfiguration config;
 
     public static void main(String[] args) throws Exception {
-        AtLeastOnceApp processor = new AtLeastOnceApp(
-                Parameters.getScope(),
-                Parameters.getReaderGroup(),
-                Parameters.getMembershipSynchronizerStreamName(),
-                Parameters.getStream1Name(),
-                Parameters.getStream2Name(),
-                Parameters.getControllerURI(),
-                Parameters.getHeartbeatIntervalMillis());
-        processor.run();
+        AtLeastOnceApp app = new AtLeastOnceApp(new AppConfiguration(args));
+        app.run();
     }
 
+    public AtLeastOnceApp(AppConfiguration config) {
+        this.config = config;
+    }
+
+    public AppConfiguration getConfig() {
+        return config;
+    }
+    
     public void run() throws Exception {
-        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(controllerURI).build();
+        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
         try (StreamManager streamManager = StreamManager.create(clientConfig)) {
-            streamManager.createScope(scope);
+            streamManager.createScope(getConfig().getScope());
             final StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .scalingPolicy(ScalingPolicy.byEventRate(
-                            Parameters.getTargetRateEventsPerSec(),
-                            Parameters.getScaleFactor(),
-                            Parameters.getMinNumSegments()))
+                            getConfig().getTargetRateEventsPerSec(),
+                            getConfig().getScaleFactor(),
+                            getConfig().getMinNumSegments()))
                     .build();
-            streamManager.createStream(scope, inputStreamName, streamConfig);
-            streamManager.createStream(scope, outputStreamName, streamConfig);
+            streamManager.createStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
+            streamManager.createStream(getConfig().getScope(), getConfig().getStream2Name(), streamConfig);
             // Create stream for the membership state synchronizer.
             streamManager.createStream(
-                    scope,
-                    membershipSynchronizerStreamName,
+                    getConfig().getScope(),
+                    getConfig().getMembershipSynchronizerStreamName(),
                     StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
         }
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
-                .stream(Stream.of(scope, inputStreamName))
-                .automaticCheckpointIntervalMillis(Parameters.getCheckpointPeriodMs())
+                .stream(Stream.of(getConfig().getScope(), getConfig().getStream1Name()))
+                .automaticCheckpointIntervalMillis(getConfig().getCheckpointPeriodMs())
                 .build();
-        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig)) {
-            readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
-            final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(readerGroupName);
-            try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
-                 SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(scope, clientConfig)) {
+        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), clientConfig)) {
+            readerGroupManager.createReaderGroup(getConfig().getReaderGroup(), readerGroupConfig);
+            final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
+            try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+                 SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig)) {
                 final AtLeastOnceProcessor processor = new AtLeastOnceProcessor(
                         readerGroup,
-                        membershipSynchronizerStreamName,
+                        getConfig().getMembershipSynchronizerStreamName(),
                         new UTF8StringSerializer(),
                         ReaderConfig.builder().build(),
                         eventStreamClientFactory,
                         synchronizerClientFactory,
                         Executors.newScheduledThreadPool(1),
-                        heartbeatIntervalMillis,
+                        getConfig().getHeartbeatIntervalMillis(),
                         1000) {
                     @Override
                     public void write(EventRead<String> eventRead) {
