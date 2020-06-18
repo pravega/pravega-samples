@@ -30,7 +30,7 @@ class AppConfiguration {
     }
 
     public String getReaderGroup() {
-        return getEnvVar("PRAVEGA_READER_GROUP", "streamprocessing-rg1");
+        return getEnvVar("PRAVEGA_READER_GROUP", "streamprocessing1a-rg1");
     }
 
     public String getMembershipSynchronizerStreamName() {
@@ -38,7 +38,7 @@ class AppConfiguration {
     }
 
     public String getStream1Name() {
-        return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1");
+        return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1a");
     }
 
     public String getStream2Name() {
@@ -54,7 +54,7 @@ class AppConfiguration {
     }
 
     public int getMinNumSegments() {
-        return Integer.parseInt(getEnvVar("PRAVEGA_MIN_NUM_SEGMENTS", "3"));
+        return Integer.parseInt(getEnvVar("PRAVEGA_MIN_NUM_SEGMENTS", "6"));
     }
 
     public  long getCheckpointPeriodMs() {
