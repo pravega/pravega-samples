@@ -10,6 +10,7 @@
  */
 package io.pravega.example.streamprocessing;
 
+import com.google.gson.reflect.TypeToken;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.SynchronizerClientFactory;
@@ -24,7 +25,6 @@ import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
@@ -58,6 +58,8 @@ public class AtLeastOnceApp {
     }
     
     public void run() throws Exception {
+        final String instanceId = getConfig().getInstanceId();
+        log.info("instanceId={}", instanceId);
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
         try (StreamManager streamManager = StreamManager.create(clientConfig)) {
             streamManager.createScope(getConfig().getScope());
@@ -84,15 +86,16 @@ public class AtLeastOnceApp {
             final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
             try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
                  SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
-                 EventStreamWriter<String> writer = eventStreamClientFactory.createEventWriter(
+                 EventStreamWriter<SampleEvent> writer = eventStreamClientFactory.createEventWriter(
                          getConfig().getStream2Name(),
-                         new UTF8StringSerializer(),
+                         new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                          EventWriterConfig.builder().build())) {
 
-                final AtLeastOnceProcessor processor = new AtLeastOnceProcessor(
+                final AtLeastOnceProcessor<SampleEvent> processor = new AtLeastOnceProcessor<SampleEvent>(
+                        instanceId,
                         readerGroup,
                         getConfig().getMembershipSynchronizerStreamName(),
-                        new UTF8StringSerializer(),
+                        new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                         ReaderConfig.builder().build(),
                         eventStreamClientFactory,
                         synchronizerClientFactory,
@@ -100,8 +103,12 @@ public class AtLeastOnceApp {
                         getConfig().getHeartbeatIntervalMillis(),
                         1000) {
                     @Override
-                    public void process(EventRead<String> eventRead) {
-                        writer.writeEvent("0", "processed," + eventRead.getEvent());
+                    public void process(EventRead<SampleEvent> eventRead) {
+                        final SampleEvent event = eventRead.getEvent();
+                        event.processedBy = instanceId;
+                        event.processedLatencyMs = System.currentTimeMillis() - event.timestamp;
+                        log.info("{}", event);
+                        writer.writeEvent(event.routingKey, event);
                     }
 
                     @Override

@@ -10,6 +10,7 @@
  */
 package io.pravega.example.streamprocessing;
 
+import com.google.gson.reflect.TypeToken;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
@@ -61,31 +62,25 @@ public class EventGenerator {
 
         Random rand = new Random(42);
         try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-             EventStreamWriter<String> writer = clientFactory.createEventWriter(
+             EventStreamWriter<SampleEvent> writer = clientFactory.createEventWriter(
                      getConfig().getStream1Name(),
-                     new UTF8StringSerializer(),
+                     new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                      EventWriterConfig.builder().build())) {
-            long eventCounter = 0;
+            long sequenceNumber = 0;
             long sum = 0;
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
             for (;;) {
-                eventCounter++;
-                long intData = rand.nextInt(100);
-                String routingKey = String.format("%02d", intData);
-                sum += intData;
-                String generatedTimestampStr = dateFormat.format(new Date());
-                String message = String.join(",",
-                        String.format("%06d", eventCounter),
-                        routingKey,
-                        String.format("%02d", intData),
-                        String.format("%08d", sum),
-                        generatedTimestampStr
-                        );
-                log.info("eventCounter={}, sum={}, event={}",
-                        String.format("%06d", eventCounter),
-                        String.format("%08d", sum),
-                        message);
-                final CompletableFuture<Void> writeFuture = writer.writeEvent(routingKey, message);
+                sequenceNumber++;
+                final SampleEvent event = new SampleEvent();
+                event.sequenceNumber = sequenceNumber;
+                event.routingKey = String.format("%3d", rand.nextInt(1000));
+                event.intData = rand.nextInt(1000);
+                sum += event.intData;
+                event.sum = sum;
+                event.timestamp = System.currentTimeMillis();
+                event.timestampStr = dateFormat.format(new Date(event.timestamp));
+                log.info("{}", event);
+                final CompletableFuture<Void> writeFuture = writer.writeEvent(event.routingKey, event);
                 Thread.sleep(1000);
             }
         }

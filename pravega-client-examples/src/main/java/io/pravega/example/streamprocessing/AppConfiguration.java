@@ -11,6 +11,7 @@
 package io.pravega.example.streamprocessing;
 
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * All parameters will come from environment variables.
@@ -29,20 +30,24 @@ class AppConfiguration {
         return getEnvVar("PRAVEGA_SCOPE", "examples");
     }
 
+    public String getInstanceId() {
+        return getEnvVar("INSTANCE_ID", UUID.randomUUID().toString());
+    }
+
+    public String getStream1Name() {
+        return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1c");
+    }
+
+    public String getStream2Name() {
+        return getEnvVar("PRAVEGA_STREAM_2", "streamprocessing2c");
+    }
+
     public String getReaderGroup() {
-        return getEnvVar("PRAVEGA_READER_GROUP", "streamprocessing1a-rg1");
+        return getEnvVar("PRAVEGA_READER_GROUP", "streamprocessing1c-rg1");
     }
 
     public String getMembershipSynchronizerStreamName() {
         return getReaderGroup() + "-membership";
-    }
-
-    public String getStream1Name() {
-        return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1a");
-    }
-
-    public String getStream2Name() {
-        return getEnvVar("PRAVEGA_STREAM_2", "streamprocessing2");
     }
 
     public int getTargetRateEventsPerSec() {

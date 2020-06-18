@@ -10,6 +10,7 @@
  */
 package io.pravega.example.streamprocessing;
 
+import com.google.gson.reflect.TypeToken;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
@@ -70,23 +71,21 @@ public class EventDebugSink {
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI())) {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
             try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-                 EventStreamReader<String> reader = clientFactory.createReader(
+                 EventStreamReader<SampleEvent> reader = clientFactory.createReader(
                          "reader",
                          readerGroup,
-                         new UTF8StringSerializer(),
+                         new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                          ReaderConfig.builder().build())) {
                 long eventCounter = 0;
                 long sum = 0;
                 for (;;) {
-                    EventRead<String> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
+                    EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
                     if (eventRead.getEvent() != null) {
                         eventCounter++;
-                        String[] cols = eventRead.getEvent().split(",");
-                        long intData = Long.parseLong(cols[3]);
-                        sum += intData;
+                        sum += eventRead.getEvent().intData;
                         log.info("eventCounter={}, sum={}, event={}",
-                                String.format("%06d", eventCounter),
-                                String.format("%08d", sum),
+                                String.format("%6d", eventCounter),
+                                String.format("%8d", sum),
                                 eventRead.getEvent());
                     }
                 }

@@ -23,7 +23,6 @@ import io.pravega.client.stream.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -34,12 +33,13 @@ import java.util.concurrent.ScheduledExecutorService;
  * each instance will get a distinct subset of events.
  * Instances can be in different processes.
  */
-abstract public class AtLeastOnceProcessor extends AbstractExecutionThreadService {
+abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadService {
     private static final Logger log = LoggerFactory.getLogger(AtLeastOnceProcessor.class);
 
+    private final String instanceId;
     private final ReaderGroup readerGroup;
     private final String membershipSynchronizerStreamName;
-    private final Serializer<String> serializer;
+    private final Serializer<T> serializer;
     private final ReaderConfig readerConfig;
     private final EventStreamClientFactory eventStreamClientFactory;
     private final SynchronizerClientFactory synchronizerClientFactory;
@@ -48,15 +48,17 @@ abstract public class AtLeastOnceProcessor extends AbstractExecutionThreadServic
     private final long readTimeoutMillis;
 
     public AtLeastOnceProcessor(
+            String instanceId,
             ReaderGroup readerGroup,
             String membershipSynchronizerStreamName,
-            Serializer<String> serializer,
+            Serializer<T> serializer,
             ReaderConfig readerConfig,
             EventStreamClientFactory eventStreamClientFactory,
             SynchronizerClientFactory synchronizerClientFactory,
             ScheduledExecutorService executor,
             long heartbeatIntervalMillis,
             long readTimeoutMillis) {
+        this.instanceId = instanceId;
         this.readerGroup = readerGroup;
         this.membershipSynchronizerStreamName = membershipSynchronizerStreamName;
         this.serializer = serializer;
@@ -77,22 +79,21 @@ abstract public class AtLeastOnceProcessor extends AbstractExecutionThreadServic
      */
     @Override
     protected void run() throws Exception {
-        final String readerId = UUID.randomUUID().toString();
         try (final ReaderGroupPruner pruner = ReaderGroupPruner.create(
                 readerGroup,
                 membershipSynchronizerStreamName,
-                readerId,
+                instanceId,
                 synchronizerClientFactory,
                 executor,
                 heartbeatIntervalMillis)) {
-            try (final EventStreamReader<String> reader = eventStreamClientFactory.createReader(
-                    readerId,
+            try (final EventStreamReader<T> reader = eventStreamClientFactory.createReader(
+                    instanceId,
                     readerGroup.getGroupName(),
                     serializer,
                     readerConfig)) {
                 while (isRunning()) {
-                    final EventRead<String> eventRead = reader.readNextEvent(readTimeoutMillis);
-                    log.info("call: eventRead={}", eventRead);
+                    final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
+                    log.info("eventRead={}", eventRead);
                     if (eventRead.isCheckpoint()) {
                         flush();
                     } else if (eventRead.getEvent() != null) {
@@ -116,7 +117,7 @@ abstract public class AtLeastOnceProcessor extends AbstractExecutionThreadServic
      *
      * @param eventRead The event read.
      */
-    abstract public void process(EventRead<String> eventRead);
+    abstract public void process(EventRead<T> eventRead);
 
     /**
      * If {@link #process} did not completely process prior events, it must do so before returning.

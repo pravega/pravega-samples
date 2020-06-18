@@ -60,6 +60,9 @@ public class MembershipSynchronizer extends AbstractService {
      */
     private static final int DEATH_THRESHOLD = 10;
 
+    /**
+     * Unique identifier for this member.
+     */
     private final String instanceId;
 
     /**
