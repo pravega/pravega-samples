@@ -16,16 +16,22 @@ These examples include:
   This application generates new events every 1 second
   and writes them to a Pravega stream (referred to as stream1).
 
-- (OBSOLETE) [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java):
-  This application continuously reads events from stream1, performs a stateless computation
-  to generate output events, and writes the output event to another
-  Pravega stream (referred to as stream2).
-  It uses the exactly-once algorithms described below.
+- [AtLeastOnceApp](AtLeastOnceApp.java):
+  This application demonstrates reading events from a Pravega stream (stream1), processing each event,
+  and writing each output event to another Pravega stream (stream2).
+  It guarantees that each event is processed at least once, using the algorithms described below.
+  If multiple instances of this application are executed using the same readerGroupName parameter,
+  each instance will get a distinct subset of events, providing load balancing and redundancy.
+  The user-defined processing function must be stateless.
+  
+  There is no direct dependency on other systems, except for Pravega.
+  In particular, this application does not *directly* use a distributed file system, nor ZooKeeper.
+  Coordination between processes occurs only through Pravega streams such as
+  Reader Groups and State Synchronizers.
 
 - [EventDebugSink](EventDebugSink.java):
   This application reads events from stream2 and displays them
   on the console.
-
 
 # How to Run
 
@@ -36,8 +42,8 @@ These examples include:
   ```
 
 -  Start the event generator.
-   ```
-   cd pravega-samples
+   ```shell script
+   cd ~/pravega-samples
    ./gradlew pravega-client-examples:startEventGenerator
    ```
 
@@ -45,38 +51,36 @@ These examples include:
    You can either set them in your shell (`export PRAVEGA_SCOPE=examples`) or use the below syntax.
 
    If you are using a non-local Pravega instance, specify the controller as follows:
-   ```
+   ```shell script
    PRAVEGA_CONTROLLER=tcp://pravega.example.com:9090 ./gradlew pravega-client-examples:startEventGenerator
    ```
 
    Multiple parameters can be specified as follows.
-   ```
+   ```shell script
    PRAVEGA_SCOPE=examples PRAVEGA_CONTROLLER=tcp://localhost:9090 ./gradlew pravega-client-examples:startEventGenerator
    ```
 
    See [Parameters.java](Parameters.java) for available appConfiguration.
 
-- In another window, start the stream processor:
-  ```
-  ./gradlew pravega-client-examples:startExactlyOnceMultithreadedProcessor
+- In another window, start one or more instances of the stream processor.
+  The `runAtLeastOnceApp.sh` can be used to run multiple instances concurrently.
+  ```shell script
+  cd ~/pravega-samples/pravega-client-examples
+  ./runAtLeastOnceApp.sh 2
   ```
 
 - In another window, start the event debug sink:
-  ```
+  ```shell script
   ./gradlew pravega-client-examples:startEventDebugSink
   ```
 
-- (OBSOLETE) Note: The [ExactlyOnceMultithreadedProcessor](ExactlyOnceMultithreadedProcessor.java)
-  will automatically restart from the latest checkpoint.
-  However, if Pravega streams are truncated or deleted, or checkpoint files in
-  /tmp/checkpoints are deleted or otherwise bad, you may need to start over from
-  a clean system. To do so, follow these steps:
-    - Stop the event generator, stream processor, and event debug sink.
-    - Delete the contents of /tmp/checkpoints.
-    - Use a new scope (PRAVEGA_SCOPE) or streams (PRAVEGA_STREAM_1 and PRAVEGA_STREAM_2).
-
-
 # (OBSOLETE) Achieving At-Least-Once Semantics
+
+Pravega has a sophisticated concept called a 
+[Reader Group](http://pravega.io/docs/latest/reader-group-design/).
+
+The complete state of a Reader Group is maintained by each reader.
+Each reader reads updates from the Reader Group stream. 
 
 The current position in a Pravega stream is defined by a stream cut.
 A stream cut is essentially a mapping from segment numbers to byte offsets
