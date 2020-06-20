@@ -20,16 +20,12 @@ archivesBaseName = 'pravega-client-examples'
 resources
 
 ext {
-//    junitJupiterVersion = '5.3.1'
     junitVersion = '4.11'
     commonsCLIVersion = '1.4'
 }
 
 dependencies {
     testCompile "junit:junit:${junitVersion}"
-//    testCompile "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
-    testCompile "io.pravega:pravega-standalone:${pravegaVersion}"
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
 
     compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
@@ -199,19 +195,6 @@ task startEventGenerator(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
-task scriptExactlyOnceMultithreadedProcessor(type: CreateStartScripts) {
-    outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.example.streamprocessing.ExactlyOnceMultithreadedProcessor'
-    applicationName = 'exactlyOnceMultithreadedProcessor'
-    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
-    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
-}
-
-task startExactlyOnceMultithreadedProcessor(type: JavaExec) {
-    main = "io.pravega.example.streamprocessing.ExactlyOnceMultithreadedProcessor"
-    classpath = sourceSets.main.runtimeClasspath
-}
-
 task scriptAtLeastOnceApp(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.streamprocessing.AtLeastOnceApp'
@@ -253,7 +236,9 @@ distributions {
                 from project.scriptSecureWriter
                 from project.scriptSecureReader
                 from project.scriptSecureBatchReader
+                from project.scriptEventGenerator
                 from project.scriptAtLeastOnceApp
+                from project.scriptEventDebugSink
             }
             into('lib') {
                 from(jar)
