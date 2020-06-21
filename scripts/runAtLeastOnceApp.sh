@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -ex
+ROOT_DIR=$(dirname $0)/..
+cd ${ROOT_DIR}
 ./gradlew pravega-client-examples:build
 cd pravega-client-examples/build/distributions
 tar -xf pravega-client-examples-0.7.0.tar
