@@ -159,7 +159,7 @@ public class MembershipSynchronizer extends AbstractService {
             try {
                 stateSync.fetchUpdates();
                 notifyListener();
-                log.info("run: BEGIN: vectorTime={}, isOverUnconditionalThreshold={}, liveInstances={}",
+                log.debug("run: BEGIN: vectorTime={}, isOverUnconditionalThreshold={}, liveInstances={}",
                         stateSync.getState().getVectorTime(),
                         stateSync.getState().isOverUnconditionalThreshold(instanceId),
                         stateSync.getState().liveInstances);
@@ -178,7 +178,7 @@ public class MembershipSynchronizer extends AbstractService {
                     stateSync.fetchUpdates();
                 }
                 notifyListener();
-                log.info("run: END: vectorTime={}, liveInstances={}",
+                log.debug("run: END: vectorTime={}, liveInstances={}",
                         stateSync.getState().getVectorTime(),
                         stateSync.getState().liveInstances);
             } catch (Exception e) {

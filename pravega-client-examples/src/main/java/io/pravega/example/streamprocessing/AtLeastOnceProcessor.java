@@ -85,28 +85,28 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
                 instanceId,
                 synchronizerClientFactory,
                 executor,
-                heartbeatIntervalMillis)) {
-            try (final EventStreamReader<T> reader = eventStreamClientFactory.createReader(
+                heartbeatIntervalMillis);
+             final EventStreamReader<T> reader = eventStreamClientFactory.createReader(
                     instanceId,
                     readerGroup.getGroupName(),
                     serializer,
                     readerConfig)) {
-                while (isRunning()) {
-                    final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
-                    log.info("eventRead={}", eventRead);
-                    if (eventRead.isCheckpoint()) {
-                        flush();
-                    } else if (eventRead.getEvent() != null) {
-                        process(eventRead);
-                    }
+
+            while (isRunning()) {
+                final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
+                log.info("eventRead={}", eventRead);
+                if (eventRead.isCheckpoint()) {
+                    flush();
+                } else if (eventRead.getEvent() != null) {
+                    process(eventRead);
                 }
-                // Gracefully stop.
-                // Call readNextEvent to indicate that the previous event was processed.
-                // When the reader is closed, it will call readerOffline with the proper position.
-                log.info("Stopping");
-                reader.readNextEvent(0);
-                flush();
             }
+            // Gracefully stop.
+            // Call readNextEvent to indicate that the previous event was processed.
+            // When the reader is closed, it will call readerOffline with the proper position.
+            log.info("Stopping");
+            reader.readNextEvent(0);
+            flush();
         }
         log.info("Stopped");
     }
@@ -114,6 +114,7 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
     /**
      * Process an event that was read.
      * Processing can be performed asynchronously after this method returns.
+     * This method must be stateless.
      *
      * @param eventRead The event read.
      */
