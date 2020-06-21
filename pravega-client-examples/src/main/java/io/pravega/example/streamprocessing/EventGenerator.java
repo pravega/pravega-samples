@@ -18,7 +18,7 @@ import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.UTF8StringSerializer;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
@@ -30,12 +30,12 @@ import java.util.concurrent.CompletableFuture;
  * A simple example app to write messages to a Pravega stream.
  */
 public class EventGenerator {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(EventGenerator.class);
+    private static final Logger log = LoggerFactory.getLogger(EventGenerator.class);
 
     private final AppConfiguration config;
 
     public static void main(String[] args) throws Exception {
-        EventGenerator app = new EventGenerator(new AppConfiguration(args));
+        final EventGenerator app = new EventGenerator(new AppConfiguration(args));
         app.run();
     }
 
@@ -58,6 +58,7 @@ public class EventGenerator {
                             getConfig().getMinNumSegments()))
                     .build();
             streamManager.createStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
+            streamManager.updateStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
         }
 
         Random rand = new Random(42);
@@ -81,6 +82,8 @@ public class EventGenerator {
                 event.timestampStr = dateFormat.format(new Date(event.timestamp));
                 log.info("{}", event);
                 final CompletableFuture<Void> writeFuture = writer.writeEvent(event.routingKey, event);
+                final long ackedSequenceNumber = sequenceNumber;
+                writeFuture.thenRun(() -> log.debug("Acknowledged: sequenceNumber={}", ackedSequenceNumber));
                 Thread.sleep(1000);
             }
         }
