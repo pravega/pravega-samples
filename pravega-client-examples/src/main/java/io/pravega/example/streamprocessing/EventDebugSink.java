@@ -22,7 +22,7 @@ import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.UTF8StringSerializer;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
@@ -31,7 +31,7 @@ import java.util.UUID;
  * A simple example that continuously shows the events in a stream.
  */
 public class EventDebugSink {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(EventDebugSink.class);
+    private static final Logger log = LoggerFactory.getLogger(EventDebugSink.class);
 
     private static final int READER_TIMEOUT_MS = 2000;
 

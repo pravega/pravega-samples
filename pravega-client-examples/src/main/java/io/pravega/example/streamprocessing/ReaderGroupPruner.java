@@ -33,7 +33,9 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
 
     private ScheduledFuture<?> task;
 
-    public static ReaderGroupPruner create(ReaderGroup readerGroup, String membershipSynchronizerStreamName, String readerId, SynchronizerClientFactory clientFactory, ScheduledExecutorService executor, long heartbeatIntervalMillis) {
+    public static ReaderGroupPruner create(ReaderGroup readerGroup, String membershipSynchronizerStreamName,
+                                           String readerId, SynchronizerClientFactory clientFactory,
+                                           ScheduledExecutorService executor, long heartbeatIntervalMillis) {
         final ReaderGroupPruner pruner = new ReaderGroupPruner(readerGroup, membershipSynchronizerStreamName, readerId, clientFactory,
                 executor, heartbeatIntervalMillis);
         pruner.startAsync();
@@ -41,7 +43,8 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
         return pruner;
     }
 
-    public ReaderGroupPruner(ReaderGroup readerGroup, String membershipSynchronizerStreamName, String readerId, SynchronizerClientFactory clientFactory,
+    public ReaderGroupPruner(ReaderGroup readerGroup, String membershipSynchronizerStreamName, String readerId,
+                             SynchronizerClientFactory clientFactory,
                              ScheduledExecutorService executor, long heartbeatIntervalMillis) {
         this.readerGroup = readerGroup;
         this.membershipSynchronizer = new MembershipSynchronizer(
@@ -61,8 +64,8 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
             try {
                 Set<String> rgMembers = readerGroup.getOnlineReaders();
                 Set<String> msMembers = membershipSynchronizer.getCurrentMembers();
-                log.info("rgMembers={}", rgMembers);
-                log.info("msMembers={}", msMembers);
+                log.debug("rgMembers={}", rgMembers);
+                log.debug("msMembers={}", msMembers);
                 rgMembers.removeAll(msMembers);
                 rgMembers.forEach(readerId -> {
                     log.info("Removing dead reader {} from reader group {}", readerId, readerGroup.getGroupName());

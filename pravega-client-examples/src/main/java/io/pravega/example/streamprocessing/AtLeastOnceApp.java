@@ -25,6 +25,7 @@ import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
@@ -40,12 +41,12 @@ import java.util.concurrent.Executors;
  * to view the output events.
  */
 public class AtLeastOnceApp {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(AtLeastOnceApp.class);
+    private static final Logger log = LoggerFactory.getLogger(AtLeastOnceApp.class);
     
     private final AppConfiguration config;
 
     public static void main(String[] args) throws Exception {
-        AtLeastOnceApp app = new AtLeastOnceApp(new AppConfiguration(args));
+        final AtLeastOnceApp app = new AtLeastOnceApp(new AppConfiguration(args));
         app.run();
     }
 
@@ -58,9 +59,15 @@ public class AtLeastOnceApp {
     }
     
     public void run() throws Exception {
+        // Get the provided instanceId that uniquely identifes this instances of AtLeastOnceApp.
+        // It will be randomly generated if not provided by the user.
         final String instanceId = getConfig().getInstanceId();
         log.info("instanceId={}", instanceId);
+
+        // Define configuration to connect to Pravega.
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
+
+        // Create the input and output streams (ignored if they already exist).
         try (StreamManager streamManager = StreamManager.create(clientConfig)) {
             streamManager.createScope(getConfig().getScope());
             final StreamConfiguration streamConfig = StreamConfiguration.builder()
@@ -77,15 +84,18 @@ public class AtLeastOnceApp {
                     getConfig().getMembershipSynchronizerStreamName(),
                     StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
         }
+
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(getConfig().getScope(), getConfig().getStream1Name()))
                 .automaticCheckpointIntervalMillis(getConfig().getCheckpointPeriodMs())
                 .build();
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), clientConfig)) {
+            // Create the Reader Group (ignored if it already exists)
             readerGroupManager.createReaderGroup(getConfig().getReaderGroup(), readerGroupConfig);
             final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
             try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
                  SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
+                 // Create a Pravega stream writer that we will send our processed output to.
                  EventStreamWriter<SampleEvent> writer = eventStreamClientFactory.createEventWriter(
                          getConfig().getStream2Name(),
                          new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
@@ -102,6 +112,17 @@ public class AtLeastOnceApp {
                         Executors.newScheduledThreadPool(1),
                         getConfig().getHeartbeatIntervalMillis(),
                         1000) {
+
+                    /**
+                     * Process an event that was read.
+                     * Processing can be performed asynchronously after this method returns.
+                     * This method must be stateless.
+                     *
+                     * For this demonstration, we output the same event that was read but with
+                     * the processedBy field set.
+                     *
+                     * @param eventRead The event read.
+                     */
                     @Override
                     public void process(EventRead<SampleEvent> eventRead) {
                         final SampleEvent event = eventRead.getEvent();
@@ -111,6 +132,10 @@ public class AtLeastOnceApp {
                         writer.writeEvent(event.routingKey, event);
                     }
 
+                    /**
+                     * If {@link #process} did not completely process prior events, it must do so before returning.
+                     * If writing to a Pravega stream, this should call {@link EventStreamWriter#flush}.
+                     */
                     @Override
                     public void flush() {
                         writer.flush();
@@ -118,6 +143,8 @@ public class AtLeastOnceApp {
                 };
 
                 processor.startAsync();
+
+                // Add shutdown hook for graceful shutdown.
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     log.info("Running shutdown hook.");
                     processor.stopAsync();
@@ -125,6 +152,7 @@ public class AtLeastOnceApp {
                     processor.awaitTerminated();
                     log.info("Processor terminated.");
                 }));
+
                 processor.awaitTerminated();
             }
         }
