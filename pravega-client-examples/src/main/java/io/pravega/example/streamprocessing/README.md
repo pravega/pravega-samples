@@ -143,7 +143,7 @@ maintain the set of workers that are providing heart beats.
 Each worker sends a heart beat by adding an update to the `MembershipSynchronizer`'s State Synchronizer.
 Workers that fail to provide a heart beat after 10 intervals will be removed from the `MembershipSynchronizer`.
 Finally, any workers in the Reader Group that are not in the `MembershipSynchronizer` are
-considered dead and `readerOffline(readerId, null)` will be called by one or more instance of `ReaderGroupPruner`.
+considered dead and `readerOffline(readerId, null)` will be called by one or more instances of `ReaderGroupPruner`.
 
 ## Stream Life Cycle
 
