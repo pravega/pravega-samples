@@ -11,19 +11,19 @@
 package io.pravega.example.streamprocessing;
 
 public class TestEvent {
+    public int key;
     public long sequenceNumber;
-    public String routingKey;
 
-    public TestEvent(long sequenceNumber, String routingKey) {
+    public TestEvent(int key, long sequenceNumber) {
+        this.key = key;
         this.sequenceNumber = sequenceNumber;
-        this.routingKey = routingKey;
     }
 
     @Override
     public String toString() {
         return "TestEvent{" +
-                "sequenceNumber=" + String.format("%6d", sequenceNumber) +
-                ", routingKey=" + routingKey +
+                "key=" + key +
+                ", sequenceNumber=" + sequenceNumber +
                 '}';
     }
 }

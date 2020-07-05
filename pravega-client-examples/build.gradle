@@ -27,6 +27,7 @@ ext {
 dependencies {
     testCompile "junit:junit:${junitVersion}"
     testCompile "io.pravega:pravega-standalone:${pravegaVersion}"
+    testCompile "io.pravega:pravega-test-testcommon:${pravegaVersion}"
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
 
     compile "io.pravega:pravega-client:${pravegaVersion}",

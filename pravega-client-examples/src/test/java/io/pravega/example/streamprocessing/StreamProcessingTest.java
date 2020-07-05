@@ -39,12 +39,6 @@ public class StreamProcessingTest {
         SETUP_UTILS.get().stopAllServices();
     }
 
-//    public static void runWorker(final ClientConfig clientConfig,
-//                                 final String inputStreamName,
-//                                 final String readerGroup) throws Exception {
-//
-//    }
-
     @Test
     public void basicTest() throws Exception {
         final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
@@ -78,59 +72,28 @@ public class StreamProcessingTest {
                 readerId,
                 readerGroup,
                 new JSONSerializer<>(new TypeToken<TestEvent>(){}.getType()),
-                ReaderConfig.builder().build());
+                readerConfig);
+        EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(reader, 30000);
 
         // Create streams with specified segments.
         // Create event generator instance.
-        TestEventGenerator generator = new TestEventGenerator(12);
+        TestEventGenerator generator = new TestEventGenerator(6);
         // Create event validator instance.
         TestEventValidator validator = new TestEventValidator(generator);
         // Create processor group instance.
         ProcessorGroup processorGroup;
         // Write 10 historical events.
-        Iterators.limit(generator, 10).forEachRemaining(event -> writer.writeEvent(event.routingKey, event));
+        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
         // Start processors.
 //        processorGroup.start(new int[]{0, 1});
         // Read events from output stream. Return when complete or throw exception if out of order or timeout.
-        EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(reader, 30000);
         validator.validate(readerIterator);
         // Kill some processors. Start some new ones.
 //        processorGroup.gracefulStop(new int[]{0, 1});
-        // Write events.
-//        generator.write(10);
-        // Read events.
-//        validator.validate();
-
-//        try (StreamManager streamManager = StreamManager.create(clientConfig)) {
-//            streamManager.createScope(scope);
-//
-//            StreamConfiguration streamConfig = StreamConfiguration.builder()
-//                    .scalingPolicy(ScalingPolicy.fixed(3))
-//                    .build();
-//            streamManager.createStream(scope, inputStreamName, streamConfig);
-//
-//            try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig)) {
-//                readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-//            }
-//            try (final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
-//                 final EventStreamWriter<String> inputWriter = clientFactory.createEventWriter( inputStreamName, serializer, eventWriterConfig)) {
-//
-//                inputWriter.writeEvent("CLAUDIO1");
-//
-//                AtLeastOnceProcessor processor = new AtLeastOnceProcessor() {
-//                    @Override
-//                    public EventStreamReader<String> createReader() {
-//                        return clientFactory.createReader(readerId, readerGroup, serializer, readerConfig);
-//                    }
-//
-//                    @Override
-//                    public void write(EventRead<String> eventRead) {
-//                    }
-//                };
-//                processor.call();
-//                // TODO: Wait for correct result and then terminate.
-//            }
-//        }
+        Iterators.limit(generator, 3).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+        validator.validate(readerIterator);
+        Iterators.limit(generator, 15).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+        validator.validate(readerIterator);
         log.info("SUCCESS");
     }
 }
