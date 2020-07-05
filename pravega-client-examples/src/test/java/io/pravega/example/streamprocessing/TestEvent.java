@@ -13,10 +13,12 @@ package io.pravega.example.streamprocessing;
 public class TestEvent {
     public int key;
     public long sequenceNumber;
+    public int processedByInstanceId;
 
     public TestEvent(int key, long sequenceNumber) {
         this.key = key;
         this.sequenceNumber = sequenceNumber;
+        processedByInstanceId = -1;
     }
 
     @Override
@@ -24,6 +26,7 @@ public class TestEvent {
         return "TestEvent{" +
                 "key=" + key +
                 ", sequenceNumber=" + sequenceNumber +
+                ", processedByInstanceId=" + processedByInstanceId +
                 '}';
     }
 }
