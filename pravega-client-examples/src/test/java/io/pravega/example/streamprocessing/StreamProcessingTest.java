@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -105,7 +106,9 @@ public class StreamProcessingTest {
         final String membershipSynchronizerStreamName = "ms-" + UUID.randomUUID().toString();
         final String inputStreamReaderGroupName = "rg" + UUID.randomUUID().toString().replace("-", "");
 
-        // Start processors. This will also create the necessary streams.
+        @Cleanup
+        StreamManager streamManager = StreamManager.create(clientConfig);
+
         final WorkerProcessConfig workerProcessConfig = WorkerProcessConfig.builder()
                 .scope(scope)
                 .clientConfig(clientConfig)
@@ -115,8 +118,11 @@ public class StreamProcessingTest {
                 .membershipSynchronizerStreamName(membershipSynchronizerStreamName)
                 .numSegments(6)
                 .build();
+        @Cleanup
         final WorkerProcessGroup workerProcessGroup = WorkerProcessGroup.builder().config(workerProcessConfig).build();
-        workerProcessGroup.start(new int[]{0});
+
+        // Start initial set of processors. This will also create the necessary streams.
+        workerProcessGroup.start(0, 1, 2);
 
         // Prepare generator writer that will write to the stream read by the processor.
         @Cleanup
@@ -144,26 +150,42 @@ public class StreamProcessingTest {
                 validationReaderConfig);
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, 30000);
 
-        // Create streams with specified segments.
-        // Create event generator instance.
         final TestEventGenerator generator = new TestEventGenerator(6);
-        // Create event validator instance.
         final TestEventValidator validator = new TestEventValidator(generator);
-        // Write 10 historical events.
-        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
 
+        // Write events to input stream.
+        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
         // Read events from output stream. Return when complete or throw exception if out of order or timeout.
         validator.validate(readerIterator);
-        // Kill some processors. Start some new ones.
-//        processorGroup.gracefulStop(new int[]{0, 1});
+
+        // Write and read additional events.
         Iterators.limit(generator, 3).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
         validator.validate(readerIterator);
         Iterators.limit(generator, 15).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
         validator.validate(readerIterator);
 
+        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
+
+        workerProcessGroup.start(3);
+        workerProcessGroup.stop(0, 1, 2);
+
+        Iterators.limit(generator, 10).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+        validator.validate(readerIterator);
+
+        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
+
+        // Cleanup
+        log.info("Cleanup");
+        workerProcessGroup.close();
         validationReader.close();
+        readerGroupManager.deleteReaderGroup(inputStreamReaderGroupName);
         readerGroupManager.deleteReaderGroup(validationReaderGroupName);
-        // TODO: Delete streams.
+        streamManager.sealStream(scope, inputStreamName);
+        streamManager.sealStream(scope, outputStreamName);
+        streamManager.sealStream(scope, membershipSynchronizerStreamName);
+        streamManager.deleteStream(scope, inputStreamName);
+        streamManager.deleteStream(scope, outputStreamName);
+        streamManager.deleteStream(scope, membershipSynchronizerStreamName);
         log.info("SUCCESS");
     }
 }

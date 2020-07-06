@@ -12,11 +12,13 @@ public class TestEventValidator {
 
     private final TestEventGenerator generator;
     // map from routing key to sequence number
-    private final Map<Integer, Long> receivedSequenceNumbers;
+    private final Map<Integer, Long> receivedSequenceNumbers = new HashMap<>();
+
+    // map from instanceId to count of events
+    private final Map<Integer, Long> eventCountByInstanceId = new HashMap<>();
 
     public TestEventValidator(TestEventGenerator generator) {
         this.generator = generator;
-        receivedSequenceNumbers = new HashMap<>();
     }
 
     public void validate(Iterator<TestEvent> events) {
@@ -41,6 +43,7 @@ public class TestEventValidator {
                 throw new IllegalStateException("Gap");
             } else {
                 receivedSequenceNumbers.put(event.key, event.sequenceNumber);
+                eventCountByInstanceId.merge(event.processedByInstanceId, 1L, Long::sum);   // increment counter
                 if (pendingSequenceNumbers.getOrDefault(event.key, -1L) <= event.sequenceNumber) {
                     pendingSequenceNumbers.remove(event.key);
                     if (pendingSequenceNumbers.size() == 0) {
@@ -52,5 +55,9 @@ public class TestEventValidator {
             }
         }
         throw new IllegalStateException("No more events");
+    }
+
+    public Map<Integer, Long> getEventCountByInstanceId() {
+        return eventCountByInstanceId;
     }
 }

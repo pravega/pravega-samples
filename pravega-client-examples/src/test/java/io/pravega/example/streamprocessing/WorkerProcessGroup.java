@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 @Builder
-public class WorkerProcessGroup {
+public class WorkerProcessGroup implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(WorkerProcessGroup.class);
 
     private final WorkerProcessConfig config;
@@ -18,8 +18,8 @@ public class WorkerProcessGroup {
     /**
      * Streams are guaranteed to exist after calling this method.
      */
-    public void start(int[] instanceIds) {
-        IntStream.of(instanceIds).parallel().forEach(instanceId -> {
+    public void start(int... instanceIds) {
+        IntStream.of(instanceIds).forEach(instanceId -> {
             log.info("start: instanceId={}", instanceId);
             workers.putIfAbsent(instanceId, WorkerProcess.builder().config(config).instanceId(instanceId).build());
         });
@@ -30,12 +30,23 @@ public class WorkerProcessGroup {
         });
     }
 
-    public void stop(int[] instanceIds) {
-        IntStream.of(instanceIds).parallel().forEach(instanceId -> {
+    public void stop(int... instanceIds) {
+        IntStream.of(instanceIds).forEach(instanceId -> {
             workers.get(instanceId).stopAsync();
         });
-        IntStream.of(instanceIds).parallel().forEach(instanceId -> {
+        IntStream.of(instanceIds).forEach(instanceId -> {
             workers.get(instanceId).awaitTerminated();
+            workers.remove(instanceId);
         });
+    }
+
+    public void stopAll() {
+        log.info("stopAll: workers={}", workers);
+        stop(workers.keySet().stream().mapToInt(i -> i).toArray());
+    }
+
+    @Override
+    public void close() throws Exception {
+        stopAll();
     }
 }

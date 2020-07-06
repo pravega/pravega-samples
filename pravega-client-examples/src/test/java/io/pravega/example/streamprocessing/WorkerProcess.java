@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Builder
 public class WorkerProcess extends AbstractExecutionThreadService {
@@ -28,6 +29,8 @@ public class WorkerProcess extends AbstractExecutionThreadService {
 
     private final WorkerProcessConfig config;
     private final int instanceId;
+
+    private final AtomicReference<AtLeastOnceProcessor<TestEvent>> processor = new AtomicReference<>();
 
     // Create the input, output, and state sychronizer streams (ignored if they already exist).
     public void init() {
@@ -68,7 +71,7 @@ public class WorkerProcess extends AbstractExecutionThreadService {
                          serializer,
                          EventWriterConfig.builder().build())) {
 
-                final AtLeastOnceProcessor<TestEvent> processor = new AtLeastOnceProcessor<TestEvent>(
+                final AtLeastOnceProcessor<TestEvent> proc = new AtLeastOnceProcessor<TestEvent>(
                         Integer.toString(instanceId),
                         readerGroup,
                         config.membershipSynchronizerStreamName,
@@ -92,9 +95,20 @@ public class WorkerProcess extends AbstractExecutionThreadService {
                         writer.flush();
                     }
                 };
-                processor.startAsync();
-                processor.awaitTerminated();
+                processor.set(proc);
+                proc.startAsync();
+                proc.awaitTerminated();
             }
         }
+    }
+
+    @Override
+    protected void triggerShutdown() {
+        log.info("triggerShutdown: BEGIN");
+        final AtLeastOnceProcessor<TestEvent> proc = processor.getAndSet(null);
+        if (proc != null) {
+            proc.stopAsync();
+        }
+        log.info("triggerShutdown: END");
     }
 }
