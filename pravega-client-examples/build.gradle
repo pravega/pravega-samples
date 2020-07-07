@@ -150,6 +150,14 @@ task scriptSecureReader(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+task scriptSecureBatchReader(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.secure.SecureBatchReader'
+    applicationName = 'secureBatchReader'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
 task startSecureWriter(type: JavaExec) {
     main = "io.pravega.example.secure.SecureWriter"
     classpath = sourceSets.main.runtimeClasspath
@@ -165,6 +173,15 @@ task startSecureReader(type: JavaExec) {
         args System.getProperty("exec.args").split()
     }
 }
+
+task startSecureBatchReader(type: JavaExec) {
+    main = "io.pravega.example.secure.SecureBatchReader"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
 
 distributions {
     main {

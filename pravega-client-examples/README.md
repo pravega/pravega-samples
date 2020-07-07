@@ -141,7 +141,8 @@ $ bin/streamCutsCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090
 ```
 
 ## `secure`
-This example includes two applications `SecureReader` and `SecureWriter`. These applications illustrate
+This example includes three applications `SecureReader`, `SecureWriter` and a `SecureBatchReader` 
+which instantiate the corresponding Pravega clients on the data path. These applications illustrate
 how to setup clients connecting to a security-enabled Pravega cluster. Specifically, they show how to:
 * Enable SSL/TLS (HTTPS) communications with a Pravega cluster for data-in-transit encryption and server authentication.
 * Pass credentials to a Pravega cluster for client authentication and authorization.
@@ -152,7 +153,7 @@ First, ensure that the Pravega cluster that the applications are going to work w
 Auth (authentication and authorization) enabled. See Pravega documentation for how to enable TLS and Auth.
 
 Now, you might want to run `SecureWriter` in one window and `SecureReader` in another window.
-
+and finally `SecureBatchReader`
 To run `SecureWriter`, you can execute the following command:
 
 ```
@@ -184,6 +185,14 @@ To run `SecureReader`, you can execute:
 
 ```
 $ bin/secureReader [-scope "myScope"] [-stream "myStream"] [-uri "tls://localhost:9090"] \
+              [-truststore "conf/cert.pem"] [-validatehost] \
+              [-username "admin"] [-password "1111_aaaa"]
+```
+
+To run `SecureBatchReader`, you can execute:
+
+```
+$ bin/secureBatchReader [-scope "myScope"] [-stream "myStream"] [-uri "tls://localhost:9090"] \
               [-truststore "conf/cert.pem"] [-validatehost] \
               [-username "admin"] [-password "1111_aaaa"]
 ```
