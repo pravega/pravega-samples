@@ -197,6 +197,7 @@ distributions {
                 from project.scriptStreamCutsCli
                 from project.scriptSecureWriter
                 from project.scriptSecureReader
+                from project.scriptSecureBatchReader
             }
             into('lib') {
                 from(jar)
