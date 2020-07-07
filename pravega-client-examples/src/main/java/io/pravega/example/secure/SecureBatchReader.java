@@ -278,9 +278,12 @@ public class SecureBatchReader {
 
     private void logEventCounts() {
         try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, clientConfig)) {
+             System.out.println("Done creating batchClient for " + scope + "/" + stream);
              ArrayList<SegmentRange> ranges = Lists.newArrayList(batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator());
-              readFromRanges(batchClient, ranges);
+             readFromRanges(batchClient, ranges);
+             System.out.println("Done reading ranges of size: " + String.valueOf(ranges.size()));
         } catch (Exception e) {
+            e.printStackTrace();
             LOG.error("Exception:", e);
         }
     }
@@ -295,12 +298,11 @@ public class SecureBatchReader {
                         .thenApplyAsync(segmentIterator -> {
                             int numEvents = 0;
                             try {
-                                numEvents = Lists.newArrayList(segmentIterator).size();
                                 String id = String.valueOf(Thread.currentThread().getId());
-                                LOG.info("Thread " + id + " read " + String.valueOf(numEvents) + " events.");
                                 while (segmentIterator.hasNext()) {
                                     String event = segmentIterator.next();
-                                    System.out.println("Read event : " + event);
+                                    System.out.println("Done reading event by thread " + id + ": " + event);
+                                    numEvents++;
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -310,6 +312,8 @@ public class SecureBatchReader {
                             return numEvents;
                         }))
                 .collect(Collectors.toList());
-        return eventCounts.stream().map(CompletableFuture::join).mapToInt(Integer::intValue).sum();
+        int count = eventCounts.stream().map(CompletableFuture::join).mapToInt(Integer::intValue).sum();
+        System.out.println("Done reading " + String.valueOf(count) + " events");
+        return count;
     }
 }
