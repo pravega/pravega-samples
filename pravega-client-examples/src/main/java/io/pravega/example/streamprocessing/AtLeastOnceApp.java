@@ -102,17 +102,20 @@ public class AtLeastOnceApp {
                          EventWriterConfig.builder().build())) {
 
                 final AtLeastOnceProcessor<SampleEvent> processor = new AtLeastOnceProcessor<SampleEvent>(
-                        instanceId,
-                        readerGroup,
-                        getConfig().getMembershipSynchronizerStreamName(),
-                        new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
-                        ReaderConfig.builder().build(),
-                        eventStreamClientFactory,
-                        synchronizerClientFactory,
-                        Executors.newScheduledThreadPool(1),
-                        getConfig().getHeartbeatIntervalMillis(),
-                        1000) {
-
+                        () -> ReaderGroupPruner.create(
+                                readerGroup,
+                                getConfig().getMembershipSynchronizerStreamName(),
+                                instanceId,
+                                synchronizerClientFactory,
+                                Executors.newScheduledThreadPool(1),
+                                getConfig().getHeartbeatIntervalMillis()),
+                        () -> eventStreamClientFactory.<SampleEvent>createReader(
+                                instanceId,
+                                readerGroup.getGroupName(),
+                                new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
+                                ReaderConfig.builder().build()),
+                        1000)
+                {
                     /**
                      * Process an event that was read.
                      * Processing can be performed asynchronously after this method returns.

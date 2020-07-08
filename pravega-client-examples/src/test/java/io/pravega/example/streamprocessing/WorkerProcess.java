@@ -6,7 +6,6 @@ import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ReaderConfig;
@@ -16,6 +15,7 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.common.util.ReusableLatch;
 import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +29,11 @@ public class WorkerProcess extends AbstractExecutionThreadService {
 
     private final WorkerProcessConfig config;
     private final int instanceId;
+    private final ReusableLatch latch = new ReusableLatch(true);
 
     private final AtomicReference<AtLeastOnceProcessor<TestEvent>> processor = new AtomicReference<>();
 
-    // Create the input, output, and state sychronizer streams (ignored if they already exist).
+    // Create the input, output, and state synchronizer streams (ignored if they already exist).
     public void init() {
         log.info("init: BEGIN");
         try (StreamManager streamManager = StreamManager.create(config.clientConfig)) {
@@ -71,30 +72,23 @@ public class WorkerProcess extends AbstractExecutionThreadService {
                          serializer,
                          EventWriterConfig.builder().build())) {
 
-                final AtLeastOnceProcessor<TestEvent> proc = new AtLeastOnceProcessor<TestEvent>(
-                        Integer.toString(instanceId),
-                        readerGroup,
-                        config.membershipSynchronizerStreamName,
-                        serializer,
-                        ReaderConfig.builder().build(),
-                        eventStreamClientFactory,
-                        synchronizerClientFactory,
-                        Executors.newScheduledThreadPool(1),
-                        config.heartbeatIntervalMillis,
-                        config.readTimeoutMillis) {
-                    @Override
-                    public void process(EventRead<TestEvent> eventRead) {
-                        final TestEvent event = eventRead.getEvent();
-                        event.processedByInstanceId = instanceId;
-                        log.info("{}", event);
-                        writer.writeEvent(Integer.toString(event.key), event);
-                    }
-
-                    @Override
-                    public void flush() {
-                        writer.flush();
-                    }
-                };
+                final AtLeastOnceProcessor<TestEvent> proc = new AtLeastOnceProcessorInstrumented(
+                        () -> ReaderGroupPruner.create(
+                                readerGroup,
+                                config.membershipSynchronizerStreamName,
+                                Integer.toString(instanceId),
+                                synchronizerClientFactory,
+                                Executors.newScheduledThreadPool(1),
+                                config.heartbeatIntervalMillis),
+                        () -> eventStreamClientFactory.createReader(
+                                Integer.toString(instanceId),
+                                readerGroup.getGroupName(),
+                                serializer,
+                                ReaderConfig.builder().build()),
+                        config.readTimeoutMillis,
+                        instanceId,
+                        writer,
+                        latch);
                 processor.set(proc);
                 proc.startAsync();
                 proc.awaitTerminated();
@@ -109,6 +103,11 @@ public class WorkerProcess extends AbstractExecutionThreadService {
         if (proc != null) {
             proc.stopAsync();
         }
+        latch.release();
         log.info("triggerShutdown: END");
+    }
+
+    public void pause() {
+        latch.reset();
     }
 }

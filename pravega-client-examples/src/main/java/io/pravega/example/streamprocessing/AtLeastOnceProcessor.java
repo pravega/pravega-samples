@@ -11,19 +11,14 @@
 package io.pravega.example.streamprocessing;
 
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.Position;
-import io.pravega.client.stream.ReaderConfig;
-import io.pravega.client.stream.ReaderGroup;
-import io.pravega.client.stream.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 /**
  * This is an abstract class for implementing a stateless event processor with Pravega.
@@ -36,37 +31,13 @@ import java.util.concurrent.ScheduledExecutorService;
 abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadService {
     private static final Logger log = LoggerFactory.getLogger(AtLeastOnceProcessor.class);
 
-    private final String instanceId;
-    private final ReaderGroup readerGroup;
-    private final String membershipSynchronizerStreamName;
-    private final Serializer<T> serializer;
-    private final ReaderConfig readerConfig;
-    private final EventStreamClientFactory eventStreamClientFactory;
-    private final SynchronizerClientFactory synchronizerClientFactory;
-    private final ScheduledExecutorService executor;
-    private final long heartbeatIntervalMillis;
+    private final Supplier<ReaderGroupPruner> prunerSupplier;
+    private final Supplier<EventStreamReader<T>> readerSupplier;
     private final long readTimeoutMillis;
 
-    public AtLeastOnceProcessor(
-            String instanceId,
-            ReaderGroup readerGroup,
-            String membershipSynchronizerStreamName,
-            Serializer<T> serializer,
-            ReaderConfig readerConfig,
-            EventStreamClientFactory eventStreamClientFactory,
-            SynchronizerClientFactory synchronizerClientFactory,
-            ScheduledExecutorService executor,
-            long heartbeatIntervalMillis,
-            long readTimeoutMillis) {
-        this.instanceId = instanceId;
-        this.readerGroup = readerGroup;
-        this.membershipSynchronizerStreamName = membershipSynchronizerStreamName;
-        this.serializer = serializer;
-        this.readerConfig = readerConfig;
-        this.eventStreamClientFactory = eventStreamClientFactory;
-        this.synchronizerClientFactory = synchronizerClientFactory;
-        this.executor = executor;
-        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
+    public AtLeastOnceProcessor(Supplier<ReaderGroupPruner> prunerSupplier, Supplier<EventStreamReader<T>> readerSupplier, long readTimeoutMillis) {
+        this.prunerSupplier = prunerSupplier;
+        this.readerSupplier = readerSupplier;
         this.readTimeoutMillis = readTimeoutMillis;
     }
 
@@ -79,22 +50,17 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
      */
     @Override
     protected void run() throws Exception {
-        try (final ReaderGroupPruner pruner = ReaderGroupPruner.create(
-                readerGroup,
-                membershipSynchronizerStreamName,
-                instanceId,
-                synchronizerClientFactory,
-                executor,
-                heartbeatIntervalMillis);
-             final EventStreamReader<T> reader = eventStreamClientFactory.createReader(
-                    instanceId,
-                    readerGroup.getGroupName(),
-                    serializer,
-                    readerConfig)) {
-
+        // It is critical that the ReaderGroupPruner is running (and therefore has added itself to the membership synchronizer)
+        // before the EventStreamReader is created. Otherwise, another ReaderGroupPruner instance may place this reader offline.
+        // It is also critical that when this method stops running the ReaderGroupPruner is eventually stopped so that
+        // it no longer sends heartbeats.
+        try (final ReaderGroupPruner pruner = prunerSupplier.get();
+             final EventStreamReader<T> reader = readerSupplier.get()) {
             while (isRunning()) {
+                injectFaultBeforeRead(pruner);
                 final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
                 log.info("eventRead={}", eventRead);
+                injectFaultAfterRead(pruner);
                 if (eventRead.isCheckpoint()) {
                     flush();
                 } else if (eventRead.getEvent() != null) {
@@ -125,5 +91,11 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
      * If writing to a Pravega stream, this should call {@link EventStreamWriter#flush}.
      */
     public void flush() {
+    }
+
+    protected void injectFaultBeforeRead(ReaderGroupPruner pruner) throws Exception {
+    }
+
+    protected void injectFaultAfterRead(ReaderGroupPruner pruner) throws Exception {
     }
 }
