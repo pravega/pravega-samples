@@ -33,7 +33,7 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     public void process(EventRead<TestEvent> eventRead) {
         final TestEvent event = eventRead.getEvent();
         event.processedByInstanceId = instanceId;
-        log.info("{}", event);
+        log.info("process: event={}", event);
         writer.writeEvent(Integer.toString(event.key), event);
     }
 
@@ -43,10 +43,15 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     }
 
     @Override
-    protected void injectFaultBeforeRead(ReaderGroupPruner pruner) throws Exception {
-        // Stop pruner (but do not close it). This will also stop the membership synchronizer.
-        pruner.stopAsync();
-        latch.await();
-        throw new Exception();
+    protected void injectFault(ReaderGroupPruner pruner) throws Exception {
+        if (!latch.isReleased()) {
+            log.warn("injectFault: BEGIN");
+            // Pause pruner (but do not close it). This will also pause the membership synchronizer.
+            pruner.pause();
+            // Halt this processor thread until the latch is released.
+            latch.await();
+            pruner.unpause();
+            log.warn("injectFault: END");
+        }
     }
 }

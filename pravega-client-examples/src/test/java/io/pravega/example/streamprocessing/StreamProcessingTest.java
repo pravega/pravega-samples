@@ -122,7 +122,7 @@ public class StreamProcessingTest {
         final WorkerProcessGroup workerProcessGroup = WorkerProcessGroup.builder().config(workerProcessConfig).build();
 
         // Start initial set of processors. This will also create the necessary streams.
-        workerProcessGroup.start(0, 1, 2);
+        workerProcessGroup.start(0);
 
         // Prepare generator writer that will write to the stream read by the processor.
         @Cleanup
@@ -150,7 +150,7 @@ public class StreamProcessingTest {
                 validationReaderConfig);
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, 30000);
 
-        final TestEventGenerator generator = new TestEventGenerator(6);
+        final TestEventGenerator generator = new TestEventGenerator(1);
         final TestEventValidator validator = new TestEventValidator(generator);
 
         // Write events to input stream.
@@ -167,7 +167,8 @@ public class StreamProcessingTest {
         log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
 
         workerProcessGroup.start(3);
-        workerProcessGroup.stop(0, 1, 2);
+//        workerProcessGroup.stop(0);
+        workerProcessGroup.pause(0);
 
         Iterators.limit(generator, 10).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
         validator.validate(readerIterator);

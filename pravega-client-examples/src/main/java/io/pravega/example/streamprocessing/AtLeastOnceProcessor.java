@@ -57,10 +57,11 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
         try (final ReaderGroupPruner pruner = prunerSupplier.get();
              final EventStreamReader<T> reader = readerSupplier.get()) {
             while (isRunning()) {
-                injectFaultBeforeRead(pruner);
                 final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
                 log.info("eventRead={}", eventRead);
-                injectFaultAfterRead(pruner);
+                // We must inject the fault between read and process.
+                // This ensures that a *new* event cannot be processed after the fault injection latch is set.
+                injectFault(pruner);
                 if (eventRead.isCheckpoint()) {
                     flush();
                 } else if (eventRead.getEvent() != null) {
@@ -93,9 +94,6 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
     public void flush() {
     }
 
-    protected void injectFaultBeforeRead(ReaderGroupPruner pruner) throws Exception {
-    }
-
-    protected void injectFaultAfterRead(ReaderGroupPruner pruner) throws Exception {
+    protected void injectFault(ReaderGroupPruner pruner) throws Exception {
     }
 }
