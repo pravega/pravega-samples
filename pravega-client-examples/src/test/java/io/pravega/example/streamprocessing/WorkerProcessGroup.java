@@ -47,7 +47,11 @@ public class WorkerProcessGroup implements AutoCloseable {
             workers.get(instanceId).stopAsync();
         });
         IntStream.of(instanceIds).forEach(instanceId -> {
-            workers.get(instanceId).awaitTerminated();
+            try {
+                workers.get(instanceId).awaitTerminated();
+            } catch (Exception e) {
+                log.warn("stop", e);
+            }
             workers.remove(instanceId);
         });
     }

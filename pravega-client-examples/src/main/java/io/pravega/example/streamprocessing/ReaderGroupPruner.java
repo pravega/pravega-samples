@@ -96,11 +96,12 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
     public void pause() {
         log.warn("paused");
         task.cancel(false);
+        membershipSynchronizer.pause();
     }
 
     public void unpause() {
         log.warn("unpause");
-//        throw new UnsupportedOperationException();
+        membershipSynchronizer.unpause();
     }
 
     @Override

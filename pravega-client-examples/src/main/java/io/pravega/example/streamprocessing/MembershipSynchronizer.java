@@ -279,4 +279,12 @@ public class MembershipSynchronizer extends AbstractService {
         task.cancel(false);
     }
 
+    public void pause() {
+        log.warn("paused");
+        task.cancel(false);
+    }
+
+    public void unpause() {
+        log.warn("unpause");
+    }
 }
