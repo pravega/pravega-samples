@@ -82,17 +82,24 @@ public class StreamProcessingTest {
 
     /**
      * Write the given number of events to the Pravega input stream.
-     * Then read events from the Pravega output stream to ensure that the processors produced the correct result.
      *
      * @param ctx provides access to the generator, writer, etc.
      * @param numEvents number of events to write
+     */
+    void writeEvents(TestContext ctx, int numEvents) {
+        Iterators.limit(ctx.generator, numEvents).forEachRemaining(event -> ctx.writer.writeEvent(Integer.toString(event.key), event));
+    }
+
+    /**
+     * Write the given number of events to the Pravega input stream.
+     * Then read events from the Pravega output stream to ensure that the processors produced the correct result.
+     *
+     * @param ctx provides access to the validator, reader, etc.
      * @param expectedInstanceIds All read events must have a processedByInstanceId in this set.
      */
-    void writeEventsAndValidate(TestContext ctx, int numEvents, int[] expectedInstanceIds) {
-        ctx.validator.clearCounters();
-        // Write events to input stream.
-        Iterators.limit(ctx.generator, numEvents).forEachRemaining(event -> ctx.writer.writeEvent(Integer.toString(event.key), event));
+    void validateEvents(TestContext ctx, int[] expectedInstanceIds) {
         // Read events from output stream. Return when complete or throw exception if out of order or timeout.
+        ctx.validator.clearCounters();
         ctx.validator.validate(ctx.readerIterator, ctx.generator.getLastSequenceNumbers());
         // Confirm that only instances in expectedInstanceIds have processed the events.
         final Map<Integer, Long> eventCountByInstanceId = ctx.validator.getEventCountByInstanceId();
@@ -107,6 +114,19 @@ public class StreamProcessingTest {
             log.warn("writeEventsAndValidate: Some instances processed no events; eventCountByInstanceId={}, expectedInstanceIdsSet={}",
                     eventCountByInstanceId, expectedInstanceIdsSet);
         }
+    }
+
+    /**
+     * Write the given number of events to the Pravega input stream.
+     * Then read events from the Pravega output stream to ensure that the processors produced the correct result.
+     *
+     * @param ctx provides access to the generator, writer, etc.
+     * @param numEvents number of events to write
+     * @param expectedInstanceIds All read events must have a processedByInstanceId in this set.
+     */
+    void writeEventsAndValidate(TestContext ctx, int numEvents, int[] expectedInstanceIds) {
+        writeEvents(ctx, numEvents);
+        validateEvents(ctx, expectedInstanceIds);
     }
 
     /**
@@ -167,7 +187,7 @@ public class StreamProcessingTest {
      * @param numInitialInstances number of initial processor instances
      * @param func function to run to write and write events, etc.
      */
-    private void endToEndTest(int numSegments, int numKeys, int numInitialInstances, Consumer<TestContext> func) throws Exception {
+    private void endToEndTest(int numSegments, int numKeys, int numInitialInstances, WriteMode writeMode, Consumer<TestContext> func) throws Exception {
         final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
         log.info("Test case: {}", methodName);
 
@@ -191,6 +211,7 @@ public class StreamProcessingTest {
                 .membershipSynchronizerStreamName(membershipSynchronizerStreamName)
                 .numSegments(numSegments)
                 .checkpointPeriodMs(checkpointPeriodMs)
+                .writeMode(writeMode)
                 .build();
         @Cleanup
         final WorkerProcessGroup workerProcessGroup = WorkerProcessGroup.builder().config(workerProcessConfig).build();
@@ -244,7 +265,7 @@ public class StreamProcessingTest {
 
     @Test
     public void trivialTest() throws Exception {
-        endToEndTest(1, 1, 1, ctx -> {
+        endToEndTest(1, 1, 1, WriteMode.Default, ctx -> {
             writeEventsAndValidate(ctx, 20, new int[]{0});
             Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
         });
@@ -252,7 +273,29 @@ public class StreamProcessingTest {
 
     @Test
     public void gracefulRestart1of1Test() throws Exception {
-        endToEndTest(6, 24, 1, ctx -> {
+        endToEndTest(6, 24, 1, WriteMode.Default, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0});
+            ctx.workerProcessGroup.stop(0);
+            ctx.workerProcessGroup.start(1);
+            writeEventsAndValidate(ctx, 90, new int[]{1});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+        });
+    }
+
+    @Test
+    public void gracefulRestart1of1DurableTest() throws Exception {
+        endToEndTest(6, 24, 1, WriteMode.AlwaysDurable, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0});
+            ctx.workerProcessGroup.stop(0);
+            ctx.workerProcessGroup.start(1);
+            writeEventsAndValidate(ctx, 90, new int[]{1});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+        });
+    }
+
+    @Test
+    public void gracefulRestart1of1DHoldUntilFlushedTest() throws Exception {
+        endToEndTest(6, 24, 1, WriteMode.AlwaysHoldUntilFlushed, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0});
             ctx.workerProcessGroup.stop(0);
             ctx.workerProcessGroup.start(1);
@@ -263,7 +306,7 @@ public class StreamProcessingTest {
 
     @Test
     public void gracefulStop1of2Test() throws Exception {
-        endToEndTest(6, 24, 2, ctx -> {
+        endToEndTest(6, 24, 2, WriteMode.Default, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0, 1});
             ctx.workerProcessGroup.stop(0);
             writeEventsAndValidate(ctx, 90, new int[]{1});
@@ -273,7 +316,7 @@ public class StreamProcessingTest {
 
     @Test
     public void killAndRestart1of1Test() throws Exception {
-        endToEndTest(6, 24, 1, ctx -> {
+        endToEndTest(6, 24, 1, WriteMode.Default, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0});
             ctx.workerProcessGroup.pause(0);
             ctx.workerProcessGroup.start(1);
@@ -283,7 +326,7 @@ public class StreamProcessingTest {
 
     @Test
     public void killAndRestart1of1WhenIdleTest() throws Exception {
-        endToEndTest(6, 24, 1, ctx -> {
+        endToEndTest(6, 24, 1, WriteMode.Default, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0});
             Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
             // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
@@ -302,7 +345,7 @@ public class StreamProcessingTest {
 
     @Test
     public void handleExceptionDuringFlushTest() throws Exception {
-        endToEndTest(6, 24, 1, ctx -> {
+        endToEndTest(6, 24, 1, WriteMode.AlwaysHoldUntilFlushed, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0});
             Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
             // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
@@ -314,7 +357,7 @@ public class StreamProcessingTest {
             ctx.workerProcessGroup.preventFlush(0);
             // Write some events that will be processed, written to Pravega, and read by the validator, but not explicitly flushed.
             final int expectedDuplicateEventCount = 3;
-            writeEventsAndValidate(ctx, expectedDuplicateEventCount, new int[]{0});
+            writeEvents(ctx, expectedDuplicateEventCount);
             Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
             // Wait for a while so that flush is called and throws an exception.
             // This will close the reader (with what value for readerOffline?).
@@ -322,14 +365,14 @@ public class StreamProcessingTest {
             // Start a new worker instance so that we can determine where it reads from.
             // The new worker should produce duplicates.
             ctx.workerProcessGroup.start(1);
-            writeEventsAndValidate(ctx, 100, new int[]{1});
+            validateEvents(ctx, new int[]{1});
             Assert.assertEquals(expectedDuplicateEventCount, ctx.validator.getDuplicateEventCount());
         });
     }
 
     @Test
     public void killAndRestart1of1ForcingDuplicatesTest() throws Exception {
-        endToEndTest(6, 24, 1, ctx -> {
+        endToEndTest(6, 24, 1, WriteMode.Default, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0});
             Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
             // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
@@ -356,7 +399,7 @@ public class StreamProcessingTest {
 
     @Test
     public void kill5of6Test() throws Exception {
-        endToEndTest(6, 24, 6, ctx -> {
+        endToEndTest(6, 24, 6, WriteMode.Default, ctx -> {
             writeEventsAndValidate(ctx, 100, new int[]{0, 1, 2, 3, 4, 5});
             ctx.workerProcessGroup.pause(0, 1, 2, 3, 4);
             writeEventsAndValidate(ctx, 90, new int[]{5});

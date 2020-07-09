@@ -25,4 +25,5 @@ public class WorkerProcessConfig {
     @Builder.Default public final long checkpointPeriodMs = 1000;
     @Builder.Default public final long heartbeatIntervalMillis = 1000;
     @Builder.Default public final long readTimeoutMillis = 1000;
+    @Builder.Default public final WriteMode writeMode = WriteMode.Default;
 }

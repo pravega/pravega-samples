@@ -7,8 +7,12 @@ import io.pravega.common.util.ReusableLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestEvent> {
@@ -20,25 +24,39 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     private final ReusableLatch latch = new ReusableLatch(true);
     private final AtomicLong unflushedEventCount = new AtomicLong(0);
     private final AtomicBoolean preventFlushFlag = new AtomicBoolean(false);
+    private final AtomicReference<WriteMode> writeModeRef = new AtomicReference<>();
+    private final List<TestEvent> queue = new ArrayList<>();
 
     public AtLeastOnceProcessorInstrumented(
             Supplier<ReaderGroupPruner> pruner,
             Supplier<EventStreamReader<TestEvent>> reader,
             long readTimeoutMillis,
+            WriteMode writeMode,
             int instanceId,
             EventStreamWriter<TestEvent> writer) {
         super(pruner, reader, readTimeoutMillis);
+        writeModeRef.set(writeMode);
         this.instanceId = instanceId;
         this.writer = writer;
     }
 
     @Override
-    public void process(EventRead<TestEvent> eventRead) {
+    public void process(EventRead<TestEvent> eventRead) throws Exception {
         final TestEvent event = eventRead.getEvent();
         event.processedByInstanceId = instanceId;
-        log.info("process: event={}", event);
-        writer.writeEvent(Integer.toString(event.key), event);
-        unflushedEventCount.incrementAndGet();
+        final WriteMode mode = writeModeRef.get();
+        log.info("process: mode={}, event={}", mode, event);
+        if (mode == WriteMode.AlwaysHoldUntilFlushed) {
+            queue.add(event);
+            unflushedEventCount.incrementAndGet();
+        } else {
+            final CompletableFuture<Void> future = writer.writeEvent(Integer.toString(event.key), event);
+            if (mode == WriteMode.AlwaysDurable) {
+                future.get();
+            } else {
+                unflushedEventCount.incrementAndGet();
+            }
+        }
     }
 
     @Override
@@ -46,6 +64,9 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
         if (preventFlushFlag.get()) {
             throw new RuntimeException("Flush called but this test requires that that flush not be called. Try to rerun the test.");
         }
+        log.info("flush: Writing {} queued events", queue.size());
+        queue.forEach((event) -> writer.writeEvent(Integer.toString(event.key), event));
+        queue.clear();
         writer.flush();
         final long flushedEventCount = unflushedEventCount.getAndSet(0);
         log.info("flush: Flushed {} events", flushedEventCount);
@@ -74,5 +95,9 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
 
     public void preventFlush() {
         preventFlushFlag.set(true);
+    }
+
+    public void setWriteModeRef(WriteMode writeMode) {
+        writeModeRef.set(writeMode);
     }
 }

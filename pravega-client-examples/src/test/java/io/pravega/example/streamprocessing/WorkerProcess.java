@@ -25,7 +25,6 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.common.util.ReusableLatch;
 import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,6 +97,7 @@ public class WorkerProcess extends AbstractExecutionThreadService {
                                 serializer,
                                 ReaderConfig.builder().build()),
                         config.readTimeoutMillis,
+                        config.writeMode,
                         instanceId,
                         writer);
                 processor.set(proc);
@@ -124,5 +124,9 @@ public class WorkerProcess extends AbstractExecutionThreadService {
 
     public void preventFlush() {
         processor.get().preventFlush();
+    }
+
+    public void setWriteMode(WriteMode mode) {
+        processor.get().setWriteModeRef(mode);
     }
 }

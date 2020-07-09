@@ -27,6 +27,7 @@ public class WorkerProcessGroup implements AutoCloseable {
 
     private final WorkerProcessConfig config;
     private final Map<Integer, WorkerProcess> workers = new HashMap<>();
+    private WriteMode writeMode;
 
     /**
      * Streams are guaranteed to exist after calling this method.
@@ -58,6 +59,12 @@ public class WorkerProcessGroup implements AutoCloseable {
         });
     }
 
+    public void setWriteModeAll(WriteMode mode) {
+        IntStream.of(getInstanceIds()).parallel().forEach(instanceId -> {
+            workers.get(instanceId).setWriteMode(mode);
+        });
+    }
+
     /**
      * Processors are guaranteed to not process events after this method returns.
      */
@@ -75,9 +82,13 @@ public class WorkerProcessGroup implements AutoCloseable {
         });
     }
 
+    protected int[] getInstanceIds() {
+        return workers.keySet().stream().mapToInt(i -> i).toArray();
+    }
+
     public void stopAll() {
         log.info("stopAll: workers={}", workers);
-        stop(workers.keySet().stream().mapToInt(i -> i).toArray());
+        stop(getInstanceIds());
     }
 
     @Override

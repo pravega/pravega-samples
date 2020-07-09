@@ -85,13 +85,13 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
      *
      * @param eventRead The event read.
      */
-    abstract public void process(EventRead<T> eventRead);
+    abstract public void process(EventRead<T> eventRead) throws Exception;
 
     /**
      * If {@link #process} did not completely process prior events, it must do so before returning.
      * If writing to a Pravega stream, this should call {@link EventStreamWriter#flush}.
      */
-    public void flush() {
+    public void flush() throws Exception {
     }
 
     protected void injectFault(ReaderGroupPruner pruner) throws Exception {
