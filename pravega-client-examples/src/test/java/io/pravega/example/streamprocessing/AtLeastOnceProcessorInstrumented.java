@@ -7,6 +7,8 @@ import io.pravega.common.util.ReusableLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestEvent> {
@@ -15,6 +17,8 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     private final int instanceId;
     private final EventStreamWriter<TestEvent> writer;
     private final ReusableLatch latch;
+    private final AtomicLong unflushedEventCount = new AtomicLong(0);
+    private final AtomicBoolean preventFlushFlag = new AtomicBoolean(false);
 
     public AtLeastOnceProcessorInstrumented(
             Supplier<ReaderGroupPruner> pruner,
@@ -35,11 +39,17 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
         event.processedByInstanceId = instanceId;
         log.info("process: event={}", event);
         writer.writeEvent(Integer.toString(event.key), event);
+        unflushedEventCount.incrementAndGet();
     }
 
     @Override
     public void flush() {
+        if (preventFlushFlag.get()) {
+            throw new RuntimeException("Flush called but this test requires that that flush not be called. Try to rerun the test.");
+        }
         writer.flush();
+        final long flushedEventCount = unflushedEventCount.getAndSet(0);
+        log.info("flush: Flushed {} events", flushedEventCount);
     }
 
     @Override
@@ -53,5 +63,9 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
             pruner.unpause();
             log.warn("injectFault: END");
         }
+    }
+
+    public void preventFlush() {
+        preventFlushFlag.set(true);
     }
 }

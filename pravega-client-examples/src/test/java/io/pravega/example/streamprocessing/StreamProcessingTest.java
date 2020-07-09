@@ -69,6 +69,7 @@ public class StreamProcessingTest {
         final TestEventGenerator generator;
         final TestEventValidator validator;
         final WorkerProcessGroup workerProcessGroup;
+        final long checkpointPeriodMs;
     }
 
     /**
@@ -140,7 +141,7 @@ public class StreamProcessingTest {
 
         final TestEventGenerator generator = new TestEventGenerator(6);
         final TestEventValidator validator = new TestEventValidator();
-        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, null);
+        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, null, 0);
 
         writeEventsAndValidate(ctx, 13, new int[]{-1});
         writeEventsAndValidate(ctx, 3, new int[]{-1});
@@ -168,6 +169,7 @@ public class StreamProcessingTest {
         final String outputStreamName = "output-stream-" + UUID.randomUUID().toString();
         final String membershipSynchronizerStreamName = "ms-" + UUID.randomUUID().toString();
         final String inputStreamReaderGroupName = "rg" + UUID.randomUUID().toString().replace("-", "");
+        final long checkpointPeriodMs = 1000;
 
         @Cleanup
         StreamManager streamManager = StreamManager.create(clientConfig);
@@ -180,6 +182,7 @@ public class StreamProcessingTest {
                 .outputStreamName(outputStreamName)
                 .membershipSynchronizerStreamName(membershipSynchronizerStreamName)
                 .numSegments(numSegments)
+                .checkpointPeriodMs(checkpointPeriodMs)
                 .build();
         @Cleanup
         final WorkerProcessGroup workerProcessGroup = WorkerProcessGroup.builder().config(workerProcessConfig).build();
@@ -215,7 +218,7 @@ public class StreamProcessingTest {
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, readTimeoutMills);
         final TestEventGenerator generator = new TestEventGenerator(numKeys);
         final TestEventValidator validator = new TestEventValidator();
-        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup);
+        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup, checkpointPeriodMs);
         func.accept(ctx);
 
         log.info("Cleanup");
@@ -269,6 +272,60 @@ public class StreamProcessingTest {
             writeEventsAndValidate(ctx, 90, new int[]{1});
         });
     }
+
+    @Test
+    public void killAndRestart1of1WhenIdleTest() throws Exception {
+        endToEndTest(6, 24, 1, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+            // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
+            // TODO: Monitor the reader group to determine when this occurs?
+            // This will update the reader group state to indicate that this reader has read up to this point.
+            try {
+                Thread.sleep(2*ctx.checkpointPeriodMs);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            // Kill the worker instance.
+            ctx.workerProcessGroup.pause(0);
+            // Start a new worker instance. It should identify the dead worker and call readerOffline(null).
+            // The new worker should resume exactly where the killed worker left off, producing no duplicates.
+            ctx.workerProcessGroup.start(1);
+            writeEventsAndValidate(ctx, 19, new int[]{1});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+        });
+    }
+
+    @Test
+    public void killAndRestart1of1ForcingDuplicatesTest() throws Exception {
+        endToEndTest(6, 24, 1, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+            // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
+            // TODO: Monitor the reader group to determine when this occurs?
+            // This will update the reader group state to indicate that this reader has read up to this point.
+            try {
+                Thread.sleep(2*ctx.checkpointPeriodMs);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            // Although we don't have control over when a checkpoint request is received by a reader, we can detect it.
+            // If this happens, we will throw an exception and this test will fail. This should be rare.
+            ctx.workerProcessGroup.preventFlush(0);
+            // Write some events that will be processed but not flushed.
+            final int expectedDuplicateEventCount = 3;
+            writeEventsAndValidate(ctx, expectedDuplicateEventCount, new int[]{0});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+            // Kill the worker instance.
+            ctx.workerProcessGroup.pause(0);
+            // Start a new worker instance. It should identify the dead worker and call readerOffline(null).
+            // The new worker should produce duplicates.
+            ctx.workerProcessGroup.start(1);
+            writeEventsAndValidate(ctx, 3, new int[]{1});
+            Assert.assertEquals(expectedDuplicateEventCount, ctx.validator.getDuplicateEventCount());
+        });
+    }
+
 
     @Test
     public void kill5of6Test() throws Exception {

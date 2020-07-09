@@ -44,7 +44,7 @@ public class WorkerProcess extends AbstractExecutionThreadService {
     private final int instanceId;
     private final ReusableLatch latch = new ReusableLatch(true);
 
-    private final AtomicReference<AtLeastOnceProcessor<TestEvent>> processor = new AtomicReference<>();
+    private final AtomicReference<AtLeastOnceProcessorInstrumented> processor = new AtomicReference<>();
 
     // Create the input, output, and state synchronizer streams (ignored if they already exist).
     public void init() {
@@ -85,7 +85,7 @@ public class WorkerProcess extends AbstractExecutionThreadService {
                          serializer,
                          EventWriterConfig.builder().build())) {
 
-                final AtLeastOnceProcessor<TestEvent> proc = new AtLeastOnceProcessorInstrumented(
+                final AtLeastOnceProcessorInstrumented proc = new AtLeastOnceProcessorInstrumented(
                         () -> ReaderGroupPruner.create(
                                 readerGroup,
                                 config.membershipSynchronizerStreamName,
@@ -112,7 +112,7 @@ public class WorkerProcess extends AbstractExecutionThreadService {
     @Override
     protected void triggerShutdown() {
         log.info("triggerShutdown: BEGIN");
-        final AtLeastOnceProcessor<TestEvent> proc = processor.getAndSet(null);
+        final AtLeastOnceProcessorInstrumented proc = processor.getAndSet(null);
         if (proc != null) {
             proc.stopAsync();
         }
@@ -122,5 +122,9 @@ public class WorkerProcess extends AbstractExecutionThreadService {
 
     public void pause() {
         latch.reset();
+    }
+
+    public void preventFlush() {
+        processor.get().preventFlush();
     }
 }

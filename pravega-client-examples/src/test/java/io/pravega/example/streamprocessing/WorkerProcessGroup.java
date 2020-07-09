@@ -52,6 +52,12 @@ public class WorkerProcessGroup implements AutoCloseable {
         });
     }
 
+    public void preventFlush(int... instanceIds) {
+        IntStream.of(instanceIds).parallel().forEach(instanceId -> {
+            workers.get(instanceId).preventFlush();
+        });
+    }
+
     /**
      * Processors are guaranteed to not process events after this method returns.
      */
