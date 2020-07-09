@@ -1,51 +1,45 @@
 /*
- * Copyright 2019 Flavio Junqueira
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
-
 package io.pravega.utils;
 
-        import com.google.common.base.Preconditions;
-        import io.pravega.client.ClientConfig;
-        import io.pravega.client.EventStreamClientFactory;
-        import io.pravega.client.admin.StreamManager;
-        import io.pravega.client.stream.ScalingPolicy;
-        import io.pravega.client.stream.Stream;
-        import io.pravega.client.stream.StreamConfiguration;
-        import io.pravega.client.stream.impl.Controller;
-        import io.pravega.client.stream.impl.ControllerImpl;
-        import io.pravega.client.stream.impl.ControllerImplConfig;
-        import io.pravega.common.concurrent.ExecutorServiceHelpers;
-        import io.pravega.local.InProcPravegaCluster;
-        import lombok.Cleanup;
-        import lombok.Getter;
-        import lombok.Setter;
-        import org.apache.commons.lang3.RandomStringUtils;
-        import org.slf4j.Logger;
-        import org.slf4j.LoggerFactory;
+import com.google.common.base.Preconditions;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.impl.Controller;
+import io.pravega.client.stream.impl.ControllerImpl;
+import io.pravega.client.stream.impl.ControllerImplConfig;
+import io.pravega.common.concurrent.ExecutorServiceHelpers;
+import io.pravega.local.InProcPravegaCluster;
+import lombok.Cleanup;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-        import javax.annotation.concurrent.NotThreadSafe;
-        import java.io.IOException;
-        import java.io.InputStream;
-        import java.net.ServerSocket;
-        import java.net.URI;
-        import java.nio.file.Files;
-        import java.nio.file.Path;
-        import java.nio.file.StandardCopyOption;
-        import java.util.concurrent.ScheduledExecutorService;
-        import java.util.concurrent.atomic.AtomicBoolean;
-        import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.concurrent.NotThreadSafe;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Utility functions for creating the test setup.
