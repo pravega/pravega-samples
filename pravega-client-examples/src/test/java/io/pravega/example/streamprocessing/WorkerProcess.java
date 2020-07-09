@@ -42,7 +42,6 @@ public class WorkerProcess extends AbstractExecutionThreadService {
 
     private final WorkerProcessConfig config;
     private final int instanceId;
-    private final ReusableLatch latch = new ReusableLatch(true);
 
     private final AtomicReference<AtLeastOnceProcessorInstrumented> processor = new AtomicReference<>();
 
@@ -100,8 +99,7 @@ public class WorkerProcess extends AbstractExecutionThreadService {
                                 ReaderConfig.builder().build()),
                         config.readTimeoutMillis,
                         instanceId,
-                        writer,
-                        latch);
+                        writer);
                 processor.set(proc);
                 proc.startAsync();
                 proc.awaitTerminated();
@@ -115,13 +113,13 @@ public class WorkerProcess extends AbstractExecutionThreadService {
         final AtLeastOnceProcessorInstrumented proc = processor.getAndSet(null);
         if (proc != null) {
             proc.stopAsync();
+            proc.unpause();
         }
-        latch.release();
         log.info("triggerShutdown: END");
     }
 
     public void pause() {
-        latch.reset();
+        processor.get().pause();
     }
 
     public void preventFlush() {

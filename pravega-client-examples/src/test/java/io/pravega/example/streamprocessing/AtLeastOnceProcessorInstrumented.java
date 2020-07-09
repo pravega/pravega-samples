@@ -16,7 +16,8 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
 
     private final int instanceId;
     private final EventStreamWriter<TestEvent> writer;
-    private final ReusableLatch latch;
+
+    private final ReusableLatch latch = new ReusableLatch(true);
     private final AtomicLong unflushedEventCount = new AtomicLong(0);
     private final AtomicBoolean preventFlushFlag = new AtomicBoolean(false);
 
@@ -25,12 +26,10 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
             Supplier<EventStreamReader<TestEvent>> reader,
             long readTimeoutMillis,
             int instanceId,
-            EventStreamWriter<TestEvent> writer,
-            ReusableLatch latch) {
+            EventStreamWriter<TestEvent> writer) {
         super(pruner, reader, readTimeoutMillis);
         this.instanceId = instanceId;
         this.writer = writer;
-        this.latch = latch;
     }
 
     @Override
@@ -63,6 +62,14 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
             pruner.unpause();
             log.warn("injectFault: END");
         }
+    }
+
+    public void pause() {
+        latch.reset();
+    }
+
+    public void unpause() {
+        latch.release();
     }
 
     public void preventFlush() {
