@@ -15,7 +15,9 @@ import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 import io.pravega.utils.EventStreamReaderIterator;
 import io.pravega.utils.SetupUtils;
+import lombok.Builder;
 import lombok.Cleanup;
+import lombok.RequiredArgsConstructor;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,7 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class StreamProcessingTest {
     static final Logger log = LoggerFactory.getLogger(StreamProcessingTest.class);
@@ -43,7 +47,8 @@ public class StreamProcessingTest {
 
     @Test
     public void noProcessorTest() throws Exception {
-        final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
+        final String methodName = (new Object() {
+        }).getClass().getEnclosingMethod().getName();
         log.info("Test case: {}", methodName);
 
         // Create stream.
@@ -51,14 +56,13 @@ public class StreamProcessingTest {
         final ClientConfig clientConfig = SETUP_UTILS.get().getClientConfig();
         final String inputStreamName = "stream-" + UUID.randomUUID().toString();
         SETUP_UTILS.get().createTestStream(inputStreamName, 6);
-        @Cleanup
-        final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+        @Cleanup final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
         // Prepare writer that will write to the stream.
-        final Serializer<TestEvent> serializer = new JSONSerializer<>(new TypeToken<TestEvent>(){}.getType());
+        final Serializer<TestEvent> serializer = new JSONSerializer<>(new TypeToken<TestEvent>() {
+        }.getType());
         final EventWriterConfig eventWriterConfig = EventWriterConfig.builder().build();
-        @Cleanup
-        final EventStreamWriter<TestEvent> writer = clientFactory.createEventWriter(inputStreamName, serializer, eventWriterConfig);
+        @Cleanup final EventStreamWriter<TestEvent> writer = clientFactory.createEventWriter(inputStreamName, serializer, eventWriterConfig);
 
         // Prepare reader that will read from the stream.
         final String outputStreamName = inputStreamName;
@@ -68,14 +72,13 @@ public class StreamProcessingTest {
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(SETUP_UTILS.get().getStream(outputStreamName))
                 .build();
-        @Cleanup
-        final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
+        @Cleanup final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
         readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-        @Cleanup
-        final EventStreamReader<TestEvent> reader = clientFactory.createReader(
+        @Cleanup final EventStreamReader<TestEvent> reader = clientFactory.createReader(
                 readerId,
                 readerGroup,
-                new JSONSerializer<>(new TypeToken<TestEvent>(){}.getType()),
+                new JSONSerializer<>(new TypeToken<TestEvent>() {
+                }.getType()),
                 readerConfig);
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(reader, 30000);
 
@@ -94,8 +97,23 @@ public class StreamProcessingTest {
         log.info("SUCCESS");
     }
 
-    @Test
-    public void basicTest() throws Exception {
+    @RequiredArgsConstructor
+    static class TestContext {
+        final EventStreamWriter<TestEvent> writer;
+        final EventStreamReaderIterator<TestEvent> readerIterator;
+        final TestEventGenerator generator;
+        final TestEventValidator validator;
+        final WorkerProcessGroup workerProcessGroup;
+    }
+
+    void writeEventsAndValidate(TestContext ctx, int numEvents) {
+        // Write events to input stream.
+        Iterators.limit(ctx.generator, numEvents).forEachRemaining(event -> ctx.writer.writeEvent(Integer.toString(event.key), event));
+        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
+        ctx.validator.validate(ctx.readerIterator);
+    }
+
+    private void test1(Consumer<TestContext> fun) throws Exception {
         final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
         log.info("Test case: {}", methodName);
 
@@ -153,27 +171,32 @@ public class StreamProcessingTest {
         final TestEventGenerator generator = new TestEventGenerator(1);
         final TestEventValidator validator = new TestEventValidator(generator);
 
-        // Write events to input stream.
-        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
-        validator.validate(readerIterator);
+        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup);
+        fun.accept(ctx);
 
-        // Write and read additional events.
-        Iterators.limit(generator, 3).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        validator.validate(readerIterator);
-        Iterators.limit(generator, 15).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        validator.validate(readerIterator);
-
-        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
-
-        workerProcessGroup.start(3);
-//        workerProcessGroup.stop(0);
-        workerProcessGroup.pause(0);
-
-        Iterators.limit(generator, 10).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        validator.validate(readerIterator);
-
-        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
+//        // Write events to input stream.
+//        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+//        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
+//        validator.validate(readerIterator);
+//
+//        // Write and read additional events.
+//        Iterators.limit(generator, 3).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+//        validator.validate(readerIterator);
+//        Iterators.limit(generator, 15).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+//        validator.validate(readerIterator);
+//
+//        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
+//
+//        workerProcessGroup.start(3);
+////        workerProcessGroup.stop(0);
+//        workerProcessGroup.pause(0);
+//
+//        Iterators.limit(generator, 10).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
+//        validator.validate(readerIterator);
+//
+//        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
+//
+//        fun.run(writer, readerIterator, generator, validator, workerProcessGroup);
 
         // Cleanup
         log.info("Cleanup");
@@ -189,4 +212,22 @@ public class StreamProcessingTest {
         streamManager.deleteStream(scope, membershipSynchronizerStreamName);
         log.info("SUCCESS");
     }
+
+    @Test
+    public void basicTest() throws Exception {
+        final Consumer<TestContext> fun = ctx -> {
+            writeEventsAndValidate(ctx, 13);
+            writeEventsAndValidate(ctx, 3);
+            writeEventsAndValidate(ctx, 15);
+            log.info("getEventCountByInstanceId={}", ctx.validator.getEventCountByInstanceId());
+            ctx.workerProcessGroup.start(3);
+//        ctx.workerProcessGroup.stop(0);
+            ctx.workerProcessGroup.pause(0);
+            writeEventsAndValidate(ctx, 10);
+            log.info("getEventCountByInstanceId={}", ctx.validator.getEventCountByInstanceId());
+        };
+        test1(fun);
+    }
+
+
 }
