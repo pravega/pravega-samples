@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.streamprocessing;
 
 import org.slf4j.Logger;
@@ -29,7 +39,7 @@ public class TestEventGenerator implements Iterator<TestEvent> {
     @Override
     public TestEvent next() {
         lastKey = (lastKey + 1) % numKeys;;
-        final Long sequenceNumber = lastSequenceNumbers.getOrDefault(lastKey, -1L) + 1;
+        final long sequenceNumber = lastSequenceNumbers.getOrDefault(lastKey, -1L) + 1;
         lastSequenceNumbers.put(lastKey, sequenceNumber);
         final TestEvent event = new TestEvent(lastKey, sequenceNumber);
         log.info("event={}", event);

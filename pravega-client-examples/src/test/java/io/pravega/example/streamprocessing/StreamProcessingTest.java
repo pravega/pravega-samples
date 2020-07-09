@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 package io.pravega.example.streamprocessing;
 
 import com.google.common.collect.Iterators;
@@ -52,6 +62,36 @@ public class StreamProcessingTest {
         SETUP_UTILS.get().stopAllServices();
     }
 
+    @RequiredArgsConstructor
+    static class TestContext {
+        final EventStreamWriter<TestEvent> writer;
+        final EventStreamReaderIterator<TestEvent> readerIterator;
+        final TestEventGenerator generator;
+        final TestEventValidator validator;
+        final WorkerProcessGroup workerProcessGroup;
+    }
+
+    void writeEventsAndValidate(TestContext ctx, int numEvents, int[] expectedInstanceIds) {
+        ctx.validator.clearCounters();
+        // Write events to input stream.
+        Iterators.limit(ctx.generator, numEvents).forEachRemaining(event -> ctx.writer.writeEvent(Integer.toString(event.key), event));
+        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
+        ctx.validator.validate(ctx.readerIterator, ctx.generator.getLastSequenceNumbers());
+        // Confirm that only instances in expectedInstanceIds have processed the events.
+        final Map<Integer, Long> eventCountByInstanceId = ctx.validator.getEventCountByInstanceId();
+        final Set<Integer> actualInstanceIds = eventCountByInstanceId.keySet();
+        final Set<Integer> expectedInstanceIdsSet = Arrays.stream(expectedInstanceIds).boxed().collect(Collectors.toCollection(HashSet::new));
+        log.info("writeEventsAndValidate: eventCountByInstanceId={}, expectedInstanceIdsSet={}", eventCountByInstanceId, expectedInstanceIdsSet);
+        Assert.assertTrue(MessageFormat.format("eventCountByInstanceId={0}, expectedInstanceIdsSet={1}", eventCountByInstanceId, expectedInstanceIdsSet),
+                Sets.difference(actualInstanceIds, expectedInstanceIdsSet).isEmpty());
+        // Warn if any instances are idle. This cannot be an assertion because this may happen under normal conditions.
+        final Sets.SetView<Integer> idleInstanceIds = Sets.difference(expectedInstanceIdsSet, actualInstanceIds);
+        if (!idleInstanceIds.isEmpty()) {
+            log.warn("writeEventsAndValidate: Some instances processed no events; eventCountByInstanceId={}, expectedInstanceIdsSet={}",
+                    eventCountByInstanceId, expectedInstanceIdsSet);
+        }
+    }
+
     @Test
     public void noProcessorTest() throws Exception {
         final String methodName = (new Object() {
@@ -66,8 +106,7 @@ public class StreamProcessingTest {
         @Cleanup final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
         // Prepare writer that will write to the stream.
-        final Serializer<TestEvent> serializer = new JSONSerializer<>(new TypeToken<TestEvent>() {
-        }.getType());
+        final Serializer<TestEvent> serializer = new JSONSerializer<>(new TypeToken<TestEvent>() {}.getType());
         final EventWriterConfig eventWriterConfig = EventWriterConfig.builder().build();
         @Cleanup final EventStreamWriter<TestEvent> writer = clientFactory.createEventWriter(inputStreamName, serializer, eventWriterConfig);
 
@@ -84,54 +123,17 @@ public class StreamProcessingTest {
         @Cleanup final EventStreamReader<TestEvent> reader = clientFactory.createReader(
                 readerId,
                 readerGroup,
-                new JSONSerializer<>(new TypeToken<TestEvent>() {
-                }.getType()),
+                new JSONSerializer<>(new TypeToken<TestEvent>() {}.getType()),
                 readerConfig);
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(reader, 30000);
 
-        // Create event generator instance.
         final TestEventGenerator generator = new TestEventGenerator(6);
-        // Create event validator instance.
-        final TestEventValidator validator = new TestEventValidator(generator);
-        // Write historical events.
-        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
-        validator.validate(readerIterator);
-        Iterators.limit(generator, 3).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        validator.validate(readerIterator);
-        Iterators.limit(generator, 15).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-        validator.validate(readerIterator);
-        log.info("SUCCESS");
-    }
+        final TestEventValidator validator = new TestEventValidator();
+        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, null);
 
-    @RequiredArgsConstructor
-    static class TestContext {
-        final EventStreamWriter<TestEvent> writer;
-        final EventStreamReaderIterator<TestEvent> readerIterator;
-        final TestEventGenerator generator;
-        final TestEventValidator validator;
-        final WorkerProcessGroup workerProcessGroup;
-    }
-
-    void writeEventsAndValidate(TestContext ctx, int numEvents, int[] expectedInstanceIds) {
-        ctx.validator.clearCounters();
-        // Write events to input stream.
-        Iterators.limit(ctx.generator, numEvents).forEachRemaining(event -> ctx.writer.writeEvent(Integer.toString(event.key), event));
-        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
-        ctx.validator.validate(ctx.readerIterator);
-        // Confirm that only instances in expectedInstanceIds have processed the events.
-        final Map<Integer, Long> eventCountByInstanceId = ctx.validator.getEventCountByInstanceId();
-        final Set<Integer> actualInstanceIds = eventCountByInstanceId.keySet();
-        final Set<Integer> expectedInstanceIdsSet = Arrays.stream(expectedInstanceIds).boxed().collect(Collectors.toCollection(HashSet::new));
-        log.info("writeEventsAndValidate: eventCountByInstanceId={}, expectedInstanceIdsSet={}", eventCountByInstanceId, expectedInstanceIdsSet);
-        Assert.assertTrue(MessageFormat.format("eventCountByInstanceId={0}, expectedInstanceIdsSet={1}", eventCountByInstanceId, expectedInstanceIdsSet),
-                Sets.difference(actualInstanceIds, expectedInstanceIdsSet).isEmpty());
-        // Warn if any instances are idle. This cannot be an assertion because this may happen under normal conditions.
-        final Sets.SetView<Integer> idleInstanceIds = Sets.difference(expectedInstanceIdsSet, actualInstanceIds);
-        if (!idleInstanceIds.isEmpty()) {
-            log.warn("writeEventsAndValidate: Some instances processed no events; eventCountByInstanceId={}, expectedInstanceIdsSet={}",
-                    eventCountByInstanceId, expectedInstanceIdsSet);
-        }
+        writeEventsAndValidate(ctx, 13, new int[]{-1});
+        writeEventsAndValidate(ctx, 3, new int[]{-1});
+        writeEventsAndValidate(ctx, 15, new int[]{-1});
     }
 
     private void endToEndTest(int numSegments, int numKeys, int numInitialInstances, Consumer<TestContext> func) throws Exception {
@@ -190,7 +192,7 @@ public class StreamProcessingTest {
         final long readTimeoutMills = 60000;
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, readTimeoutMills);
         final TestEventGenerator generator = new TestEventGenerator(numKeys);
-        final TestEventValidator validator = new TestEventValidator(generator);
+        final TestEventValidator validator = new TestEventValidator();
         final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup);
         func.accept(ctx);
 

@@ -18,7 +18,13 @@ public class TestEvent {
     public TestEvent(int key, long sequenceNumber) {
         this.key = key;
         this.sequenceNumber = sequenceNumber;
-        processedByInstanceId = -1;
+        this.processedByInstanceId = -1;
+    }
+
+    public TestEvent(int key, long sequenceNumber, int processedByInstanceId) {
+        this.key = key;
+        this.sequenceNumber = sequenceNumber;
+        this.processedByInstanceId = processedByInstanceId;
     }
 
     @Override
