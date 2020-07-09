@@ -1,6 +1,7 @@
 package io.pravega.example.streamprocessing;
 
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
@@ -15,19 +16,25 @@ import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 import io.pravega.utils.EventStreamReaderIterator;
 import io.pravega.utils.SetupUtils;
-import lombok.Builder;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class StreamProcessingTest {
     static final Logger log = LoggerFactory.getLogger(StreamProcessingTest.class);
@@ -106,14 +113,28 @@ public class StreamProcessingTest {
         final WorkerProcessGroup workerProcessGroup;
     }
 
-    void writeEventsAndValidate(TestContext ctx, int numEvents) {
+    void writeEventsAndValidate(TestContext ctx, int numEvents, int[] expectedInstanceIds) {
+        ctx.validator.clearCounters();
         // Write events to input stream.
         Iterators.limit(ctx.generator, numEvents).forEachRemaining(event -> ctx.writer.writeEvent(Integer.toString(event.key), event));
         // Read events from output stream. Return when complete or throw exception if out of order or timeout.
         ctx.validator.validate(ctx.readerIterator);
+        // Confirm that only instances in expectedInstanceIds have processed the events.
+        final Map<Integer, Long> eventCountByInstanceId = ctx.validator.getEventCountByInstanceId();
+        final Set<Integer> actualInstanceIds = eventCountByInstanceId.keySet();
+        final Set<Integer> expectedInstanceIdsSet = Arrays.stream(expectedInstanceIds).boxed().collect(Collectors.toCollection(HashSet::new));
+        log.info("writeEventsAndValidate: eventCountByInstanceId={}, expectedInstanceIdsSet={}", eventCountByInstanceId, expectedInstanceIdsSet);
+        Assert.assertTrue(MessageFormat.format("eventCountByInstanceId={0}, expectedInstanceIdsSet={1}", eventCountByInstanceId, expectedInstanceIdsSet),
+                Sets.difference(actualInstanceIds, expectedInstanceIdsSet).isEmpty());
+        // Warn if any instances are idle. This cannot be an assertion because this may happen under normal conditions.
+        final Sets.SetView<Integer> idleInstanceIds = Sets.difference(expectedInstanceIdsSet, actualInstanceIds);
+        if (!idleInstanceIds.isEmpty()) {
+            log.warn("writeEventsAndValidate: Some instances processed no events; eventCountByInstanceId={}, expectedInstanceIdsSet={}",
+                    eventCountByInstanceId, expectedInstanceIdsSet);
+        }
     }
 
-    private void test1(Consumer<TestContext> fun) throws Exception {
+    private void endToEndTest(int numSegments, int numKeys, int numInitialInstances, Consumer<TestContext> func) throws Exception {
         final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
         log.info("Test case: {}", methodName);
 
@@ -134,13 +155,13 @@ public class StreamProcessingTest {
                 .inputStreamName(inputStreamName)
                 .outputStreamName(outputStreamName)
                 .membershipSynchronizerStreamName(membershipSynchronizerStreamName)
-                .numSegments(6)
+                .numSegments(numSegments)
                 .build();
         @Cleanup
         final WorkerProcessGroup workerProcessGroup = WorkerProcessGroup.builder().config(workerProcessConfig).build();
 
         // Start initial set of processors. This will also create the necessary streams.
-        workerProcessGroup.start(0);
+        workerProcessGroup.start(IntStream.range(0, numInitialInstances).toArray());
 
         // Prepare generator writer that will write to the stream read by the processor.
         @Cleanup
@@ -166,39 +187,13 @@ public class StreamProcessingTest {
                 validationReaderGroupName,
                 new JSONSerializer<>(new TypeToken<TestEvent>(){}.getType()),
                 validationReaderConfig);
-        EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, 30000);
-
-        final TestEventGenerator generator = new TestEventGenerator(1);
+        final long readTimeoutMills = 60000;
+        EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, readTimeoutMills);
+        final TestEventGenerator generator = new TestEventGenerator(numKeys);
         final TestEventValidator validator = new TestEventValidator(generator);
-
         final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup);
-        fun.accept(ctx);
+        func.accept(ctx);
 
-//        // Write events to input stream.
-//        Iterators.limit(generator, 13).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-//        // Read events from output stream. Return when complete or throw exception if out of order or timeout.
-//        validator.validate(readerIterator);
-//
-//        // Write and read additional events.
-//        Iterators.limit(generator, 3).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-//        validator.validate(readerIterator);
-//        Iterators.limit(generator, 15).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-//        validator.validate(readerIterator);
-//
-//        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
-//
-//        workerProcessGroup.start(3);
-////        workerProcessGroup.stop(0);
-//        workerProcessGroup.pause(0);
-//
-//        Iterators.limit(generator, 10).forEachRemaining(event -> writer.writeEvent(Integer.toString(event.key), event));
-//        validator.validate(readerIterator);
-//
-//        log.info("getEventCountByInstanceId={}", validator.getEventCountByInstanceId());
-//
-//        fun.run(writer, readerIterator, generator, validator, workerProcessGroup);
-
-        // Cleanup
         log.info("Cleanup");
         workerProcessGroup.close();
         validationReader.close();
@@ -210,24 +205,52 @@ public class StreamProcessingTest {
         streamManager.deleteStream(scope, inputStreamName);
         streamManager.deleteStream(scope, outputStreamName);
         streamManager.deleteStream(scope, membershipSynchronizerStreamName);
-        log.info("SUCCESS");
     }
 
     @Test
-    public void basicTest() throws Exception {
-        final Consumer<TestContext> fun = ctx -> {
-            writeEventsAndValidate(ctx, 13);
-            writeEventsAndValidate(ctx, 3);
-            writeEventsAndValidate(ctx, 15);
-            log.info("getEventCountByInstanceId={}", ctx.validator.getEventCountByInstanceId());
-            ctx.workerProcessGroup.start(3);
-//        ctx.workerProcessGroup.stop(0);
-            ctx.workerProcessGroup.pause(0);
-            writeEventsAndValidate(ctx, 10);
-            log.info("getEventCountByInstanceId={}", ctx.validator.getEventCountByInstanceId());
-        };
-        test1(fun);
+    public void trivialTest() throws Exception {
+        endToEndTest(1, 1, 1, ctx -> {
+            writeEventsAndValidate(ctx, 20, new int[]{0});
+        });
     }
 
+    @Test
+    public void gracefulRestart1of1Test() throws Exception {
+        endToEndTest(6, 24, 1, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0});
+            ctx.workerProcessGroup.stop(0);
+            ctx.workerProcessGroup.start(1);
+            writeEventsAndValidate(ctx, 90, new int[]{1});
+        });
+    }
 
+    @Test
+    public void gracefulStop1of2Test() throws Exception {
+        endToEndTest(6, 24, 2, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0, 1});
+            ctx.workerProcessGroup.stop(0);
+            writeEventsAndValidate(ctx, 90, new int[]{1});
+        });
+    }
+
+    @Test
+    public void killAndRestart1of1Test() throws Exception {
+        endToEndTest(6, 24, 1, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0});
+            ctx.workerProcessGroup.pause(0);
+            ctx.workerProcessGroup.start(1);
+            writeEventsAndValidate(ctx, 90, new int[]{1});
+        });
+    }
+
+    @Test
+    public void kill5of6Test() throws Exception {
+        endToEndTest(6, 24, 6, ctx -> {
+            writeEventsAndValidate(ctx, 100, new int[]{0, 1, 2, 3, 4, 5});
+            ctx.workerProcessGroup.pause(0, 1, 2, 3, 4);
+            writeEventsAndValidate(ctx, 90, new int[]{5});
+        });
+    }
+
+    // TODO: pause and resume
 }

@@ -19,7 +19,6 @@ public class TestEventGenerator implements Iterator<TestEvent> {
         this.numKeys = numKeys;
         this.lastKey = numKeys - 1;
         lastSequenceNumbers = new HashMap<>();
-//        IntStream.range(0, numKeys).forEach(key -> lastSequenceNumbers.put(key, 0L));
     }
 
     @Override

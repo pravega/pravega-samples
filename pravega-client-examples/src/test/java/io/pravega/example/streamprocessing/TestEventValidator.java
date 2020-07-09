@@ -58,6 +58,10 @@ public class TestEventValidator {
         throw new IllegalStateException("No more events");
     }
 
+    public void clearCounters() {
+        eventCountByInstanceId.clear();
+    }
+
     public Map<Integer, Long> getEventCountByInstanceId() {
         return eventCountByInstanceId;
     }
