@@ -44,14 +44,14 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     public void process(EventRead<TestEvent> eventRead) throws Exception {
         final TestEvent event = eventRead.getEvent();
         event.processedByInstanceId = instanceId;
-        final WriteMode mode = writeModeRef.get();
-        log.info("process: mode={}, event={}", mode, event);
-        if (mode == WriteMode.AlwaysHoldUntilFlushed) {
+        final WriteMode writeMode = writeModeRef.get();
+        log.info("process: writeMode={}, event={}", writeMode, event);
+        if (writeMode == WriteMode.AlwaysHoldUntilFlushed) {
             queue.add(event);
             unflushedEventCount.incrementAndGet();
         } else {
             final CompletableFuture<Void> future = writer.writeEvent(Integer.toString(event.key), event);
-            if (mode == WriteMode.AlwaysDurable) {
+            if (writeMode == WriteMode.AlwaysDurable) {
                 future.get();
             } else {
                 unflushedEventCount.incrementAndGet();
