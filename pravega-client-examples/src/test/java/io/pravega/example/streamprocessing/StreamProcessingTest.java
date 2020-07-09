@@ -71,6 +71,14 @@ public class StreamProcessingTest {
         final WorkerProcessGroup workerProcessGroup;
     }
 
+    /**
+     * Write the given number of events to the Pravega input stream.
+     * Then read events from the Pravega output stream to ensure that the processors produced the correct result.
+     *
+     * @param ctx provides access to the generator, writer, etc.
+     * @param numEvents number of events to write
+     * @param expectedInstanceIds All read events must have a processedByInstanceId in this set.
+     */
     void writeEventsAndValidate(TestContext ctx, int numEvents, int[] expectedInstanceIds) {
         ctx.validator.clearCounters();
         // Write events to input stream.
@@ -92,6 +100,9 @@ public class StreamProcessingTest {
         }
     }
 
+    /**
+     * Write events to a Pravega stream, read events from the same stream, and validate expected ordering.
+     */
     @Test
     public void noProcessorTest() throws Exception {
         final String methodName = (new Object() {
@@ -136,6 +147,17 @@ public class StreamProcessingTest {
         writeEventsAndValidate(ctx, 15, new int[]{-1});
     }
 
+    /**
+     * Write events to the input stream. Start multiple processors which can read from the input stream
+     * and write to the output stream. Validate events in the output stream.
+     * This method performs the setup and teardown. The provided function func performs the actual write and read
+     * of events; stops, pauses, and starts processor instances; and validates results.
+     *
+     * @param numSegments number of stream segments
+     * @param numKeys number of unique routing keys
+     * @param numInitialInstances number of initial processor instances
+     * @param func function to run to write and write events, etc.
+     */
     private void endToEndTest(int numSegments, int numKeys, int numInitialInstances, Consumer<TestContext> func) throws Exception {
         final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
         log.info("Test case: {}", methodName);
@@ -213,6 +235,7 @@ public class StreamProcessingTest {
     public void trivialTest() throws Exception {
         endToEndTest(1, 1, 1, ctx -> {
             writeEventsAndValidate(ctx, 20, new int[]{0});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
         });
     }
 
@@ -223,6 +246,7 @@ public class StreamProcessingTest {
             ctx.workerProcessGroup.stop(0);
             ctx.workerProcessGroup.start(1);
             writeEventsAndValidate(ctx, 90, new int[]{1});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
         });
     }
 
@@ -232,6 +256,7 @@ public class StreamProcessingTest {
             writeEventsAndValidate(ctx, 100, new int[]{0, 1});
             ctx.workerProcessGroup.stop(0);
             writeEventsAndValidate(ctx, 90, new int[]{1});
+            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
         });
     }
 
@@ -253,6 +278,4 @@ public class StreamProcessingTest {
             writeEventsAndValidate(ctx, 90, new int[]{5});
         });
     }
-
-    // TODO: pause and resume
 }

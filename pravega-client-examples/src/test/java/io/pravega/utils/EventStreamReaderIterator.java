@@ -16,6 +16,9 @@ import io.pravega.client.stream.EventStreamReader;
 import java.util.Iterator;
 import java.util.Optional;
 
+/**
+ * An Iterator for reading from a Pravega stream.
+ */
 public class EventStreamReaderIterator<T> implements Iterator<T> {
     private final EventStreamReader<T> reader;
     private final long timeoutMillis;

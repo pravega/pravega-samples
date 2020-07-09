@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+/**
+ * This manages a group of WorkerProcess instances.
+ */
 @Builder
 public class WorkerProcessGroup implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(WorkerProcessGroup.class);

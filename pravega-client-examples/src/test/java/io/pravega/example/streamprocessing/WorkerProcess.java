@@ -33,6 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * This simulates an independent process running an AtLeastOnceProcessor.
+ */
 @Builder
 public class WorkerProcess extends AbstractExecutionThreadService {
     private static final Logger log = LoggerFactory.getLogger(WorkerProcess.class);

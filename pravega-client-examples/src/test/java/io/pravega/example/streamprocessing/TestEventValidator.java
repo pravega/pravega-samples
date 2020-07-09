@@ -17,6 +17,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * This validates that the sequence of events provided is consistent with the guarantees provided by the
+ * AtLeastOnceProcessor.
+ */
 public class TestEventValidator {
     static final Logger log = LoggerFactory.getLogger(TestEventValidator.class);
 

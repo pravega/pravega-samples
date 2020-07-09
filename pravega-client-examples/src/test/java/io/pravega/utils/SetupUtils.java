@@ -42,12 +42,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Utility functions for creating the test setup.
+ * Utility functions for creating an in-process Pravega server or connecting to an external Pravega server.
  */
-//@Slf4j
 @NotThreadSafe
 public final class SetupUtils {
-
     static Logger log = LoggerFactory.getLogger(SetupUtils.class);
     private static final ScheduledExecutorService DEFAULT_SCHEDULED_EXECUTOR_SERVICE = ExecutorServiceHelpers.newScheduledThreadPool(3, "SetupUtils");
 

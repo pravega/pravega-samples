@@ -17,6 +17,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * An Iterator that generates TestEvent elements.
+ * Events will have routing keys between 0 and numKeys - 1.
+ * For each routing key, sequence numbers will begin at 0 and increment by 1.
+ */
 public class TestEventGenerator implements Iterator<TestEvent> {
     static final Logger log = LoggerFactory.getLogger(TestEventGenerator.class);
 
