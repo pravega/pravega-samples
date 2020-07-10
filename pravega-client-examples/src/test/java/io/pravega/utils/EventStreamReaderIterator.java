@@ -52,14 +52,11 @@ public class EventStreamReaderIterator<T> implements Iterator<T> {
     }
 
     private void readIfNeeded() {
-        log.info("readIfNeeded: BEGIN");
         if (!nextEvent.isPresent()) {
             final long t0 = System.nanoTime();
             long nextTimeoutMillis = timeoutMillis;
             while (nextTimeoutMillis >= 0) {
-                log.info("readIfNeeded: nextTimeoutMillis={}", nextTimeoutMillis);
                 final EventRead<T> eventRead = reader.readNextEvent(nextTimeoutMillis);
-                log.info("readIfNeeded: eventRead={}", eventRead);
                 if (!eventRead.isCheckpoint()) {
                     if (eventRead.getEvent() != null) {
                         nextEvent = Optional.of(eventRead.getEvent());
@@ -69,6 +66,5 @@ public class EventStreamReaderIterator<T> implements Iterator<T> {
                 nextTimeoutMillis = timeoutMillis - (System.nanoTime() - t0) / 1000 / 1000;
             }
         }
-        log.info("readIfNeeded: END");
     }
 }

@@ -122,8 +122,8 @@ public class WorkerProcess extends AbstractExecutionThreadService {
         processor.get().pause();
     }
 
-    public void preventFlush() {
-        processor.get().preventFlush();
+    public void induceFailureDuringFlush() {
+        processor.get().induceFailureDuringFlush();
     }
 
     public void induceFailureDuringProcess() {
@@ -131,6 +131,6 @@ public class WorkerProcess extends AbstractExecutionThreadService {
     }
 
     public void setWriteMode(WriteMode mode) {
-        processor.get().setWriteModeRef(mode);
+        processor.get().setWriteMode(mode);
     }
 }
