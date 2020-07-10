@@ -387,7 +387,7 @@ public class StreamProcessingTest {
                 }).build());
     }
 
-    @Test
+    @Test(timeout = 2*60*1000)
     public void handleExceptionDuringFlushTest() throws Exception {
         run(EndToEndTestConfig.builder()
                 .numSegments(6)
@@ -419,7 +419,7 @@ public class StreamProcessingTest {
                 }).build());
     }
 
-    @Test
+    @Test(timeout = 2*60*1000)
     public void killAndRestart1of1ForcingDuplicatesTest() throws Exception {
         run(EndToEndTestConfig.builder()
                 .numSegments(6)
