@@ -43,10 +43,6 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
 
     /**
      * Run the event processor loop.
-     *
-     * If the previous call to readNextEvent returned a checkpoint, the next call
-     * to readNextEvent will record in the reader group that this reader
-     * has read and processed events up to the previous {@link Position}.
      */
     @Override
     protected void run() throws Exception {
@@ -54,26 +50,42 @@ abstract public class AtLeastOnceProcessor<T> extends AbstractExecutionThreadSer
         // before the EventStreamReader is created. Otherwise, another ReaderGroupPruner instance may place this reader offline.
         // It is also critical that when this method stops running the ReaderGroupPruner is eventually stopped so that
         // it no longer sends heartbeats.
-        try (final ReaderGroupPruner pruner = prunerSupplier.get();
-             final EventStreamReader<T> reader = readerSupplier.get()) {
-            while (isRunning()) {
-                final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
-                log.info("eventRead={}", eventRead);
-                // We must inject the fault between read and process.
-                // This ensures that a *new* event cannot be processed after the fault injection latch is set.
-                injectFault(pruner);
-                if (eventRead.isCheckpoint()) {
-                    flush();
-                } else if (eventRead.getEvent() != null) {
-                    process(eventRead);
+        try (final ReaderGroupPruner pruner = prunerSupplier.get()) {
+            final EventStreamReader<T> reader = readerSupplier.get();
+            Position lastProcessedPosition = null;
+            Position lastFlushedPosition = null;
+            try {
+                while (isRunning()) {
+                    final EventRead<T> eventRead = reader.readNextEvent(readTimeoutMillis);
+                    log.info("eventRead={}", eventRead);
+                    // We must inject the fault between read and process.
+                    // This ensures that a *new* event cannot be processed after the fault injection latch is set.
+                    injectFault(pruner);
+                    if (eventRead.isCheckpoint()) {
+                        flush();
+                        lastProcessedPosition = eventRead.getPosition();
+                        lastFlushedPosition = lastProcessedPosition;
+                    } else if (eventRead.getEvent() != null) {
+                        try {
+                            process(eventRead);
+                            lastProcessedPosition = eventRead.getPosition();
+                        } catch (Exception e) {
+                            // If an exception occurs during processing, attempt to flush.
+                            flush();
+                            lastFlushedPosition = lastProcessedPosition;
+                            throw e;
+                        }
+                    }
                 }
+                // Gracefully stop.
+                log.info("Stopping");
+                flush();
+                lastFlushedPosition = lastProcessedPosition;
+            } finally {
+                log.info("Closing reader");
+                // Note that if lastFlushedPosition is null, the segment offset used by a future reader will remain unchanged.
+                reader.closeAt(lastFlushedPosition);
             }
-            // Gracefully stop.
-            // Call readNextEvent to indicate that the previous event was processed.
-            // When the reader is closed, it will call readerOffline with the proper position.
-            log.info("Stopping");
-            reader.readNextEvent(0);
-            flush();
         }
         log.info("Stopped");
     }

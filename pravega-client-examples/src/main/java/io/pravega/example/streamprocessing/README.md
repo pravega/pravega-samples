@@ -112,16 +112,21 @@ The interval can be specified using `ReaderGroupConfig.automaticCheckpointInterv
 ## Graceful shutdown
 
 A graceful shutdown of an at-least-once process requires that it call
-`ReaderGroup.readerOffline(readerId, lastPosition)`, where `lastPosition`
+`EventStreamReader.closeAt(position)`, where `position`
 is the position object of the last event that was successfully processed.
-This method is called automatically when the `EventStreamReader` is closed.
+If `position` is null, this will indicate that the reader did not successfully process any events.
 When graceful shutdowns occur, events will be processed exactly once.
+
+## Exceptional shutdown
+
+An exceptional shutdown occurs when `AtLeastOnceProcessor.run()` encounters a fatal exception.
+This is handled similarly to the graceful shutdown case.
 
 ## Ungraceful shutdown
 
 An ungraceful shutdown of a process can occur when the host abruptly loses power,
 when it loses its network connection, or when the process is terminated with `kill -9`.
-In these situations, the process is unable to successfully call `ReaderGroup.readerOffline()`.
+In these situations, the process is unable to successfully call `EventStreamReader.closeAt(position)`.
 However, the Reader Group guarantees that any assigned segments will remain assigned
 to the reader until `readerOffline()` is called. 
 If no action is taken, the events in the segments assigned to the dead worker's reader will never be read.
@@ -139,9 +144,9 @@ If writes are not idempotent, this will produce duplicates.
 In order to detect dead workers, each worker process must run an instance of `ReaderGroupPruner`.
 `ReaderGroupPruner` uses a [MembershipSynchronizer](MembershipSynchronizer.java) which uses a 
 [State Synchronizer](http://pravega.io/docs/latest/state-synchronizer-design/) to
-maintain the set of workers that are providing heart beats.
-Each worker sends a heart beat by adding an update to the `MembershipSynchronizer`'s State Synchronizer.
-Workers that fail to provide a heart beat after 10 intervals will be removed from the `MembershipSynchronizer`.
+maintain the set of workers that are providing heartbeats.
+Each worker sends a heartbeat by adding an update to the `MembershipSynchronizer`'s State Synchronizer.
+Workers that fail to provide a heartbeat after 10 intervals will be removed from the `MembershipSynchronizer`.
 Finally, any workers in the Reader Group that are not in the `MembershipSynchronizer` are
 considered dead and `readerOffline(readerId, null)` will be called by one or more instances of `ReaderGroupPruner`.
 
