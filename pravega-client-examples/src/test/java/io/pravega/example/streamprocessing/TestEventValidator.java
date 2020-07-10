@@ -13,6 +13,7 @@ package io.pravega.example.streamprocessing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -61,7 +62,10 @@ public class TestEventValidator {
                 }
             }
         }
-        throw new NoMoreEventsException("No more events but all expected events were not received");
+        throw new NoMoreEventsException(MessageFormat.format(
+                "No more events but all expected events were not received; " +
+                "receivedSequenceNumbers={0}, expectedLastSequenceNumbers={1}",
+                receivedSequenceNumbers, expectedLastSequenceNumbers));
     }
 
     public void clearCounters() {

@@ -99,6 +99,7 @@ public class StreamProcessingTest {
      * @param expectedInstanceIds All read events must have a processedByInstanceId in this set.
      */
     void validateEvents(TestContext ctx, int[] expectedInstanceIds) {
+        log.info("validateEvents: BEGIN");
         // Read events from output stream. Return when complete or throw exception if out of order or timeout.
         ctx.validator.clearCounters();
         ctx.validator.validate(ctx.readerIterator, ctx.generator.getLastSequenceNumbers());
@@ -106,15 +107,16 @@ public class StreamProcessingTest {
         final Map<Integer, Long> eventCountByInstanceId = ctx.validator.getEventCountByInstanceId();
         final Set<Integer> actualInstanceIds = eventCountByInstanceId.keySet();
         final Set<Integer> expectedInstanceIdsSet = Arrays.stream(expectedInstanceIds).boxed().collect(Collectors.toCollection(HashSet::new));
-        log.info("writeEventsAndValidate: eventCountByInstanceId={}, expectedInstanceIdsSet={}", eventCountByInstanceId, expectedInstanceIdsSet);
+        log.info("validateEvents: eventCountByInstanceId={}, expectedInstanceIdsSet={}", eventCountByInstanceId, expectedInstanceIdsSet);
         Assert.assertTrue(MessageFormat.format("eventCountByInstanceId={0}, expectedInstanceIdsSet={1}", eventCountByInstanceId, expectedInstanceIdsSet),
                 Sets.difference(actualInstanceIds, expectedInstanceIdsSet).isEmpty());
         // Warn if any instances are idle. This cannot be an assertion because this may happen under normal conditions.
         final Sets.SetView<Integer> idleInstanceIds = Sets.difference(expectedInstanceIdsSet, actualInstanceIds);
         if (!idleInstanceIds.isEmpty()) {
-            log.warn("writeEventsAndValidate: Some instances processed no events; eventCountByInstanceId={}, expectedInstanceIdsSet={}",
+            log.warn("validateEvents: Some instances processed no events; eventCountByInstanceId={}, expectedInstanceIdsSet={}",
                     eventCountByInstanceId, expectedInstanceIdsSet);
         }
+        log.info("validateEvents: END");
     }
 
     /**
@@ -388,6 +390,28 @@ public class StreamProcessingTest {
     }
 
     @Test(timeout = 2*60*1000)
+    public void handleExceptionDuringProcessTest() throws Exception {
+        run(EndToEndTestConfig.builder()
+                .numSegments(1)
+                .numKeys(1)
+                .numInitialInstances(1)
+                .writeMode(WriteMode.AlwaysHoldUntilFlushed)
+                .func(ctx -> {
+                    // Force process function to throw an exception.
+                    ctx.workerProcessGroup.get(0).induceFailureDuringProcess();
+                    // Write an event.
+                    writeEvents(ctx, 1);
+                    // Wait for process function to throw an exception.
+                    sleep(2*ctx.checkpointPeriodMs);
+                    // Start a new worker instance so that we can determine where it reads from.
+                    // The event should have been processed exactly once.
+                    ctx.workerProcessGroup.start(1);
+                    validateEvents(ctx, new int[]{1});
+                    Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+                }).build());
+    }
+
+    @Test(timeout = 2*60*1000)
     public void handleExceptionDuringFlushTest() throws Exception {
         run(EndToEndTestConfig.builder()
                 .numSegments(6)
@@ -401,13 +425,11 @@ public class StreamProcessingTest {
                     // TODO: Monitor the reader group to determine when this occurs?
                     // This will update the reader group state to indicate that this reader has read up to this point.
                     sleep(2*ctx.checkpointPeriodMs);
-                    // Although we don't have control over when a checkpoint request is received by a reader, we can detect it.
-                    // If this happens, we will throw an exception and this test will fail. This should be rare.
+                    // Force an exception during flush.
                     ctx.workerProcessGroup.preventFlush(0);
                     // Write some events that will be processed, written to Pravega, and read by the validator, but not explicitly flushed.
                     final int expectedDuplicateEventCount = 3;
                     writeEvents(ctx, expectedDuplicateEventCount);
-                    Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
                     // Wait for a while so that flush is called and throws an exception.
                     // This will close the reader (with what value for readerOffline?).
                     sleep(2*ctx.checkpointPeriodMs);

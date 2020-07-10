@@ -29,6 +29,10 @@ public class WorkerProcessGroup implements AutoCloseable {
     private final Map<Integer, WorkerProcess> workers = new HashMap<>();
     private WriteMode writeMode;
 
+    public WorkerProcess get(int instanceId) {
+        return workers.get(instanceId);
+    }
+
     /**
      * Streams are guaranteed to exist after calling this method.
      */

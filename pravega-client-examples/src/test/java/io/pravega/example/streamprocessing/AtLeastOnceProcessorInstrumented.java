@@ -24,6 +24,7 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     private final ReusableLatch latch = new ReusableLatch(true);
     private final AtomicLong unflushedEventCount = new AtomicLong(0);
     private final AtomicBoolean preventFlushFlag = new AtomicBoolean(false);
+    private final AtomicBoolean induceFailureDuringProcessFlag = new AtomicBoolean(false);
     private final AtomicReference<WriteMode> writeModeRef = new AtomicReference<>();
     private final List<TestEvent> queue = new ArrayList<>();
 
@@ -46,6 +47,9 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
         event.processedByInstanceId = instanceId;
         final WriteMode writeMode = writeModeRef.get();
         log.info("process: writeMode={}, event={}", writeMode, event);
+        if (induceFailureDuringProcessFlag.get()) {
+            throw new RuntimeException("induceFailureDuringProcess is set");
+        }
         if (writeMode == WriteMode.AlwaysHoldUntilFlushed) {
             queue.add(event);
             unflushedEventCount.incrementAndGet();
@@ -95,6 +99,10 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
 
     public void preventFlush() {
         preventFlushFlag.set(true);
+    }
+
+    public void induceFailureDuringProcess() {
+        induceFailureDuringProcessFlag.set(true);
     }
 
     public void setWriteModeRef(WriteMode writeMode) {
