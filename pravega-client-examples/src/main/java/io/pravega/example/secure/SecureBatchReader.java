@@ -10,107 +10,29 @@
  */
 package io.pravega.example.secure;
 
+import com.google.common.collect.Lists;
+import io.pravega.client.BatchClientFactory;
 import io.pravega.client.ClientConfig;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.ReaderConfig;
-import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.SynchronizerClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.batch.SegmentIterator;
+import io.pravega.client.batch.SegmentRange;
 import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.StreamCut;
 import io.pravega.client.stream.impl.DefaultCredentials;
 import io.pravega.client.stream.impl.JavaSerializer;
-import com.google.common.collect.Lists;
 import io.pravega.common.concurrent.Futures;
-import io.pravega.client.BatchClientFactory;
-import io.pravega.client.admin.StreamInfo;
-import io.pravega.common.concurrent.Futures;
-import io.pravega.client.state.Revision;
-import io.pravega.client.state.RevisionedStreamClient;
-import io.pravega.client.state.SynchronizerConfig;
-import io.pravega.client.segment.impl.Segment;
-import io.pravega.client.ClientConfig;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.SynchronizerClientFactory;
-import io.pravega.client.netty.impl.ConnectionFactory;
-import io.pravega.client.netty.impl.ConnectionFactoryImpl;
-import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.batch.SegmentIterator;
-import io.pravega.client.batch.SegmentRange;
-import io.pravega.client.batch.impl.SegmentRangeImpl;
-import io.pravega.client.admin.impl.ReaderGroupManagerImpl;
-import io.pravega.client.stream.EventRead;
-import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.ReaderConfig;
-import io.pravega.client.stream.ReaderGroup;
-import io.pravega.client.stream.ReaderGroupConfig;
-import io.pravega.client.stream.Serializer;
-import io.pravega.client.stream.TimeWindow;
-import io.pravega.client.stream.impl.Controller;
-import io.pravega.client.stream.impl.ControllerImpl;
-import io.pravega.client.stream.impl.ControllerImplConfig;
-import io.pravega.client.stream.impl.JavaSerializer;
-import io.pravega.shared.watermarks.Watermark;
-import io.pravega.common.concurrent.Futures;
-import io.pravega.client.state.Revision;
-import io.pravega.client.state.RevisionedStreamClient;
-import io.pravega.client.state.SynchronizerConfig;
-import io.pravega.client.segment.impl.Segment;
-import io.pravega.client.ClientConfig;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.SynchronizerClientFactory;
-import io.pravega.client.netty.impl.ConnectionFactory;
-import io.pravega.client.netty.impl.ConnectionFactoryImpl;
-import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.batch.SegmentIterator;
-import io.pravega.client.batch.SegmentRange;
-import io.pravega.client.batch.impl.SegmentRangeImpl;
-import io.pravega.client.admin.impl.ReaderGroupManagerImpl;
-import io.pravega.client.stream.EventRead;
-import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.ReaderConfig;
-import io.pravega.client.stream.ReaderGroup;
-import io.pravega.client.stream.ReaderGroupConfig;
-import io.pravega.client.stream.Serializer;
-import io.pravega.client.stream.TimeWindow;
-import io.pravega.client.stream.impl.Controller;
-import io.pravega.client.stream.impl.ControllerImpl;
-import io.pravega.client.stream.impl.ControllerImplConfig;
-import io.pravega.client.stream.impl.JavaSerializer;
-import io.pravega.shared.watermarks.Watermark;
-import io.pravega.client.watermark.WatermarkSerializer;
-import io.pravega.shared.NameUtils;
-import io.pravega.client.stream.Stream;
-import io.pravega.client.stream.StreamCut;
-import io.pravega.common.concurrent.Futures;
-import io.pravega.client.segment.impl.Segment;
-import io.pravega.client.stream.Position;
-import io.pravega.client.stream.Stream;
-import io.pravega.client.stream.StreamCut;
-import io.pravega.client.stream.TimeWindow;
-import io.pravega.client.segment.impl.Segment;
-import io.pravega.client.stream.impl.StreamCutImpl;
-import io.pravega.client.stream.TruncatedDataException;
-import org.apache.commons.lang3.ObjectUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Supplier;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.Random;
-
-
-
-
+import java.util.UUID;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -118,8 +40,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import java.net.URI;
-import java.util.UUID;
 import static io.pravega.common.concurrent.ExecutorServiceHelpers.newScheduledThreadPool;
 
 /**
@@ -132,7 +52,7 @@ import static io.pravega.common.concurrent.ExecutorServiceHelpers.newScheduledTh
  * This example can be driven interactively against a running Pravega cluster configured to communicate using SSL/TLS
  * and "auth" (authentication and authorization) turned on.
  */
-public class SecureBatchReader {
+public class SecureBatchReader implements AutoCloseable{
 
     private final String scope;
     private final String stream;
@@ -147,15 +67,13 @@ public class SecureBatchReader {
     private final String password;
     private ClientConfig clientConfig;
 
-    private static Logger LOG = LoggerFactory.getLogger(SecureBatchReader.class);
     private static final int THREAD_POOL_SIZE = 5;
-    private static ScheduledExecutorService streamCutLoggerService = newScheduledThreadPool(THREAD_POOL_SIZE, String.format("EventsCount"));
-    private ScheduledExecutorService executor;
+    private ScheduledExecutorService batchCountExecutor;
 
 
     public SecureBatchReader(String scope, String stream, URI controllerURI,
-                        String truststorePath, boolean validateHostname,
-                        String username, String password) {
+                             String truststorePath, boolean validateHostname,
+                             String username, String password) {
 
         this.scope = scope;
         this.stream = stream;
@@ -164,8 +82,13 @@ public class SecureBatchReader {
         this.validateHostName = validateHostname;
         this.username = username;
         this.password = password;
+        this.batchCountExecutor = newScheduledThreadPool(THREAD_POOL_SIZE, String.format("EventsCount"));
     }
 
+    @Override
+    public void close() throws Exception {
+        this.batchCountExecutor.shutdownNow();
+    }
 
     public void read() throws ReinitializationRequiredException {
 
@@ -262,57 +185,43 @@ public class SecureBatchReader {
     }
 
     public void run() {
-        LOG.info("Starting segment logger");
-        this.executor = newScheduledThreadPool(THREAD_POOL_SIZE, String.format("EventsLogger"));
-        try {
-            Futures.delayedTask(() -> {
-                logEventCounts();
-                this.executor.shutdownNow();
-                return null;
-            }, Duration.ofMinutes(0), executor).get();
-        } catch (InterruptedException | ExecutionException e) {
-           e.printStackTrace();
-        }
-        LOG.info("Started segment logger");
-    }
-
-    private void logEventCounts() {
         try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, clientConfig)) {
-             System.out.println("Done creating batchClient for " + scope + "/" + stream);
-             ArrayList<SegmentRange> ranges = Lists.newArrayList(batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator());
-             readFromRanges(batchClient, ranges);
-             System.out.println("Done reading ranges of size: " + String.valueOf(ranges.size()));
+            System.out.println("Done creating batchClient for " + scope + "/" + stream);
+            ArrayList<SegmentRange> ranges = Lists.newArrayList(batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator());
+            readFromRanges(batchClient, ranges);
+            System.out.println("Done reading ranges of size: " + String.valueOf(ranges.size()));
         } catch (Exception e) {
             e.printStackTrace();
-            LOG.error("Exception:", e);
         }
     }
 
     private int readFromRanges(BatchClientFactory batchClient, List<SegmentRange> ranges) {
-        LOG.info("Number of ranges: {}", ranges.size());
         List<CompletableFuture<Integer>> eventCounts = new ArrayList<>();
         JavaSerializer<String> serializer = new JavaSerializer<String>();
         eventCounts = ranges
-                .parallelStream()
-                .map(range -> CompletableFuture.supplyAsync(() -> batchClient.readSegment(range, serializer))
-                        .thenApplyAsync(segmentIterator -> {
-                            int numEvents = 0;
-                            try {
-                                String id = String.valueOf(Thread.currentThread().getId());
-                                while (segmentIterator.hasNext()) {
-                                    String event = segmentIterator.next();
-                                    System.out.println("Done reading event by thread " + id + ": " + event);
-                                    numEvents++;
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            } finally {
-                                segmentIterator.close();
+                .stream()
+                .map(range -> {
+                    return Futures.delayedTask(() -> {
+                        SegmentIterator<String> segmentIterator = batchClient.readSegment(range, serializer);
+                        int numEvents = 0;
+                        try {
+                            String id = String.valueOf(Thread.currentThread().getId());
+                            while (segmentIterator.hasNext()) {
+                                String event = segmentIterator.next();
+                                System.out.println("Done reading event by thread " + id + ": " + event);
+                                numEvents++;
                             }
-                            return numEvents;
-                        }))
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            segmentIterator.close();
+                        }
+                        return new Integer(numEvents);
+                    }, Duration.ofSeconds(1), batchCountExecutor);
+                })
                 .collect(Collectors.toList());
-        int count = eventCounts.stream().map(CompletableFuture::join).mapToInt(Integer::intValue).sum();
+        List<Integer> results = Futures.allOfWithResults(eventCounts).join();
+        int count = results.stream().mapToInt(Integer::intValue).sum();
         System.out.println("Done reading " + String.valueOf(count) + " events");
         return count;
     }
