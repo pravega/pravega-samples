@@ -21,7 +21,7 @@ import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
 import io.pravega.client.stream.impl.DefaultCredentials;
-import io.pravega.client.stream.impl.JavaSerializer;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import io.pravega.common.concurrent.Futures;
 import java.net.URI;
 import java.time.Duration;
@@ -127,7 +127,14 @@ public class SecureBatchReader implements AutoCloseable{
         // Everything below depicts the usual flow of reading events. All client-side security configuration is
         // done through the ClientConfig object as shown above.
 
-        run();
+        try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, clientConfig)) {
+            System.out.println("Done creating batchClient for " + scope + "/" + stream);
+            ArrayList<SegmentRange> segments = Lists.newArrayList(batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator());
+            readFromSegments(batchClient, segments);
+            System.out.println("Done reading " + String.valueOf(segments.size()) + " segments.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.err.println("All done with reading! Exiting...");
     }
 
@@ -184,44 +191,30 @@ public class SecureBatchReader implements AutoCloseable{
         return cmd;
     }
 
-    public void run() {
-        try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, clientConfig)) {
-            System.out.println("Done creating batchClient for " + scope + "/" + stream);
-            ArrayList<SegmentRange> ranges = Lists.newArrayList(batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator());
-            readFromRanges(batchClient, ranges);
-            System.out.println("Done reading ranges of size: " + String.valueOf(ranges.size()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private int readFromRanges(BatchClientFactory batchClient, List<SegmentRange> ranges) {
-        List<CompletableFuture<Integer>> eventCounts = new ArrayList<>();
-        JavaSerializer<String> serializer = new JavaSerializer<String>();
-        eventCounts = ranges
+    private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) {
+        List<Integer> batchEventCountList = new ArrayList<>();
+        UTF8StringSerializer serializer = new UTF8StringSerializer();
+        batchEventCountList = segments
                 .stream()
-                .map(range -> {
-                    return Futures.delayedTask(() -> {
-                        SegmentIterator<String> segmentIterator = batchClient.readSegment(range, serializer);
-                        int numEvents = 0;
-                        try {
-                            String id = String.valueOf(Thread.currentThread().getId());
-                            while (segmentIterator.hasNext()) {
-                                String event = segmentIterator.next();
-                                System.out.println("Done reading event by thread " + id + ": " + event);
-                                numEvents++;
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
-                            segmentIterator.close();
+                .map(segment -> {
+                    SegmentIterator<String> segmentIterator = batchClient.readSegment(segment, serializer);
+                    int numEvents = 0;
+                    try {
+                        String id = String.valueOf(Thread.currentThread().getId());
+                        while (segmentIterator.hasNext()) {
+                            String event = segmentIterator.next();
+                            System.out.println("Done reading event by thread " + id + ": " + event);
+                            numEvents++;
                         }
-                        return new Integer(numEvents);
-                    }, Duration.ofSeconds(1), batchCountExecutor);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        segmentIterator.close();
+                    }
+                    return new Integer(numEvents);
                 })
                 .collect(Collectors.toList());
-        List<Integer> results = Futures.allOfWithResults(eventCounts).join();
-        int count = results.stream().mapToInt(Integer::intValue).sum();
+        int count = batchEventCountList.stream().mapToInt(Integer::intValue).sum();
         System.out.println("Done reading " + String.valueOf(count) + " events");
         return count;
     }
