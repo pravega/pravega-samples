@@ -21,7 +21,7 @@ import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
 import io.pravega.client.stream.impl.DefaultCredentials;
-import io.pravega.client.stream.impl.UTF8StringSerializer;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.common.concurrent.Futures;
 import java.net.URI;
 import java.time.Duration;
@@ -135,7 +135,7 @@ public class SecureBatchReader implements AutoCloseable{
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.err.println("All done with reading! Exiting...");
+        System.out.println("All done with reading! Exiting...");
     }
 
     public static void main(String[] args) throws ReinitializationRequiredException {
@@ -146,8 +146,6 @@ public class SecureBatchReader implements AutoCloseable{
             cmd = parseCommandLineArgs(options, args);
         } catch (ParseException e) {
             System.out.format("%s.%n", e.getMessage());
-            final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("HelloWorldReader", options);
             System.exit(1);
         }
 
@@ -193,7 +191,7 @@ public class SecureBatchReader implements AutoCloseable{
 
     private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) {
         List<Integer> batchEventCountList = new ArrayList<>();
-        UTF8StringSerializer serializer = new UTF8StringSerializer();
+        JavaSerializer<String> serializer = new JavaSerializer<>();
         batchEventCountList = segments
                 .stream()
                 .map(segment -> {

@@ -152,8 +152,7 @@ how to setup clients connecting to a security-enabled Pravega cluster. Specifica
 First, ensure that the Pravega cluster that the applications are going to work with, has both TLS and
 Auth (authentication and authorization) enabled. See Pravega documentation for how to enable TLS and Auth.
 
-Now, you might want to run `SecureWriter` in one window and `SecureReader` in another window.
-and finally `SecureBatchReader`
+Now, you might want to run `SecureWriter` in one window, `SecureReader` in another window and finally `SecureBatchReader`
 To run `SecureWriter`, you can execute the following command:
 
 ```

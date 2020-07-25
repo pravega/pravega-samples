@@ -16,7 +16,7 @@ package io.pravega.example.secure;
 public class Constants {
     static final String DEFAULT_SCOPE = "myscope";
     static final String DEFAULT_STREAM_NAME = "mystream";
-    static final String DEFAULT_CONTROLLER_URI = "tls://localhost:9090";
+    static final String DEFAULT_CONTROLLER_URI = "tcp://10.247.78.154:9090";
 
     // Replace the value of the DEFAULT_TRUSTSTORE_PATH with "./pravega-client-examples/src/main/resources/cert.pem"
     // if you are running the tests directly from the IDE (as opposed to CLI).
