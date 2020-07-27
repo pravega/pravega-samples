@@ -70,7 +70,6 @@ public class SecureBatchReader implements AutoCloseable{
     private static final int THREAD_POOL_SIZE = 5;
     private ScheduledExecutorService batchCountExecutor;
 
-
     public SecureBatchReader(String scope, String stream, URI controllerURI,
                              String truststorePath, boolean validateHostname,
                              String username, String password) {
