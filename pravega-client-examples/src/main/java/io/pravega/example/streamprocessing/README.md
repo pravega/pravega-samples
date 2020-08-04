@@ -137,7 +137,7 @@ Each worker process runs an instance of `ReaderGroupPruner`.
 When it detects a dead worker, it calls `readerOffline(readerId, lastPosition)` with
 a null value for `lastPosition`. 
 The null value for `lastPosition` indicates that it should use the position stored in the
-last `ReaderGroupState.CheckpointReader` event in the Reader Group.
+last `ReaderGroupState.CheckpointReader` event written by that reader in the Reader Group.
 Any events processed by the now-dead worker after the last checkpoint will be reprocessed by other workers.
 If writes are not idempotent, this will produce duplicates.
 
