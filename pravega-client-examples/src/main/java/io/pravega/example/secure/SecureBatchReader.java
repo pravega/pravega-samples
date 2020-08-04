@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Dell Inc., or its subsidiaries. All Rights Reserved.
+ * Copyright (c) 2020 Dell Inc., or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.pravega.common.concurrent.Futures;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,7 +53,7 @@ import static io.pravega.common.concurrent.ExecutorServiceHelpers.newScheduledTh
  * This example can be driven interactively against a running Pravega cluster configured to communicate using SSL/TLS
  * and "auth" (authentication and authorization) turned on.
  */
-public class SecureBatchReader implements AutoCloseable{
+public class SecureBatchReader implements AutoCloseable {
 
     private final String scope;
     private final String stream;
@@ -68,7 +69,7 @@ public class SecureBatchReader implements AutoCloseable{
     private ClientConfig clientConfig;
 
     private static final int THREAD_POOL_SIZE = 5;
-    private ScheduledExecutorService batchCountExecutor;
+    private final ScheduledExecutorService batchCountExecutor;
 
     public SecureBatchReader(String scope, String stream, URI controllerURI,
                              String truststorePath, boolean validateHostname,
@@ -89,7 +90,7 @@ public class SecureBatchReader implements AutoCloseable{
         this.batchCountExecutor.shutdownNow();
     }
 
-    public void read() throws ReinitializationRequiredException {
+    public void read() throws Exception {
 
         /*
          * Note about setting the client config for HTTPS:
@@ -128,16 +129,18 @@ public class SecureBatchReader implements AutoCloseable{
 
         try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, clientConfig)) {
             System.out.println("Done creating batchClient for " + scope + "/" + stream);
-            ArrayList<SegmentRange> segments = Lists.newArrayList(batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator());
+            ArrayList<SegmentRange> segments = new ArrayList<>();
+            Iterator<SegmentRange> iterator =  batchClient.getSegments(Stream.of(scope, stream), StreamCut.UNBOUNDED, StreamCut.UNBOUNDED).getIterator();
+            while(iterator.hasNext()) {
+                  segments.add(iterator.next());
+            }
             readFromSegments(batchClient, segments);
-            System.out.println("Done reading " + String.valueOf(segments.size()) + " segments.");
-        } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(String.format("Done reading %s segments.", segments.size()));
         }
         System.out.println("All done with reading! Exiting...");
     }
 
-    public static void main(String[] args) throws ReinitializationRequiredException {
+    public static void main(String[] args) throws Exception {
         Options options = getOptions();
 
         CommandLine cmd = null;
@@ -191,13 +194,13 @@ public class SecureBatchReader implements AutoCloseable{
     private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) {
         List<Integer> batchEventCountList = new ArrayList<>();
         JavaSerializer<String> serializer = new JavaSerializer<>();
-        batchEventCountList = segments
+        int count = segments
                 .stream()
-                .map(segment -> {
+                .mapToInt(segment -> {
                     SegmentIterator<String> segmentIterator = batchClient.readSegment(segment, serializer);
                     int numEvents = 0;
                     try {
-                        String id = String.valueOf(Thread.currentThread().getId());
+                        String id = String.format("%s", Thread.currentThread().getId());
                         while (segmentIterator.hasNext()) {
                             String event = segmentIterator.next();
                             System.out.println("Done reading event by thread " + id + ": " + event);
@@ -208,11 +211,9 @@ public class SecureBatchReader implements AutoCloseable{
                     } finally {
                         segmentIterator.close();
                     }
-                    return new Integer(numEvents);
-                })
-                .collect(Collectors.toList());
-        int count = batchEventCountList.stream().mapToInt(Integer::intValue).sum();
-        System.out.println("Done reading " + String.valueOf(count) + " events");
+                    return numEvents;
+                }).sum();
+        System.out.println(String.format("Done reading %s events", String.valueOf(count)));
         return count;
     }
 }
