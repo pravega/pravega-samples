@@ -191,7 +191,7 @@ public class SecureBatchReader implements AutoCloseable {
         return cmd;
     }
 
-    private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) {
+    private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) throws Exception {
         List<Integer> batchEventCountList = new ArrayList<>();
         JavaSerializer<String> serializer = new JavaSerializer<>();
         int count = segments
@@ -206,8 +206,6 @@ public class SecureBatchReader implements AutoCloseable {
                             System.out.println("Done reading event by thread " + id + ": " + event);
                             numEvents++;
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     } finally {
                         segmentIterator.close();
                     }
