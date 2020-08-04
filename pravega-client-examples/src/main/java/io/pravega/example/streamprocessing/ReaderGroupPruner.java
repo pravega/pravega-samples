@@ -10,6 +10,7 @@
  */
 package io.pravega.example.streamprocessing;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AbstractService;
 import io.pravega.client.SynchronizerClientFactory;
 import io.pravega.client.stream.ReaderGroup;
@@ -93,12 +94,17 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
         membershipSynchronizer.stopAsync();
     }
 
+    @VisibleForTesting
     public void pause() {
         log.warn("paused");
         task.cancel(false);
         membershipSynchronizer.pause();
     }
 
+    /**
+     * Not implemented.
+     */
+    @VisibleForTesting
     public void unpause() {
         log.warn("unpause");
         membershipSynchronizer.unpause();

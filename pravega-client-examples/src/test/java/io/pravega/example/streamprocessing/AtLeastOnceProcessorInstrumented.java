@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+/**
+ * An AtLeastOnceProcessor that is instrumented for testing.
+ */
 public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestEvent> {
     private static final Logger log = LoggerFactory.getLogger(AtLeastOnceProcessorInstrumented.class);
 
@@ -26,6 +29,7 @@ public class AtLeastOnceProcessorInstrumented extends AtLeastOnceProcessor<TestE
     private final AtomicBoolean induceFailureDuringFlushFlag = new AtomicBoolean(false);
     private final AtomicBoolean induceFailureDuringProcessFlag = new AtomicBoolean(false);
     private final AtomicReference<WriteMode> writeModeRef = new AtomicReference<>();
+    // A queue containing unflushed events.
     private final List<TestEvent> queue = new ArrayList<>();
 
     public AtLeastOnceProcessorInstrumented(

@@ -27,7 +27,6 @@ import io.pravega.client.stream.Stream;
 import io.pravega.utils.EventStreamReaderIterator;
 import io.pravega.utils.SetupUtils;
 import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
 import lombok.Builder;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@RunWith(JUnitParamsRunner.class)
 public class StreamProcessingTest {
     static final Logger log = LoggerFactory.getLogger(StreamProcessingTest.class);
 
@@ -58,7 +56,7 @@ public class StreamProcessingTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        SETUP_UTILS.set(new SetupUtils("tcp://localhost:9090"));
+        SETUP_UTILS.set(new SetupUtils());
         SETUP_UTILS.get().startAllServices();
     }
 
@@ -96,8 +94,7 @@ public class StreamProcessingTest {
     }
 
     /**
-     * Write the given number of events to the Pravega input stream.
-     * Then read events from the Pravega output stream to ensure that the processors produced the correct result.
+     * Read events from the Pravega output stream to ensure that the processors produced the correct result.
      *
      * @param ctx provides access to the validator, reader, etc.
      * @param expectedInstanceIds All read events must have a processedByInstanceId in this set.
@@ -192,7 +189,7 @@ public class StreamProcessingTest {
         // number of initial processor instances
         @Builder.Default public final int numInitialInstances = 1;
         @Builder.Default public final WriteMode writeMode = WriteMode.Default;
-        // function to run to write and write events, etc.
+        // test-specific function to write and validate events, etc.
         @Builder.Default public final Consumer<TestContext> func = (ctx) -> {};
     }
 
@@ -278,6 +275,10 @@ public class StreamProcessingTest {
         streamManager.deleteStream(scope, membershipSynchronizerStreamName);
     }
 
+    /**
+     * Write 20 events with 1 routing key, run 1 processor instance, and validate results.
+     * @throws Exception
+     */
     @Test
     public void trivialTest() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -291,6 +292,9 @@ public class StreamProcessingTest {
                 }).build());
     }
 
+    /**
+     * Gracefully stop 1 of 1 processor instances.
+     */
     @Test
     public void gracefulRestart1of1Test() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -307,6 +311,10 @@ public class StreamProcessingTest {
                 }).build());
     }
 
+    /**
+     * Gracefully stop 1 of 1 processor instances.
+     * Force each events to be durably written immediately.
+     */
     @Test
     public void gracefulRestart1of1DurableTest() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -323,6 +331,10 @@ public class StreamProcessingTest {
                 }).build());
     }
 
+    /**
+     * Gracefully stop 1 of 1 processor instances.
+     * Do not writes events to Pravega until flushed.
+     */
     @Test
     public void gracefulRestart1of1DHoldUntilFlushedTest() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -339,6 +351,9 @@ public class StreamProcessingTest {
                 }).build());
     }
 
+    /**
+     * Gracefully stop 1 of 2 processor instances.
+     */
     @Test
     public void gracefulStop1of2Test() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -354,6 +369,11 @@ public class StreamProcessingTest {
                 }).build());
     }
 
+    /**
+     * Kill and restart 1 of 1 processor instances.
+     * This is simulated by pausing the first instance until the test completes.
+     * This may produce duplicates.
+     */
     @Test
     public void killAndRestart1of1Test() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -366,9 +386,17 @@ public class StreamProcessingTest {
                     ctx.workerProcessGroup.get(0).pause();
                     ctx.workerProcessGroup.start(1);
                     writeEventsAndValidate(ctx, 90, new int[]{1});
+                    log.info("getDuplicateEventCount={}", ctx.validator.getDuplicateEventCount());
                 }).build());
     }
 
+    /**
+     * Kill and restart 1 of 1 processor instances.
+     * This is simulated by pausing the first instance until the test completes.
+     * This tests waits for 2x the checkpoint interval to ensure that the
+     * first processor writes its position before pausing.
+     * This will not produce duplicates.
+     */
     @Test
     public void killAndRestart1of1WhenIdleTest() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -440,6 +468,11 @@ public class StreamProcessingTest {
                     Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
                 }).build());
     }
+
+    /**
+     * This test processes events and then kills the processor before it receives a checkpoint.
+     * This is expected to produce duplicates.
+     */
     @Test(timeout = 2*60*1000)
     public void killAndRestart1of1ForcingDuplicatesTest() throws Exception {
         run(EndToEndTestConfig.builder()
@@ -457,9 +490,9 @@ public class StreamProcessingTest {
                     final int expectedDuplicateEventCount = 3;
                     writeEventsAndValidate(ctx, expectedDuplicateEventCount, new int[]{0});
                     Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
-                    sleep(1*ctx.checkpointPeriodMs);
-                    // Kill the worker instance.
-                    // TODO: We hope this will happen before flushing.
+                    // Kill the worker instance before it checkpoints and updates the reader group state.
+                    // There is no control mechanism to prevent the checkpoint.
+                    // If a checkpoint occurs here, this test will fail because duplicates will not be produced.
                     ctx.workerProcessGroup.get(0).pause();
                     // Start a new worker instance. It should identify the dead worker and call readerOffline(null).
                     // The new worker should produce duplicates.
@@ -469,6 +502,9 @@ public class StreamProcessingTest {
                 }).build());
     }
 
+    /**
+     * Kill 5 of 6 processor instances.
+     */
     @Test
     public void kill5of6Test() throws Exception {
         run(EndToEndTestConfig.builder()

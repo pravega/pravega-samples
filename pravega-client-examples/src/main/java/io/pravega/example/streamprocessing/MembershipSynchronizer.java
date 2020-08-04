@@ -10,6 +10,7 @@
  */
 package io.pravega.example.streamprocessing;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 import io.pravega.client.SynchronizerClientFactory;
@@ -279,11 +280,16 @@ public class MembershipSynchronizer extends AbstractService {
         task.cancel(false);
     }
 
+    @VisibleForTesting
     public void pause() {
         log.warn("paused");
         task.cancel(false);
     }
 
+    /**
+     * Not implemented.
+     */
+    @VisibleForTesting
     public void unpause() {
         log.warn("unpause");
     }
