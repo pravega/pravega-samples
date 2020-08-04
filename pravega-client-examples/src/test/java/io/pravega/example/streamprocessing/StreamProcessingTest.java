@@ -26,7 +26,6 @@ import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 import io.pravega.utils.EventStreamReaderIterator;
 import io.pravega.utils.SetupUtils;
-import junitparams.JUnitParamsRunner;
 import lombok.Builder;
 import lombok.Cleanup;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

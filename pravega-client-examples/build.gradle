@@ -22,12 +22,10 @@ resources
 ext {
     junitVersion = '4.11'
     commonsCLIVersion = '1.4'
-    junitParamsVersion = '1.1.1'
 }
 
 dependencies {
     testCompile "junit:junit:${junitVersion}"
-    testCompile "pl.pragmatists:JUnitParams:${junitParamsVersion}"
     testCompile "io.pravega:pravega-standalone:${pravegaVersion}"
     testCompile "io.pravega:pravega-test-testcommon:${pravegaVersion}"
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
