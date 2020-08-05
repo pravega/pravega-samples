@@ -210,7 +210,7 @@ public class SecureBatchReader implements AutoCloseable {
                     }
                     return numEvents;
                 }).sum();
-        System.out.println(String.format("Done reading %s events", String.valueOf(count)));
+        System.out.println(String.format("Done reading %s events", count));
         return count;
     }
 }
