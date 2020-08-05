@@ -192,7 +192,6 @@ public class SecureBatchReader implements AutoCloseable {
     }
 
     private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) throws Exception {
-        List<Integer> batchEventCountList = new ArrayList<>();
         JavaSerializer<String> serializer = new JavaSerializer<>();
         int count = segments
                 .stream()
