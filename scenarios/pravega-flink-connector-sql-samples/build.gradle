@@ -23,14 +23,19 @@ sourceCompatibility = "1.8"
 archivesBaseName = 'pravega-flink-connector-sql-samples'
 
 dependencies {
-    compile "io.pravega:pravega-connectors-flink_$flinkScalaVersion:${flinkConnectorVersion}"
-    compile "org.apache.flink:flink-streaming-java_$flinkScalaVersion:${flinkVersion}"
-    compile "org.apache.flink:flink-table_$flinkScalaVersion:${flinkVersion}"
-    compile "org.apache.flink:flink-streaming-scala_$flinkScalaVersion:${flinkVersion}"
+    compile "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
+
+    compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-table-planner_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-table-api-java-bridge_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-json:${flinkVersion}"
+    compile "org.apache.flink:flink-table-planner-blink_${flinkScalaVersion}:${flinkVersion}"
+
     compile "ch.qos.logback:logback-classic:1.1.7"
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
 
-    compile "joda-time:joda-time:2.7"
     compile "org.projectlombok:lombok:1.16.18"
 }
 
@@ -64,6 +69,7 @@ distributions {
 
 shadowJar {
     dependencies {
-        include dependency("io.pravega:pravega-connectors-flink_$flinkScalaVersion")
+        include dependency("io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}")
+        include dependency("io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}")
     }
 }

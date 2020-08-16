@@ -11,10 +11,11 @@
 package io.pravega.example.streamcuts;
 
 import com.google.common.collect.Lists;
-import io.pravega.client.ClientFactory;
+import io.pravega.client.BatchClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
-import io.pravega.client.batch.BatchClient;
 import io.pravega.client.batch.SegmentRange;
 import io.pravega.client.batch.StreamSegmentsIterator;
 import io.pravega.client.stream.EventRead;
@@ -47,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StreamCutsExample implements Closeable {
 
-    public static final int maxEventsPerDay = 3;
+    private static final int maxEventsPerDay = 3;
     private static final String eventSeparator = ":";
     private static final String streamSeparator = "-";
 
@@ -89,7 +90,8 @@ public class StreamCutsExample implements Closeable {
 
         // Free resources after execution.
         try (ReaderGroupManager manager = ReaderGroupManager.withScope(scope, controllerURI);
-             ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                     ClientConfig.builder().controllerURI(controllerURI).build())) {
 
             // Create a reader group and a reader to read from the stream.
             final String readerGroupName = streamName + randomId;
@@ -145,7 +147,8 @@ public class StreamCutsExample implements Closeable {
         StringBuilder result = new StringBuilder();
         final String randomId = String.valueOf(new Random(System.nanoTime()).nextInt());
         try (ReaderGroupManager manager = ReaderGroupManager.withScope(scope, controllerURI);
-             ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                     ClientConfig.builder().controllerURI(controllerURI).build())) {
             final String readerGroupName = "RG" + randomId;
             manager.createReaderGroup(readerGroupName, config);
             @Cleanup
@@ -174,7 +177,7 @@ public class StreamCutsExample implements Closeable {
      * A good use-case for {@link StreamCut}s is to allow efficient batch processing of data events within specific
      * boundaries (e.g., perform a mean on the temperature values in 1986). Instead of ingesting all the data and force
      * the reader to discard irrelevant events, {@link StreamCut}s help readers to only read the events that are
-     * important for a particular task. In this sense, this method enables the Pravega {@link BatchClient} to read from
+     * important for a particular task. In this sense, this method enables the Pravega {@link BatchClientFactory} to read from
      * various {@link Stream}s within the specific ranges passed as input, and the sum up all the values contained in
      * read events.
      *
@@ -183,8 +186,7 @@ public class StreamCutsExample implements Closeable {
      */
     public int sumBoundedStreams(Map<Stream, List<StreamCut>> streamCuts) {
         int totalSumValuesInDay = 0;
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
-            final BatchClient batchClient = clientFactory.createBatchClient();
+        try (BatchClientFactory batchClient = BatchClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build())) {
             for (Stream myStream: streamCuts.keySet()) {
 
                 // Get the cuts for this stream that will bound the number of events to read.
@@ -236,7 +238,8 @@ public class StreamCutsExample implements Closeable {
             streamManager.createStream(scope, streamName, streamConfig);
 
             // Note that we use the try-with-resources statement for those classes that should be closed after usage.
-            try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+            try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                    ClientConfig.builder().controllerURI(controllerURI).build());
                  EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                          new JavaSerializer<>(), EventWriterConfig.builder().build())) {
 
@@ -312,7 +315,7 @@ public class StreamCutsExample implements Closeable {
                 streamManager.deleteStream(scope, streamName);
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                log.error("Problem while sleeping current Thread in deleteStreams: {}.", e);
+                log.error("Problem while sleeping current Thread in deleteStreams: ", e);
             }
         }
         myStreamNames.clear();

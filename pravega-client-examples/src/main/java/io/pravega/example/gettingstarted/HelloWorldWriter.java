@@ -13,6 +13,7 @@ package io.pravega.example.gettingstarted;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
+import io.pravega.client.ClientConfig;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -20,7 +21,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
@@ -52,7 +53,8 @@ public class HelloWorldWriter {
                 .build();
         final boolean streamIsNew = streamManager.createStream(scope, streamName, streamConfig);
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
                                                                                  new JavaSerializer<String>(),
                                                                                  EventWriterConfig.builder().build())) {

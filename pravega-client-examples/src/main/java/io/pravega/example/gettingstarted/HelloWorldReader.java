@@ -11,9 +11,9 @@
 package io.pravega.example.gettingstarted;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.UUID;
 
+import io.pravega.client.ClientConfig;
 import io.pravega.client.stream.Stream;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -22,7 +22,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
@@ -67,7 +67,8 @@ public class HelloWorldReader {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         }
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
+                ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamReader<String> reader = clientFactory.createReader("reader",
                                                                            readerGroup,
                                                                            new JavaSerializer<String>(),

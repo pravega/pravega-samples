@@ -10,7 +10,8 @@
  */
 package io.pravega.example.flink.streamcuts.process;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
@@ -68,7 +69,8 @@ public class SliceProcessor {
 
         // Instantiate the reader group manager to create the reader group and the client factory to create readers.
         try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI);
-             ClientFactory clientFactory = ClientFactory.withScope(Constants.DEFAULT_SCOPE, pravegaControllerURI)) {
+             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(Constants.DEFAULT_SCOPE,
+                     ClientConfig.builder().controllerURI(pravegaControllerURI).build())) {
 
             // Create the reader group to read the stream slices.
             readerGroupManager.createReaderGroup(READER_GROUP_NAME, readerGroupConfig);

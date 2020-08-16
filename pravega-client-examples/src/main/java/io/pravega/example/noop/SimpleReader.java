@@ -10,19 +10,18 @@
  */
 package io.pravega.example.noop;
 
-import io.pravega.client.ClientFactory;
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ReinitializationRequiredException;
-import io.pravega.client.stream.Sequence;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -68,7 +67,7 @@ public class SimpleReader<T> implements Runnable {
             readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         }
 
-        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamReader<T> reader = clientFactory.createReader("reader",
                      readerGroup, serializer, ReaderConfig.builder().build())) {
 
