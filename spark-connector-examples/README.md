@@ -35,7 +35,7 @@ In the command below, replace x.x.x.x with the IP address of a local network int
 cd
 git clone https://github.com/pravega/pravega
 cd pravega
-git checkout r0.4
+git checkout r0.7
 cd docker/compose
 export HOST_IP=x.x.x.x
 docker-compose up -d
@@ -48,13 +48,13 @@ You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs
 
 This will install a development instance of Spark locally.
 
-Download https://www.apache.org/dyn/closer.lua/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz.
+Download https://www.apache.org/dyn/closer.lua/spark/spark-2.4.6/spark-2.4.6-bin-hadoop2.7.tgz.
 
 ```
 mkdir -p ~/spark
 cd ~/spark
-tar -xzvf ~/Downloads/spark-2.4.1-bin-hadoop2.7.tgz
-ln -s spark-2.4.1-bin-hadoop2.7 current
+tar -xzvf ~/Downloads/spark-2.4.6-bin-hadoop2.7.tgz
+ln -s spark-2.4.6-bin-hadoop2.7 current
 export PATH="$HOME/spark/current/bin:$PATH"
 ```
 
@@ -198,7 +198,7 @@ Submit the job.
 
 ```
 USE_IN_PROCESS_SPARK=0 ./run_pyspark_app.sh src/main/python/stream_generated_data_to_pravega.py
-USE_IN_PROCESS_SPARK=0 ./run_java_spark_p.sh io.pravega.example.spark.StreamPravegaToConsole
+USE_IN_PROCESS_SPARK=0 ./run_java_spark_app.sh io.pravega.example.spark.StreamPravegaToConsole
 ```
 
 ## (Optional) Configure Anaconda Python
