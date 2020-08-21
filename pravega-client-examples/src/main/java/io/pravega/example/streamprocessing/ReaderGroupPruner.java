@@ -84,7 +84,13 @@ public class ReaderGroupPruner extends AbstractService implements AutoCloseable 
         // We must ensure that we add this reader to the membership synchronizer before the reader group.
         membershipSynchronizer.startAsync();
         membershipSynchronizer.awaitRunning();
-        task = executor.scheduleAtFixedRate(new PruneRunner(), heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
+        // Initial delay will be between 50% and 100% of the heartbeat interval.
+        // Although this is not needed for correctness, it reduces unnecessary load
+        // caused by multiple processes attempting to put the same reader offline.
+        final long initialDelay = (long) (heartbeatIntervalMillis * (0.5 + Math.random() * 0.5));
+        // Period will between 90% and 100% of the heartbeat interval.
+        final long period = (long) (heartbeatIntervalMillis * (0.9 + Math.random() * 0.1));
+        task = executor.scheduleAtFixedRate(new PruneRunner(), initialDelay, period, TimeUnit.MILLISECONDS);
         notifyStarted();
     }
 
