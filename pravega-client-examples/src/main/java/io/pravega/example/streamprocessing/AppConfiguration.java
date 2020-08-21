@@ -34,10 +34,16 @@ class AppConfiguration {
         return getEnvVar("INSTANCE_ID", UUID.randomUUID().toString());
     }
 
+    /**
+     * The output of EventGenerator and the input of AtLeastOnceApp.
+     */
     public String getStream1Name() {
         return getEnvVar("PRAVEGA_STREAM_1", "streamprocessing1c");
     }
 
+    /**
+     * The output of AtLeastOnceApp and the input of EventDebugSink.
+     */
     public String getStream2Name() {
         return getEnvVar("PRAVEGA_STREAM_2", "streamprocessing2c");
     }
