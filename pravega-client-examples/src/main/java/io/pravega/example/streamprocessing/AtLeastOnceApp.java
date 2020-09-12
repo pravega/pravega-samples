@@ -101,7 +101,7 @@ public class AtLeastOnceApp {
                          new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                          EventWriterConfig.builder().build())) {
 
-                final AtLeastOnceProcessor<SampleEvent> processor = new AtLeastOnceProcessor<SampleEvent>(
+                final SampleEventProcessor processor = new SampleEventProcessor(
                         () -> ReaderGroupPruner.create(
                                 readerGroup,
                                 getConfig().getMembershipSynchronizerStreamName(),
@@ -114,36 +114,9 @@ public class AtLeastOnceApp {
                                 readerGroup.getGroupName(),
                                 new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                                 ReaderConfig.builder().build()),
-                        1000)
-                {
-                    /**
-                     * Process an event that was read.
-                     * Processing can be performed asynchronously after this method returns.
-                     * This method must be stateless.
-                     *
-                     * For this demonstration, we output the same event that was read but with
-                     * the processedBy field set.
-                     *
-                     * @param eventRead The event read.
-                     */
-                    @Override
-                    public void process(EventRead<SampleEvent> eventRead) {
-                        final SampleEvent event = eventRead.getEvent();
-                        event.processedBy = instanceId;
-                        event.processedLatencyMs = System.currentTimeMillis() - event.timestamp;
-                        log.info("{}", event);
-                        writer.writeEvent(event.routingKey, event);
-                    }
-
-                    /**
-                     * If {@link #process} did not completely process prior events, it must do so before returning.
-                     * If writing to a Pravega stream, this should call {@link EventStreamWriter#flush}.
-                     */
-                    @Override
-                    public void flush() {
-                        writer.flush();
-                    }
-                };
+                        1000,
+                        instanceId,
+                        writer);
 
                 processor.startAsync();
 
