@@ -46,11 +46,11 @@ public class EventDebugSink {
         this.config = config;
     }
 
-    public AppConfiguration getConfig() {
+    private AppConfiguration getConfig() {
         return config;
     }
 
-    public void run() throws Exception {
+    private void run() throws Exception {
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
         try (StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
             streamManager.createScope(getConfig().getScope());
@@ -79,7 +79,7 @@ public class EventDebugSink {
                 long eventCounter = 0;
                 long sum = 0;
                 for (;;) {
-                    EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
+                    final EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
                     if (eventRead.getEvent() != null) {
                         eventCounter++;
                         sum += eventRead.getEvent().intData;
