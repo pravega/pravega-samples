@@ -25,6 +25,7 @@ import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
+import lombok.Cleanup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,48 +90,46 @@ public class AtLeastOnceApp {
                 .stream(Stream.of(getConfig().getScope(), getConfig().getStream1Name()))
                 .automaticCheckpointIntervalMillis(getConfig().getCheckpointPeriodMs())
                 .build();
-        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), clientConfig)) {
-            // Create the Reader Group (ignored if it already exists)
-            readerGroupManager.createReaderGroup(getConfig().getReaderGroup(), readerGroupConfig);
-            final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
-            try (EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-                 SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
-                 // Create a Pravega stream writer that we will send our processed output to.
-                 EventStreamWriter<SampleEvent> writer = eventStreamClientFactory.createEventWriter(
-                         getConfig().getStream2Name(),
-                         new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
-                         EventWriterConfig.builder().build())) {
+        @Cleanup ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), clientConfig);
+        // Create the Reader Group (ignored if it already exists)
+        readerGroupManager.createReaderGroup(getConfig().getReaderGroup(), readerGroupConfig);
+        @Cleanup final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
+        @Cleanup final EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+        @Cleanup final SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
+        // Create a Pravega stream writer that we will send our processed output to.
+        @Cleanup final EventStreamWriter<SampleEvent> writer = eventStreamClientFactory.createEventWriter(
+                getConfig().getStream2Name(),
+                new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
+                EventWriterConfig.builder().build());
 
-                final SampleEventProcessor processor = new SampleEventProcessor(
-                        () -> ReaderGroupPruner.create(
-                                readerGroup,
-                                getConfig().getMembershipSynchronizerStreamName(),
-                                instanceId,
-                                synchronizerClientFactory,
-                                Executors.newScheduledThreadPool(1),
-                                getConfig().getHeartbeatIntervalMillis()),
-                        () -> eventStreamClientFactory.<SampleEvent>createReader(
-                                instanceId,
-                                readerGroup.getGroupName(),
-                                new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
-                                ReaderConfig.builder().build()),
-                        1000,
+        final SampleEventProcessor processor = new SampleEventProcessor(
+                () -> ReaderGroupPruner.create(
+                        readerGroup,
+                        getConfig().getMembershipSynchronizerStreamName(),
                         instanceId,
-                        writer);
+                        synchronizerClientFactory,
+                        Executors.newScheduledThreadPool(1),
+                        getConfig().getHeartbeatIntervalMillis()),
+                () -> eventStreamClientFactory.<SampleEvent>createReader(
+                        instanceId,
+                        readerGroup.getGroupName(),
+                        new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
+                        ReaderConfig.builder().build()),
+                1000,
+                instanceId,
+                writer);
 
-                processor.startAsync();
+        processor.startAsync();
 
-                // Add shutdown hook for graceful shutdown.
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    log.info("Running shutdown hook.");
-                    processor.stopAsync();
-                    log.info("Waiting for processor to terminate.");
-                    processor.awaitTerminated();
-                    log.info("Processor terminated.");
-                }));
+        // Add shutdown hook for graceful shutdown.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Running shutdown hook.");
+            processor.stopAsync();
+            log.info("Waiting for processor to terminate.");
+            processor.awaitTerminated();
+            log.info("Processor terminated.");
+        }));
 
-                processor.awaitTerminated();
-            }
-        }
+        processor.awaitTerminated();
     }
 }

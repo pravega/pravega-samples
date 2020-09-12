@@ -22,6 +22,7 @@ import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
+import lombok.Cleanup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,31 +69,30 @@ public class EventDebugSink {
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(getConfig().getScope(), getConfig().getStream2Name()))
                 .build();
-        try (ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI())) {
-            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-            try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-                 EventStreamReader<SampleEvent> reader = clientFactory.createReader(
-                         "reader",
-                         readerGroup,
-                         new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
-                         ReaderConfig.builder().build())) {
-                long eventCounter = 0;
-                long sum = 0;
-                for (;;) {
-                    final EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
-                    if (eventRead.getEvent() != null) {
-                        eventCounter++;
-                        sum += eventRead.getEvent().intData;
-                        log.info("eventCounter={}, sum={}, event={}",
-                                String.format("%6d", eventCounter),
-                                String.format("%8d", sum),
-                                eventRead.getEvent());
-                    }
+        @Cleanup final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI());
+        readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+             EventStreamReader<SampleEvent> reader = clientFactory.createReader(
+                     "reader",
+                     readerGroup,
+                     new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
+                     ReaderConfig.builder().build())) {
+            long eventCounter = 0;
+            long sum = 0;
+            for (;;) {
+                final EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
+                if (eventRead.getEvent() != null) {
+                    eventCounter++;
+                    sum += eventRead.getEvent().intData;
+                    log.info("eventCounter={}, sum={}, event={}",
+                            String.format("%6d", eventCounter),
+                            String.format("%8d", sum),
+                            eventRead.getEvent());
                 }
             }
-            finally {
-                readerGroupManager.deleteReaderGroup(readerGroup);
-            }
+        }
+        finally {
+            readerGroupManager.deleteReaderGroup(readerGroup);
         }
     }
 }
