@@ -47,4 +47,8 @@ This demo showcases using json serializer library APIs usage with json schemas a
 ### All format demo
 AllFormatDemo.java is a sample application that writes all three - avro, protobuf and json - events into the same pravega stream. 
 It also demonstrates how the events can be filtered during reads and then written into an output stream while keeping the 
-schema information included with the output stream. 
+schema information included with the output stream.
+
+### Compression Demo
+CompressionDemo.java showcases how schema registry can be used for indicating the codec type information of the encoded data.
+Codec Type can typically describe the compression used on the serialized data.  
