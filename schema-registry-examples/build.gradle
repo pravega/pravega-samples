@@ -1,0 +1,104 @@
+import org.gradle.internal.jvm.Jvm
+
+/*
+ * Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *   
+ */
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.8
+archivesBaseName = 'pravega-schema-registry-examples'
+
+resources
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url "https://oss.jfrog.org/jfrog-dependencies"
+    }
+    maven {
+        url 'https://repository.mulesoft.org/nexus/content/repositories/public'
+    }
+}
+
+dependencies {
+    compile "io.pravega.schemaregistry:serializers:${schemaRegistryVersion}"
+    compile "commons-cli:commons-cli:${commonsCliVersion}"
+}
+
+// Build examples
+
+task scriptAllFormatInStreamDemo(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.allformatdemo.AllFormatInSingleStreamDemo'
+    applicationName = 'writeAllFormatsInStream'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptAvroDemo(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.avro.AvroDemo'
+    applicationName = 'writeAvro'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptMessageBusProducer(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.avro.messagebus.MessageBusProducer'
+    applicationName = 'messagebusproducer'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptMessageBusConsumer(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.avro.messagebus.MessageBusConsumer'
+    applicationName = 'messagebusconsumer'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptGenericConsumer(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.avro.messagebus.GenericConsumer'
+    applicationName = 'genericconsumer'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptSpecificAndGenericConsumer(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.avro.messagebus.SpecificAndGenericConsumer'
+    applicationName = 'specificandgenericconsumer'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptJsonDemo(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.json.JsonDemo'
+    applicationName = 'jsondemo'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task scriptProtobufDemo(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.schemaregistry.samples.protobuf.ProtobufDemo'
+    applicationName = 'protobufdemo'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
