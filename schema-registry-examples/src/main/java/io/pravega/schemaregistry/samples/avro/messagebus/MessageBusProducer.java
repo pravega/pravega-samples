@@ -43,6 +43,11 @@ import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * This sample demonstrates how a pravega stream can be used as a message bus. This is sample producer application which
+ * uses schema registry serializers, to write events of type {@link Type1}, {@link Type2} and {@link Type3}, 
+ * by serializing them as avro records and writing them into pravega stream. 
+ */
 public class MessageBusProducer {
     private final ClientConfig clientConfig;
     private final SchemaRegistryClientConfig config;

@@ -7,7 +7,9 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 -->
-This module has applications to demonstrate how pravega applications can work with schema registry for different 
+# Schema Registry Samples
+
+This module has applications to demonstrate how Pravega applications can work with Pravega Schema Registry for different 
 serialization formats. 
 
 ### Avro
@@ -33,6 +35,8 @@ it uses the writer schema from the registry to deserialize the event into `avro.
 
 3. Generic consumer.
 This uses the generic `avro` deserializer to deserialize all events into `avro.GenericRecord`.
+
+To run this sample, run the Message bus producer and the three different consumers respectively. 
 
 ### Protobuf
 ProtobufDemo.java shows sample code for registering and evolving protobuf schemas with registry service and using these 

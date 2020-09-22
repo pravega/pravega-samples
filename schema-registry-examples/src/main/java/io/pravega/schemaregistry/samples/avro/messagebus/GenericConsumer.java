@@ -40,6 +40,9 @@ import org.apache.commons.cli.ParseException;
 
 import java.net.URI;
 
+/**
+ * Generic Avro consumer which reads events as {@link org.apache.avro.generic.GenericRecord}.  
+ */
 public class GenericConsumer {
     private final ClientConfig clientConfig;
     private final SchemaRegistryClient client;

@@ -47,6 +47,11 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This sample demonstrates how a pravega stream can be used as a message bus. This is sample consumer application which
+ * uses schema registry deserializers to read events of type {@link Type1}, {@link Type2} and {@link Type3}, 
+ * by deserializing the avro serialized events into typed objects. 
+ */
 public class MessageBusConsumer {
     private final ClientConfig clientConfig;
     private final SchemaRegistryClient client;
