@@ -159,7 +159,7 @@ public class CompressionDemo {
     public static void main(String[] args) {
         Options options = new Options();
 
-        Option pravegaUriOpt = new Option("c", "pravegaUri", true, "Pravega Uri");
+        Option pravegaUriOpt = new Option("p", "pravegaUri", true, "Pravega Uri");
         pravegaUriOpt.setRequired(true);
         options.addOption(pravegaUriOpt);
 

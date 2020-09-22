@@ -63,7 +63,7 @@ public class MessageBusProducer {
     public static void main(String[] args) {
         Options options = new Options();
 
-        Option pravegaUriOpt = new Option("c", "pravegaUri", true, "Controller Uri");
+        Option pravegaUriOpt = new Option("p", "pravegaUri", true, "Controller Uri");
         pravegaUriOpt.setRequired(true);
         options.addOption(pravegaUriOpt);
 

@@ -5,6 +5,7 @@ This repository contains code samples to demonstrate how developers can work wit
 engines such as [Flink](https://flink.apache.org/) and
 [Hadoop](http://hadoop.apache.org/) with Pravega as a storage substrate for data 
 streams. 
+We also provide samples for using new pravega schema registry with pravega applications. 
 
 For more information on Pravega, we recommend to read the [documentation and the
 developer guide](http://pravega.io).
@@ -55,6 +56,17 @@ The related documentation and instructions are [here](hadoop-connector-examples)
 | [`anomaly-detection`](scenarios/anomaly-detection) | A Flink streaming application for detecting anomalous input patterns using a finite-state machine. | [Java](scenarios/anomaly-detection/src/main/java/io/pravega/anomalydetection)
 | [`pravega-flink-connector-sql-samples`](scenarios/pravega-flink-connector-sql-samples) | Flink connector table api/sql samples. | [Java](scenarios/pravega-flink-connector-sql-samples/src/main/java/io/pravega/connectors.nytaxi)
 
+## Schema Registry Examples
+The prerequisite for running Schema Registry Examples is to deploy Pravega and Schema Registry Service. For instructions to run pravga schema registry, please see instructions [here](https://github.com/pravega/schema-registry) 
+| Example Name  | Description  | Language |
+| ------------- |:-----| :-----|
+| `Avro` | Samples for registering schema in avro format with registry service. Samples demonstrate how to use avro schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/avro)
+| `Protobuf` | Samples for registering schema in protobuf format with registry service. Samples demonstrate how to use protobuf schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/protobuf)
+| `Json` | Samples for registering schema in json format with registry service. Samples demonstrate how to use json schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/json)
+| `All Formats` | Samples that demonstrate how to serialize data in different formats and write into same pravega stream. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/allformatdemo)
+| `Codec` | Samples that demonstrate how to use additional codecs and share encoding information using schema registry service. This sample demonstrates using compression codecs for snappy and gzip. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/codec)
+
+The related documentation and instructions are [here](schema-registry-examples).
 
 # Build Instructions
 

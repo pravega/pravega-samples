@@ -14,6 +14,7 @@ import org.gradle.internal.jvm.Jvm
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+apply plugin: 'distribution'
 
 sourceCompatibility = 1.8
 archivesBaseName = 'pravega-schema-registry-examples'
@@ -110,3 +111,29 @@ task scriptCompressionDemo(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('bin') {
+                from project.scriptAllFormatInStreamDemo
+                from project.scriptAvroDemo
+                from project.scriptMessageBusProducer
+                from project.scriptMessageBusConsumer
+                from project.scriptGenericConsumer
+                from project.scriptSpecificAndGenericConsumer
+                from project.scriptJsonDemo
+                from project.scriptProtobufDemo
+                from project.scriptCompressionDemo
+            }
+            into('lib') {
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/resources/logback.xml'))
+                from(project.file('src/main/resources/cert.pem'))
+            }
+        }
+    }
+}

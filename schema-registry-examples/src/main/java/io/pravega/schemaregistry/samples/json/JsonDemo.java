@@ -80,7 +80,7 @@ public class JsonDemo {
     public static void main(String[] args) throws Exception {
         Options options = new Options();
 
-        Option pravegaUriOpt = new Option("c", "pravegaUri", true, "Pravega Uri");
+        Option pravegaUriOpt = new Option("p", "pravegaUri", true, "Pravega Uri");
         pravegaUriOpt.setRequired(true);
         options.addOption(pravegaUriOpt);
 
