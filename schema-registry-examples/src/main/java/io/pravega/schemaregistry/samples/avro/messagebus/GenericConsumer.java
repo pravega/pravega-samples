@@ -39,6 +39,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * Generic Avro consumer which reads events as {@link org.apache.avro.generic.GenericRecord}.  
@@ -130,7 +131,7 @@ public class GenericConsumer {
 
         // region read into specific schema
         ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig));
-        String rg = "rg" + stream + System.currentTimeMillis();
+        String rg = UUID.randomUUID().toString();
         readerGroupManager.createReaderGroup(rg,
                 ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 

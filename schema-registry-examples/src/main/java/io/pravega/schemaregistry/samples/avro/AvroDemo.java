@@ -59,6 +59,7 @@ import org.apache.commons.cli.ParseException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Sample class that demonstrates how to use Avro Serializers and Deserializers provided by Schema registry's 
@@ -161,7 +162,7 @@ public class AvroDemo {
             streamManager.createScope(scope);
             streamManager.createStream(scope, stream, StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
 
-            System.out.println("adding new group with: \nserialization format = avro\n compatibiity = backwardPolicy");
+            System.out.println("adding new group with: \nserialization format = avro\n compatibility = backwardPolicy");
 
             SerializationFormat serializationFormat = SerializationFormat.Avro;
             client.addGroup(groupId, new GroupProperties(serializationFormat,
@@ -216,7 +217,7 @@ public class AvroDemo {
             // region read into specific schema
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig,
                     new SocketConnectionFactoryImpl(clientConfig))) {
-                String rg = "rg" + stream + System.currentTimeMillis();
+                String rg = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -237,7 +238,7 @@ public class AvroDemo {
                 // create new reader, this time with incompatible schema3
                 try (ReaderGroupManager readerGroupManager2 = new ReaderGroupManagerImpl(scope, clientConfig,
                         new SocketConnectionFactoryImpl(clientConfig))) {
-                    String rg1 = "rg1" + stream;
+                    String rg1 = UUID.randomUUID().toString();
                     readerGroupManager2.createReaderGroup(rg1,
                             ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -256,7 +257,7 @@ public class AvroDemo {
 
                     // endregion
                     // region read into writer schema
-                    String rg2 = "rg2" + stream;
+                    String rg2 = UUID.randomUUID().toString();
                     readerGroupManager2.createReaderGroup(rg2,
                             ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -312,7 +313,7 @@ public class AvroDemo {
             // region read into specific schema
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig,
                     new SocketConnectionFactoryImpl(clientConfig))) {
-                String rg = "rg" + stream + System.currentTimeMillis();
+                String rg = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -327,7 +328,7 @@ public class AvroDemo {
 
                 // endregion
                 // region read into writer schema
-                String rg2 = "rg2" + stream;
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -376,7 +377,7 @@ public class AvroDemo {
             // region read into specific schema
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig,
                     new SocketConnectionFactoryImpl(clientConfig))) {
-                String rg = "rg" + stream + System.currentTimeMillis();
+                String rg = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -391,7 +392,7 @@ public class AvroDemo {
 
                 // endregion
                 // region read into writer schema
-                String rg2 = "rg2" + stream;
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -448,7 +449,7 @@ public class AvroDemo {
             // region read into specific schema
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig,
                     new SocketConnectionFactoryImpl(clientConfig))) {
-                String rg = "rg" + stream + System.currentTimeMillis();
+                String rg = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -468,7 +469,7 @@ public class AvroDemo {
 
                 // endregion
                 // region read into writer schema
-                String rg2 = "rg2" + stream;
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -485,7 +486,7 @@ public class AvroDemo {
                 // endregion
 
                 // region read using multiplexed and generic record combination
-                String rg3 = "rg3" + stream;
+                String rg3 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg3,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 

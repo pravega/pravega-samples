@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -150,7 +151,7 @@ public class CompressionDemo {
         Serializer<Object> readerDeserializer = SerializerFactory.avroGenericDeserializer(serializerConfig2, null);
 
         ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig));
-        String readerGroup = "rg" + stream + System.currentTimeMillis();
+        String readerGroup = UUID.randomUUID().toString();
         readerGroupManager.createReaderGroup(readerGroup,
                 ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
         reader = clientFactory.createReader("r2", readerGroup, readerDeserializer, ReaderConfig.builder().build());

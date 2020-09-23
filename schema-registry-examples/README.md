@@ -48,11 +48,18 @@ This package has a class [JsonDemo.java](schema-registry-examples/src/main/java/
 schemas in pravega appliations.
 This demo showcases using json serializer library APIs usage with json schemas and POJOs.
 
-### All format demo
-This package has a class [AllFormatDemo.java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/allformatdemo/AllFormatDemo.java) is a sample application that writes all three - avro, protobuf and json - events into the same pravega stream. 
+### Multi format demo
+This package has a class [MultiFormatDemo.java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/multiformatdemo/MultiFormatDemo.java) is a sample application that writes all three - avro, protobuf and json - events into the same pravega stream. 
 It also demonstrates how the events can be filtered during reads and then written into an output stream while keeping the 
 schema information included with the output stream.
 
 ### Compression Demo
 This package has a class [CompressionDemo.java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/codec/CompressionDemo.java) showcases how schema registry can be used for indicating the codec type information of the encoded data.
-Codec Type can typically describe the compression used on the serialized data.  
+Codec Type can typically describe the compression used on the serialized data.
+
+### How to run a sample  
+```
+$ ./gradlew install
+$ cd schema-registry-examples/build/install/pravega-schema-registry-examples
+$ ./bin/compressiondemo -p tcp://<pravega-ip>:<port> -r http://<schema-registry-ip>:<port>
+```

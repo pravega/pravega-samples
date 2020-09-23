@@ -53,11 +53,9 @@ import org.apache.commons.cli.ParseException;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Sample class that demonstrates how to use Json Serializers and Deserializers provided by Schema registry's 
@@ -115,7 +113,9 @@ public class ProtobufDemo {
         System.exit(0);
     }
 
-    private void demo() throws IOException {
+    private void demo() throws Exception {
+        System.out.println("Demo writing protobuf messages into pravega stream.");
+
         // create stream
         String scope = "scope";
         String stream = "protobuf";
@@ -124,6 +124,7 @@ public class ProtobufDemo {
         try (StreamManager streamManager = new StreamManagerImpl(clientConfig)) {
             streamManager.createScope(scope);
             streamManager.createStream(scope, stream, StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
+            System.out.printf("Created Stream %s/%s%n", scope, stream);
 
             SerializationFormat serializationFormat = SerializationFormat.Protobuf;
             client.addGroup(groupId, new GroupProperties(serializationFormat,
@@ -141,13 +142,17 @@ public class ProtobufDemo {
             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
             EventStreamWriter<ProtobufTest.Message1> writer = clientFactory.createEventWriter(stream, serializer, EventWriterConfig.builder().build());
-            writer.writeEvent(ProtobufTest.Message1.newBuilder().setName("test").setInternal(ProtobufTest.InternalMessage.newBuilder().setValue(ProtobufTest.InternalMessage.Values.val1).build()).build()).join();
+            ProtobufTest.Message1 message = ProtobufTest.Message1.newBuilder().setName("test").setInternal(ProtobufTest.InternalMessage.newBuilder().setValue(ProtobufTest.InternalMessage.Values.val1).build()).build();
+            System.out.printf("Writing message %s%n", message.toString());
+            writer.writeEvent(message).join();
 
             // endregion
 
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig))) {
                 // region read into specific schema
-                String readerGroupName = "rg" + stream;
+                System.out.println("Reading into protobuf generated object");
+
+                String readerGroupName = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(readerGroupName,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -157,12 +162,13 @@ public class ProtobufDemo {
 
                 EventRead<ProtobufTest.Message1> event = reader.readNextEvent(1000);
                 assert null != event.getEvent();
-
+                System.out.printf("Message read into specific Message1 schema %s%n", event.getEvent().toString());
                 // endregion
 
                 // region generic read
                 // 1. try without passing the schema. writer schema will be used to read
-                String rg2 = "rg2" + stream;
+                System.out.println("Reading as dynamic message using writer's schema.");
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -172,14 +178,15 @@ public class ProtobufDemo {
 
                 EventRead<DynamicMessage> event2 = reader2.readNextEvent(1000);
                 assert null != event2.getEvent();
+                System.out.printf("Message read as DynamicMessage %s%n", event2.getEvent().toString());
 
                 // 2. try with passing the schema. reader schema will be used to read
-                String rg3 = "rg3";
+                System.out.println("Reading as dynamic message by explicitly supplying a schema to apply while reading.");
+                String rg3 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg3,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
-                Path path = Paths.get("samples/resources/proto/protobufTest.pb");
-                byte[] schemaBytes = Files.readAllBytes(path);
+                byte[] schemaBytes = client.getLatestSchemaVersion(groupId, null).getSchemaInfo().getSchemaData().array();
                 DescriptorProtos.FileDescriptorSet descriptorSet = DescriptorProtos.FileDescriptorSet.parseFrom(schemaBytes);
 
                 ProtobufSchema<DynamicMessage> schema2 = ProtobufSchema.of(ProtobufTest.Message1.getDescriptor().getFullName(), descriptorSet);
@@ -189,12 +196,15 @@ public class ProtobufDemo {
 
                 event2 = reader2.readNextEvent(1000);
                 assert null != event2.getEvent();
+                System.out.printf("Message read as DynamicMessage by passing the schema in the application %s%n", event2.getEvent().toString());
                 // endregion
             }
         }
     }
 
-    private void demoMultipleEventTypesInStream() throws IOException {
+    private void demoMultipleEventTypesInStream() {
+        System.out.println("Demo writing multiple types of protobuf messages into same pravega stream.");
+
         // create stream
         String scope = "scope";
         String stream = "protomultiplexed";
@@ -203,6 +213,7 @@ public class ProtobufDemo {
         try (StreamManager streamManager = new StreamManagerImpl(clientConfig)) {
             streamManager.createScope(scope);
             streamManager.createStream(scope, stream, StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
+            System.out.printf("Created Stream %s/%s%n", scope, stream);
 
             SerializationFormat serializationFormat = SerializationFormat.Protobuf;
             client.addGroup(groupId, new GroupProperties(serializationFormat,
@@ -227,15 +238,24 @@ public class ProtobufDemo {
             EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
             EventStreamWriter<GeneratedMessageV3> writer = clientFactory.createEventWriter(stream, serializer, EventWriterConfig.builder().build());
-            writer.writeEvent(ProtobufTest.Message1.newBuilder().setName("test").setInternal(ProtobufTest.InternalMessage.newBuilder().setValue(ProtobufTest.InternalMessage.Values.val1).build()).build()).join();
-            writer.writeEvent(ProtobufTest.Message2.newBuilder().setName("test").setField1(0).build()).join();
-            writer.writeEvent(ProtobufTest.Message3.newBuilder().setName("test").setField1(0).setField2(1).build()).join();
+            ProtobufTest.Message1 message1 = ProtobufTest.Message1.newBuilder().setName("message1").setInternal(ProtobufTest.InternalMessage.newBuilder().setValue(ProtobufTest.InternalMessage.Values.val1).build()).build();
+            writer.writeEvent(message1).join();
+            System.out.printf("Writing event: %s%n", message1.toString());
+
+            ProtobufTest.Message2 message2 = ProtobufTest.Message2.newBuilder().setName("message2").setField1(0).build();
+            writer.writeEvent(message2).join();
+            System.out.printf("Writing event: %s%n", message2.toString());
+
+            ProtobufTest.Message3 message3 = ProtobufTest.Message3.newBuilder().setName("message3").setField1(0).setField2(1).build();
+            writer.writeEvent(message3).join();
+            System.out.printf("Writing event: %s%n", message3.toString());
 
             // endregion
 
             // region read into specific schema
+            System.out.println("Reading into specific generated objects.");
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig))) {
-                String rg = "rg" + stream + System.currentTimeMillis();
+                String rg = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -246,16 +266,22 @@ public class ProtobufDemo {
                 EventRead<GeneratedMessageV3> event = reader.readNextEvent(1000);
                 assert null != event.getEvent();
                 assert event.getEvent() instanceof ProtobufTest.Message1;
+                System.out.printf("Event read: %s%n", event.getEvent().toString());
+
                 event = reader.readNextEvent(1000);
                 assert null != event.getEvent();
                 assert event.getEvent() instanceof ProtobufTest.Message2;
+                System.out.printf("Event read: %s%n", event.getEvent().toString());
+
                 event = reader.readNextEvent(1000);
                 assert null != event.getEvent();
                 assert event.getEvent() instanceof ProtobufTest.Message3;
+                System.out.printf("Event read: %s%n", event.getEvent().toString());
 
                 // endregion
                 // region read into writer schema
-                String rg2 = "rg2" + stream;
+                System.out.println("Reading as dynamic message using writer's schema.");
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -265,14 +291,22 @@ public class ProtobufDemo {
 
                 EventRead<DynamicMessage> genEvent = reader2.readNextEvent(1000);
                 assert null != genEvent.getEvent();
+                System.out.printf("Event read: %s%n", genEvent.getEvent().toString());
+
                 genEvent = reader2.readNextEvent(1000);
                 assert null != genEvent.getEvent();
+                System.out.printf("Event read: %s%n", genEvent.getEvent().toString());
+
                 genEvent = reader2.readNextEvent(1000);
                 assert null != genEvent.getEvent();
+                System.out.printf("Event read: %s%n", genEvent.getEvent().toString());
+
                 // endregion
 
                 // region read using multiplexed and generic record combination
-                String rg3 = "rg3" + stream;
+                System.out.println("Reading into specific generated objects for Message1 and Message2 and DynamicMessage for others.");
+
+                String rg3 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg3,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -290,12 +324,16 @@ public class ProtobufDemo {
                 assert e1.getEvent() != null;
                 assert e1.getEvent().isLeft();
                 assert e1.getEvent().getLeft() instanceof ProtobufTest.Message1;
+                System.out.printf("Event read: %s%n", e1.getEvent().getLeft().toString());
 
                 e1 = reader3.readNextEvent(1000);
                 assert e1.getEvent().isLeft();
                 assert e1.getEvent().getLeft() instanceof ProtobufTest.Message2;
+                System.out.printf("Event read: %s%n", e1.getEvent().getLeft().toString());
+
                 e1 = reader3.readNextEvent(1000);
                 assert e1.getEvent().isRight();
+                System.out.printf("Event read: %s%n", e1.getEvent().getRight().toString());
                 //endregion
             }
         }

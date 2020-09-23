@@ -39,10 +39,10 @@ dependencies {
 
 // Build examples
 
-task scriptAllFormatInStreamDemo(type: CreateStartScripts) {
+task scriptMultiFormatInStreamDemo(type: CreateStartScripts) {
     outputDir = file('build/scripts')
-    mainClassName = 'io.pravega.schemaregistry.samples.allformatdemo.AllFormatInSingleStreamDemo'
-    applicationName = 'writeAllFormatsInStream'
+    mainClassName = 'io.pravega.schemaregistry.samples.multiformatdemo.MultiFormatDemo'
+    applicationName = 'multiFormatsInStreamDemo'
     defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
@@ -50,7 +50,7 @@ task scriptAllFormatInStreamDemo(type: CreateStartScripts) {
 task scriptAvroDemo(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.schemaregistry.samples.avro.AvroDemo'
-    applicationName = 'writeAvro'
+    applicationName = 'avroDemo'
     defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
@@ -116,7 +116,7 @@ distributions {
         baseName = archivesBaseName
         contents {
             into('bin') {
-                from project.scriptAllFormatInStreamDemo
+                from project.scriptMultiFormatInStreamDemo
                 from project.scriptAvroDemo
                 from project.scriptMessageBusProducer
                 from project.scriptMessageBusConsumer

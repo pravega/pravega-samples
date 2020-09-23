@@ -63,7 +63,7 @@ The prerequisite for running Schema Registry Examples is to deploy Pravega and S
 | `Avro` | Samples for registering schema in avro format with registry service. Samples demonstrate how to use avro schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/avro)
 | `Protobuf` | Samples for registering schema in protobuf format with registry service. Samples demonstrate how to use protobuf schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/protobuf)
 | `Json` | Samples for registering schema in json format with registry service. Samples demonstrate how to use json schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/json)
-| `All Formats` | Samples that demonstrate how to serialize data in different formats and write into same pravega stream. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/allformatdemo)
+| `Multiple Formats` | Samples that demonstrate how to serialize data in different formats and write into same pravega stream. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/multiformatdemo)
 | `Codec` | Samples that demonstrate how to use additional codecs and share encoding information using schema registry service. This sample demonstrates using compression codecs for snappy and gzip. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/codec)
 
 The related documentation and instructions are [here](schema-registry-examples).
@@ -136,6 +136,23 @@ of `pravega-samples`.
 
 
 For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
+
+### Schema Registry Build Instructions
+
+Schema registry uses pravega, so make sure pravega is installed and running before installing schema registry. 
+To build Schema Registry from source, follow the below steps to build and publish artifacts from 
+source to local Maven repository:
+
+```
+$ git clone https://github.com/pravega/schema-registry.git
+$ cd schema-registry
+$ ./gradlew install
+$ cd server/build/install/schema-registry
+$ # edit conf/schema-registry.config.properties to point to pravega URI (hint: if you are running pravega standalone, it would be tcp://localhost:9090) 
+$ ./bin/schema-registry
+```
+
+For more information, please visit [Schema Registry](https://github.com/pravega/schema-registry). 
 
 ### Configuring Pravega Samples for Running with Source Builds
 

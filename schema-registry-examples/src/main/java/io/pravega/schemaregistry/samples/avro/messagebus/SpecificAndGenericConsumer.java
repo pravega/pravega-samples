@@ -46,6 +46,7 @@ import org.apache.commons.cli.ParseException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This sample demonstrates how a pravega stream can be used as a message bus. This is sample consumer application which
@@ -159,7 +160,7 @@ public class SpecificAndGenericConsumer {
 
         // region read into specific schema
         ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig));
-        String rg = "rg" + stream + System.currentTimeMillis();
+        String rg = UUID.randomUUID().toString();
         readerGroupManager.createReaderGroup(rg,
                 ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 

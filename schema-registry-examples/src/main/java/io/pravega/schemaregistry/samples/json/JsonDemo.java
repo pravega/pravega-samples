@@ -57,6 +57,7 @@ import org.apache.commons.cli.ParseException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Sample class that demonstrates how to use Json Serializers and Deserializers provided by Schema registry's 
@@ -146,7 +147,7 @@ public class JsonDemo {
 
             // region read into specific schema
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig))) {
-                String readerGroupName = "rg" + stream;
+                String readerGroupName = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(readerGroupName,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -160,7 +161,7 @@ public class JsonDemo {
                 // endregion
 
                 // region generic read
-                String rg2 = "rg2" + stream;
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -214,7 +215,7 @@ public class JsonDemo {
 
             // region read into specific schema
             try (ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig))) {
-                String rg = "rg" + stream;
+                String rg = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -231,7 +232,7 @@ public class JsonDemo {
                 // endregion
 
                 // region read into writer schema
-                String rg2 = "rg2" + stream;
+                String rg2 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg2,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -246,7 +247,7 @@ public class JsonDemo {
                 // endregion
 
                 // region read using multiplexed and generic record combination
-                String rg3 = "rg3" + stream;
+                String rg3 = UUID.randomUUID().toString();
                 readerGroupManager.createReaderGroup(rg3,
                         ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 

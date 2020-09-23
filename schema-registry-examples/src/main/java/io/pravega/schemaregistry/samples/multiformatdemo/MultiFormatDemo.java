@@ -7,7 +7,7 @@
  * 
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.schemaregistry.samples.allformatdemo;
+package io.pravega.schemaregistry.samples.multiformatdemo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.pravega.client.ClientConfig;
@@ -53,6 +53,7 @@ import org.apache.commons.cli.ParseException;
 
 import java.net.URI;
 import java.util.Scanner;
+import java.util.UUID;
 
 /**
  * This sample writes objects of all json protobuf and avro formats into a single stream. For this the `serialization format` property
@@ -61,23 +62,23 @@ import java.util.Scanner;
  * of each type and the reader returns the common base class {@link Object}. 
  * It also writes the events back into an output stream. 
  */
-public class AllFormatDemo {
+public class MultiFormatDemo {
     private final ClientConfig clientConfig;
     private final SchemaRegistryClient client;
     private final String scope;
     private final String stream;
     private final String outputStream;
 
-    public AllFormatDemo(ClientConfig clientConfig, SchemaRegistryClient client, String scope, String stream, String groupId) {
+    private MultiFormatDemo(ClientConfig clientConfig, SchemaRegistryClient client, String scope, String stream) {
         this.clientConfig = clientConfig;
         this.client = client;
         this.scope = scope;
         this.stream = stream;
         this.outputStream = stream + "out";
-        initialize(groupId);
+        initialize();
     }
 
-    private void initialize(String groupId) {
+    private void initialize() {
         // create stream
         StreamManager streamManager = new StreamManagerImpl(clientConfig);
         streamManager.createScope(scope);
@@ -85,10 +86,10 @@ public class AllFormatDemo {
         streamManager.createStream(scope, outputStream, StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
 
         SerializationFormat serializationFormat = SerializationFormat.Any;
-        client.addGroup(groupId, new GroupProperties(serializationFormat,
+        client.addGroup(NameUtils.getScopedStreamName(scope, stream), new GroupProperties(serializationFormat,
                 Compatibility.allowAny(),
                 true));
-        client.addGroup(NameUtils.getScopedStreamName(scope, stream), new GroupProperties(serializationFormat,
+        client.addGroup(NameUtils.getScopedStreamName(scope, outputStream), new GroupProperties(serializationFormat,
                 Compatibility.allowAny(),
                 true));
     }
@@ -122,14 +123,14 @@ public class AllFormatDemo {
         String registryUri = cmd.getOptionValue("registryUri");
 
         String scope = "scope";
-        String stream = "allFormatDemo";
+        String stream = "multiFormatDemo";
         String groupId = NameUtils.getScopedStreamName(scope, stream);
         String groupIdOut = NameUtils.getScopedStreamName(scope, stream + "out");
 
         ClientConfig clientConfig = ClientConfig.builder().controllerURI(URI.create(pravegaUri)).build();
         SchemaRegistryClientConfig config = SchemaRegistryClientConfig.builder().schemaRegistryUri(URI.create(registryUri)).build();
         SchemaRegistryClient schemaRegistryClient = SchemaRegistryClientFactory.withDefaultNamespace(config);
-        AllFormatDemo demo = new AllFormatDemo(clientConfig, schemaRegistryClient, scope, stream, groupId);
+        MultiFormatDemo demo = new MultiFormatDemo(clientConfig, schemaRegistryClient, scope, stream);
 
         EventStreamWriter<Type1> avro = demo.createAvroWriter(groupId);
         EventStreamWriter<ProtobufTest.Message1> proto = demo.createProtobufWriter(groupId);
@@ -199,7 +200,7 @@ public class AllFormatDemo {
         Serializer<WithSchema<Object>> deserializer = SerializerFactory.deserializerWithSchema(serializerConfig);
         // region read into specific schema
         ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig));
-        String rg = "rg" + stream + System.currentTimeMillis();
+        String rg = UUID.randomUUID().toString();
         readerGroupManager.createReaderGroup(rg,
                 ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
@@ -234,7 +235,7 @@ public class AllFormatDemo {
         Serializer<String> deserializer = SerializerFactory.deserializeAsJsonString(serializerConfig);
         // region read into specific schema
         ReaderGroupManager readerGroupManager = new ReaderGroupManagerImpl(scope, clientConfig, new SocketConnectionFactoryImpl(clientConfig));
-        String rg = "rg" + stream + System.currentTimeMillis();
+        String rg = UUID.randomUUID().toString();
         readerGroupManager.createReaderGroup(rg,
                 ReaderGroupConfig.builder().stream(NameUtils.getScopedStreamName(scope, stream)).disableAutomaticCheckpoints().build());
 
