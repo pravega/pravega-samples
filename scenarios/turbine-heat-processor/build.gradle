@@ -35,7 +35,7 @@ dependencies {
 shadowJar {
     dependencies {
         include dependency("org.scala-lang.modules:scala-java8-compat_${flinkScalaVersion}")
-        include dependency("io.pravega:pravega-connectors-flink_${flinkScalaVersion}")
+        include dependency("io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}")
         include dependency("io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}")
     }
 }

@@ -133,10 +133,10 @@ public class StreamCutsCli {
         output("Now, we will ask you some questions to set up the example: %n%n");
 
         output("How many streams do you want to create? (e.g., from 1 to %s):%n", exampleMaxStreams);
-        final int numStreams = askForIntInput(prefix, 0, exampleMaxStreams);
+        final int numStreams = askForIntInput(prefix, 1, exampleMaxStreams);
 
         output("How many events per stream do you want to create? (e.g., from 1 to %s):%n", exampleMaxEvents);
-        final int numEvents = askForIntInput(prefix, 0, exampleMaxEvents);
+        final int numEvents = askForIntInput(prefix, 1, exampleMaxEvents);
 
         // Set up and write data in streams.
         StreamCutsExample example = new StreamCutsExample(numStreams, numEvents, scope, controllerURI);
