@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    compile "io.pravega.schemaregistry:serializers:${schemaRegistryVersion}"
+    compile "io.pravega:schemaregistry-serializers:${schemaRegistryVersion}"
     compile "commons-cli:commons-cli:${commonsCliVersion}"
 }
 
