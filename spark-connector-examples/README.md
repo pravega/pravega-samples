@@ -35,7 +35,7 @@ In the command below, replace x.x.x.x with the IP address of a local network int
 cd
 git clone https://github.com/pravega/pravega
 cd pravega
-git checkout r0.7
+git checkout r0.8
 cd docker/compose
 export HOST_IP=x.x.x.x
 docker-compose up -d
@@ -59,7 +59,7 @@ export PATH="$HOME/spark/current/bin:$PATH"
 ```
 
 By default, the script `run_spark_ap.sh` will use an in-process Spark mini-cluster
-that is started with the Spark job ("--master local[2]"). 
+that is started with the Spark job (`--master local[2]`). 
 
 ### Build and Install the Spark Connector
 
@@ -81,7 +81,7 @@ ls -lhR ~/.m2/repository/io/pravega/pravega-connectors-spark
 ./run_pyspark_app.sh src/main/python/batch_file_to_pravega.py
 ```
 
-The file *sample_data.json" has the following conents:
+The file *sample_data.json* has the following conents:
 ```
 {"id": 1, "key": "a", "message": "Hello world."}
 {"id": 2, "key": "b", "message": "Welcome to Pravega!"}
