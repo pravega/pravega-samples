@@ -13,6 +13,7 @@ include 'pravega-client-examples'
 include 'flink-connector-examples'
 include 'hadoop-connector-examples'
 include 'schema-registry-examples'
+include 'spark-connector-examples'
 
 // Build scenarios
 include 'scenarios/turbine-heat-sensor'
