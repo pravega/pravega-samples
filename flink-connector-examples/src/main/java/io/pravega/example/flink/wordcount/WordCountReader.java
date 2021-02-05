@@ -13,9 +13,9 @@ package io.pravega.example.flink.wordcount;
 import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
 import io.pravega.example.flink.Utils;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -67,7 +67,7 @@ public class WordCountReader {
         FlinkPravegaReader<String> source = FlinkPravegaReader.<String>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
-                .withDeserializationSchema(PravegaSerialization.deserializationFor(String.class))
+                .withDeserializationSchema(new SimpleStringSchema())
                 .build();
 
         // count each word over a 10 second time period

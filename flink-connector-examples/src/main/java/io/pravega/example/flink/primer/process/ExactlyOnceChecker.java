@@ -11,9 +11,10 @@
 package io.pravega.example.flink.primer.process;
 
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
 import io.pravega.example.flink.Utils;
 import io.pravega.example.flink.primer.datatype.Constants;
 import io.pravega.example.flink.primer.datatype.IntegerEvent;
@@ -67,7 +68,7 @@ public class ExactlyOnceChecker {
         FlinkPravegaReader<IntegerEvent> reader = FlinkPravegaReader.<IntegerEvent>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
-                .withDeserializationSchema(PravegaSerialization.deserializationFor(IntegerEvent.class))
+                .withDeserializationSchema(new PravegaDeserializationSchema<>(IntegerEvent.class, new JavaSerializer<>()))
                 .build();
 
         DataStream<IntegerEvent> dataStream = env

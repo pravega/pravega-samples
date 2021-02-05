@@ -10,8 +10,9 @@
  */
 package io.pravega.turbineheatprocessor;
 
+import io.pravega.client.stream.impl.JavaSerializer
 import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
-import io.pravega.connectors.flink.serialization.PravegaSerialization
+import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema
 import io.pravega.connectors.flink.{FlinkPravegaReader, PravegaConfig}
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
@@ -86,7 +87,7 @@ object TurbineHeatProcessorScala {
     val source = FlinkPravegaReader.builder()
       .withPravegaConfig(pravegaConfig)
       .forStream(stream)
-      .withDeserializationSchema(PravegaSerialization.deserializationFor(classOf[String]))
+      .withDeserializationSchema(new PravegaDeserializationSchema(classOf[String], new JavaSerializer[String]()))
       .build()
 
     val events: DataStream[SensorEvent] = env.addSource(source).name("input").map { line =>
