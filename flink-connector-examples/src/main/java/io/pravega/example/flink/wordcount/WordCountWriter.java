@@ -15,8 +15,8 @@ import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.PravegaEventRouter;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
 import io.pravega.example.flink.Utils;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +78,7 @@ public class WordCountWriter {
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
                 .withEventRouter(new EventRouter())
-                .withSerializationSchema(PravegaSerialization.serializationFor(String.class))
+                .withSerializationSchema(new SimpleStringSchema())
                 .build();
         dataStream.addSink(writer).name("Pravega Stream");
 

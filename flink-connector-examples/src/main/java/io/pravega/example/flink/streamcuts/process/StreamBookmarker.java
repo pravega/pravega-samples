@@ -15,11 +15,12 @@ import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.PravegaEventRouter;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.serialization.PravegaSerializationSchema;
 import io.pravega.example.flink.Utils;
 import io.pravega.example.flink.streamcuts.Constants;
 import io.pravega.example.flink.streamcuts.SensorStreamSlice;
@@ -86,7 +87,7 @@ public class StreamBookmarker {
         SinkFunction<SensorStreamSlice> writer = FlinkPravegaWriter.<SensorStreamSlice>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(streamCutsStream)
-                .withSerializationSchema(PravegaSerialization.serializationFor(SensorStreamSlice.class))
+                .withSerializationSchema(new PravegaSerializationSchema<>(new JavaSerializer<>()))
                 .withEventRouter(new EventRouter())
                 .build();
 

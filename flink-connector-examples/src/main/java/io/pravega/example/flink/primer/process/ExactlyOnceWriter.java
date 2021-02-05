@@ -11,8 +11,9 @@
 package io.pravega.example.flink.primer.process;
 
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.*;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.serialization.PravegaSerializationSchema;
 import io.pravega.example.flink.Utils;
 import io.pravega.example.flink.primer.datatype.IntegerEvent;
 import io.pravega.example.flink.primer.datatype.Constants;
@@ -83,7 +84,7 @@ public class ExactlyOnceWriter {
                 .withEventRouter( new EventRouter())
                 .withTxnLeaseRenewalPeriod(txnLeaseRenewalPeriod)
                 .withWriterMode( exactlyOnce ? PravegaWriterMode.EXACTLY_ONCE : PravegaWriterMode.ATLEAST_ONCE )
-                .withSerializationSchema(PravegaSerialization.serializationFor(IntegerEvent.class))
+                .withSerializationSchema(new PravegaSerializationSchema<>(new JavaSerializer<>()))
                 .build();
 
         env
