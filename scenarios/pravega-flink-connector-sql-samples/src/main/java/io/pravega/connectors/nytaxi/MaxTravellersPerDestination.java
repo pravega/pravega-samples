@@ -10,18 +10,15 @@
  */
 package io.pravega.connectors.nytaxi;
 
-import io.pravega.client.stream.Stream;
-import io.pravega.connectors.flink.table.descriptors.Pravega;
-import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.api.Tumble;
-import org.apache.flink.table.descriptors.Json;
-import org.apache.flink.table.descriptors.Schema;
 import org.apache.flink.types.Row;
+
+import static org.apache.flink.table.api.Expressions.$;
+import static org.apache.flink.table.api.Expressions.lit;
 
 /**
  * Find maximum number of travellers who travelled to a destination point for a given window interval.
@@ -37,38 +34,18 @@ public class MaxTravellersPerDestination extends AbstractHandler {
     @Override
     public void handleRequest() {
 
-        Schema schema = TripRecord.getSchemaWithDropOffTimeAsRowTime();
-
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
         // create a TableEnvironment
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(
-                env,
-                EnvironmentSettings.newInstance()
-                        .useBlinkPlanner()
-                        .inStreamingMode()
-                        .build()
-        );
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
 
-        Pravega pravega = new Pravega();
-        pravega.tableSourceReaderBuilder()
-                .forStream(Stream.of(getScope(), getStream()).getScopedName())
-                .withPravegaConfig(getPravegaConfig());
-
-        tEnv.connect(pravega)
-                .withFormat(new Json().failOnMissingField(true))
-                .withSchema(schema)
-                .inAppendMode()
-                .registerTableSource("TaxiRide");
-
-        String fields = "passengerCount, dropOffTime, destLocationZone";
+        tEnv.executeSql(createTableDdl("WATERMARK FOR dropOffTime AS dropOffTime - INTERVAL '30' SECONDS", "max-traveller"));
 
         Table noOfTravelersPerDest = tEnv
-                .from("TaxiRide")
-                .select(fields)
-                .window(Tumble.over("1.hour").on("dropOffTime").as("w"))
-                .groupBy("destLocationZone, w")
-                .select("destLocationZone, w.start AS start, w.end AS end, count(passengerCount) AS cnt");
+                .from("TaxiRide").select($("passengerCount"), $("dropOffTime"), $("destLocationZone"))
+                .window(Tumble.over(lit(1).hour()).on($("dropOffTime")).as("w"))
+                .groupBy($("destLocationZone"), $("w"))
+                .select($("destLocationZone"), $("w").start().as("start"), $("w").end().as("end"), $("passengerCount").count().as("cnt"));
 
         tEnv.toAppendStream(noOfTravelersPerDest, Row.class).print();
 

@@ -27,6 +27,7 @@ dependencies {
 
     compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-clients_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-connector-elasticsearch5_${flinkScalaVersion}:${flinkVersion}"
     compile "ch.qos.logback:logback-classic:1.1.7"
 }

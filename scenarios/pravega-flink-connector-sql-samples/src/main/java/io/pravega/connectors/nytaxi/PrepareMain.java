@@ -12,21 +12,15 @@ package io.pravega.connectors.nytaxi;
 
 import io.pravega.client.stream.Stream;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
+import io.pravega.connectors.flink.serialization.JsonSerializer;
+import io.pravega.connectors.flink.serialization.PravegaSerializationSchema;
 import io.pravega.connectors.nytaxi.common.Helper;
 import io.pravega.connectors.nytaxi.common.TripRecord;
 import io.pravega.connectors.nytaxi.common.ZoneLookup;
 import io.pravega.connectors.nytaxi.source.TaxiDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.formats.json.JsonRowSerializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.types.utils.TypeConversions;
-import org.apache.flink.types.Row;
 
 import java.io.IOException;
 import java.util.Map;
@@ -48,15 +42,13 @@ public class PrepareMain extends AbstractHandler {
             createStream();
         }
 
-        Stream streamInfo = getPravegaConfig().resolve(Stream.of(getScope(), getStream()).getScopedName());
+        Stream streamInfo = Stream.of(getScope(), getStream());
 
-        TypeInformation<Row> typeInfo = (RowTypeInfo) TypeConversions.fromDataTypeToLegacyInfo(TripRecord.getTableSchema().toRowDataType());
-
-        FlinkPravegaWriter<Row> writer = FlinkPravegaWriter.<Row>builder()
+        FlinkPravegaWriter<TripRecord> writer = FlinkPravegaWriter.<TripRecord>builder()
                 .withPravegaConfig(getPravegaConfig())
                 .forStream(streamInfo)
-                .withSerializationSchema(new JsonRowSerializationSchema.Builder(typeInfo).build())
-                .withEventRouter(event -> String.valueOf(event.getField(6)))
+                .withSerializationSchema(new PravegaSerializationSchema<>(new JsonSerializer<>(TripRecord.class)))
+                .withEventRouter(r -> String.valueOf(r.getRideId()))
                 .build();
 
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
@@ -72,14 +64,11 @@ public class PrepareMain extends AbstractHandler {
 
         TaxiDataSource taxiDataSource = new TaxiDataSource(TRIP_DATA, zoneLookupRecordMap);
 
-        DataStreamSource<TripRecord> streamSource = env.addSource(taxiDataSource);
-        streamSource.name("source");
+        DataStream<TripRecord> streamSource = env.addSource(taxiDataSource).name("source");
 
-        DataStream mapper = streamSource.map((MapFunction<TripRecord, Row>) tripRecord -> TripRecord.transform(tripRecord));
-        ((SingleOutputStreamOperator) mapper).name("transform");
-        mapper.print();
+        streamSource.print();
 
-        mapper.addSink(writer);
+        streamSource.addSink(writer);
 
         try {
             env.execute("ingest");

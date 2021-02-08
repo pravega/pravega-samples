@@ -29,7 +29,7 @@ dependencies {
     compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-table-planner_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-table-api-java-bridge_${flinkScalaVersion}:${flinkVersion}"
-    compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-clients_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-json:${flinkVersion}"
     compile "org.apache.flink:flink-table-planner-blink_${flinkScalaVersion}:${flinkVersion}"
 
