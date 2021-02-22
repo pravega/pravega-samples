@@ -48,7 +48,7 @@ public class PrepareMain extends AbstractHandler {
                 .withPravegaConfig(getPravegaConfig())
                 .forStream(streamInfo)
                 .withSerializationSchema(new PravegaSerializationSchema<>(new JsonSerializer<>(TripRecord.class)))
-                .withEventRouter(r -> String.valueOf(r.getRideId()))
+                .withEventRouter(r -> String.valueOf(r.getStartLocationId()))
                 .build();
 
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();

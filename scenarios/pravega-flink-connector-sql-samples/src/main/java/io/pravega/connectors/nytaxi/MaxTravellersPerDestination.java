@@ -42,7 +42,8 @@ public class MaxTravellersPerDestination extends AbstractHandler {
         tEnv.executeSql(createTableDdl("WATERMARK FOR dropOffTime AS dropOffTime - INTERVAL '30' SECONDS", "max-traveller"));
 
         Table noOfTravelersPerDest = tEnv
-                .from("TaxiRide").select($("passengerCount"), $("dropOffTime"), $("destLocationZone"))
+                .from("TaxiRide")
+                .select($("passengerCount"), $("dropOffTime"), $("destLocationZone"))
                 .window(Tumble.over(lit(1).hour()).on($("dropOffTime")).as("w"))
                 .groupBy($("destLocationZone"), $("w"))
                 .select($("destLocationZone"), $("w").start().as("start"), $("w").end().as("end"), $("passengerCount").count().as("cnt"));
