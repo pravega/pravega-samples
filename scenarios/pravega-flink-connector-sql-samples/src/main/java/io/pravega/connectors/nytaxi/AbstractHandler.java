@@ -73,5 +73,41 @@ public abstract class AbstractHandler {
         return env;
     }
 
+    public String createTableDdl(String watermarkDdl, String readerGroupName) {
+        return String.format(
+                "CREATE TABLE TaxiRide (%n" +
+                        "  rideId INT,%n" +
+                        "  vendorId INT,%n" +
+                        "  pickupTime TIMESTAMP(3),%n" +
+                        "  dropOffTime TIMESTAMP(3),%n" +
+                        "  passengerCount INT,%n" +
+                        "  tripDistance FLOAT,%n" +
+                        "  startLocationId INT,%n" +
+                        "  destLocationId INT,%n" +
+                        "  startLocationBorough STRING,%n" +
+                        "  startLocationZone STRING,%n" +
+                        "  startLocationServiceZone STRING,%n" +
+                        "  destLocationBorough STRING,%n" +
+                        "  destLocationZone STRING,%n" +
+                        "  destLocationServiceZone STRING,%n" +
+                        "  %s" +
+                        ") with (%n" +
+                        "  'connector' = 'pravega',%n" +
+                        "  'controller-uri' = '%s',%n" +
+                        "  'scope' = '%s',%n" +
+                        "  'scan.execution.type' = '%s',%n" +
+                        "  'scan.reader-group.name' = '%s',%n" +
+                        "  'scan.streams' = '%s',%n" +
+                        "  'format' = 'json'%n" +
+                        ")",
+                watermarkDdl,
+                controllerUri,
+                scope,
+                "streaming",
+                readerGroupName,
+                stream,
+                stream);
+    }
+
     public abstract void handleRequest();
 }
