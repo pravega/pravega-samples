@@ -10,16 +10,10 @@
  */
 package io.pravega.connectors.nytaxi;
 
-import io.pravega.client.stream.Stream;
-import io.pravega.connectors.flink.table.descriptors.Pravega;
-import io.pravega.connectors.nytaxi.common.TripRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.descriptors.Json;
-import org.apache.flink.table.descriptors.Schema;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
 /**
@@ -36,29 +30,12 @@ public class PopularDestinationQuery extends AbstractHandler {
     @Override
     public void handleRequest() {
 
-        Schema schema = TripRecord.getSchemaWithPickupTimeAsRowTime();
-
         StreamExecutionEnvironment env = getStreamExecutionEnvironment();
 
         // create a TableEnvironment
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(
-                env,
-                EnvironmentSettings.newInstance()
-                        .useBlinkPlanner()
-                        .inStreamingMode()
-                        .build()
-        );
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
 
-        Pravega pravega = new Pravega();
-        pravega.tableSourceReaderBuilder()
-                .forStream(Stream.of(getScope(), getStream()).getScopedName())
-                .withPravegaConfig(getPravegaConfig());
-
-        tEnv.connect(pravega)
-                .withFormat(new Json().failOnMissingField(true))
-                .withSchema(schema)
-                .inAppendMode()
-                .registerTableSource("TaxiRide");
+        tEnv.executeSql(createTableDdl("WATERMARK FOR pickupTime AS pickupTime - INTERVAL '30' SECONDS", "popular-dest"));
 
         String query =
                 "SELECT " +
