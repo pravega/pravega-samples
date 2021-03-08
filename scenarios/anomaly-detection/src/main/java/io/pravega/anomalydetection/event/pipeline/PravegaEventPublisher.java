@@ -15,10 +15,11 @@ import io.pravega.anomalydetection.event.producer.ControlledSourceContextProduce
 import io.pravega.anomalydetection.event.producer.SourceContextProducer;
 import io.pravega.anomalydetection.event.state.Event;
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.PravegaEventRouter;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.serialization.PravegaSerializationSchema;
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -41,7 +42,7 @@ public class PravegaEventPublisher extends AbstractPipeline {
 		FlinkPravegaWriter<Event> writer = FlinkPravegaWriter.<Event>builder()
 				.withPravegaConfig(getPravegaConfig())
 				.forStream(stream)
-				.withSerializationSchema(PravegaSerialization.serializationFor(Event.class))
+				.withSerializationSchema(new PravegaSerializationSchema<>(new JavaSerializer<>()))
 				.withEventRouter(new EventRouter())
 				.build();
 

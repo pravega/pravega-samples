@@ -11,10 +11,12 @@
 package io.pravega.example.flink.watermark;
 
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.PravegaConfig;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
+import io.pravega.connectors.flink.serialization.PravegaSerializationSchema;
 import io.pravega.connectors.flink.watermark.LowerBoundAssigner;
 import io.pravega.example.flink.Utils;
 import org.apache.flink.api.common.functions.AggregateFunction;
@@ -74,7 +76,7 @@ public class EventTimeAverage {
         FlinkPravegaReader<SensorData> source = FlinkPravegaReader.<SensorData>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(inputStream)
-                .withDeserializationSchema(PravegaSerialization.deserializationFor(SensorData.class))
+                .withDeserializationSchema(new PravegaDeserializationSchema<>(SensorData.class, new JavaSerializer<>()))
                 // provide an implementation of AssignerWithTimeWindows<T>
                 .withTimestampAssigner(new LowerBoundAssigner<SensorData>() {
                     @Override
@@ -104,7 +106,7 @@ public class EventTimeAverage {
                 // enable watermark propagation
                 .enableWatermark(true)
                 .withEventRouter(event -> String.valueOf(event.getSensorId()))
-                .withSerializationSchema(PravegaSerialization.serializationFor(SensorData.class))
+                .withSerializationSchema(new PravegaSerializationSchema<>(new JavaSerializer<>()))
                 .build();
 
         // Print to pravega sink for further usage

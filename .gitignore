@@ -7,5 +7,6 @@ build/
 *.ipr
 *.iml
 *.iws
+*.log
 out/
 .DS_Store

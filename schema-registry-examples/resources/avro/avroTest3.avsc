@@ -1,0 +1,11 @@
+{
+   "namespace": "io.pravega.schemaregistry.samples.avro",
+   "type": "record",
+   "name": "Type3",
+   "fields": [
+      {"name": "f", "type": "string"},
+      {"name": "g", "type": "int"},
+      {"name": "h", "type": "string"},
+      {"name": "i", "type": "string"}
+   ]
+}
