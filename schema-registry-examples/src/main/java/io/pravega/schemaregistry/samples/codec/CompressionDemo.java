@@ -51,8 +51,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Base64;
@@ -91,7 +91,7 @@ public class CompressionDemo {
         }
 
         @Override
-        public void encode(ByteBuffer data, ByteArrayOutputStream bos) throws IOException {
+        public void encode(ByteBuffer data, OutputStream bos) throws IOException {
             // left rotate by 1 byte
             byte[] array = new byte[data.remaining()];
             data.get(array);
