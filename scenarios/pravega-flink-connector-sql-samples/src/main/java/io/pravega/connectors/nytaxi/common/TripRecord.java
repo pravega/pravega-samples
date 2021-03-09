@@ -14,15 +14,9 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.descriptors.Rowtime;
-import org.apache.flink.table.descriptors.Schema;
-import org.apache.flink.table.types.DataType;
-import org.apache.flink.types.Row;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -50,8 +44,8 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
 
     private int rideId;
     private int vendorId;
-    private LocalDateTime pickupTime;
-    private LocalDateTime dropOffTime;
+    private String pickupTime;
+    private String dropOffTime;
     private int passengerCount;
     private float tripDistance;
     private int startLocationId;
@@ -64,56 +58,12 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
     private String destLocationZone;
     private String destLocationServiceZone;
 
-    public static String[] getFieldNames() {
-        return new String[] {
-                "rideId",
-                "vendorId",
-                "pickupTime",
-                "dropOffTime",
-                "passengerCount",
-                "tripDistance",
-                "startLocationId",
-                "destLocationId",
-
-                "startLocationBorough",
-                "startLocationZone",
-                "startLocationServiceZone",
-                "destLocationBorough",
-                "destLocationZone",
-                "destLocationServiceZone"
-        };
-    }
-
-    public static DataType[] getTypeInformation() {
-        DataType[] typeInfo = new DataType[] {
-                DataTypes.INT(),
-                DataTypes.INT(),
-                DataTypes.TIMESTAMP(3),
-                DataTypes.TIMESTAMP(3),
-                DataTypes.INT(),
-                DataTypes.FLOAT(),
-                DataTypes.INT(),
-                DataTypes.INT(),
-
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.STRING()
-        };
-        return typeInfo;
-    }
-
     public static TableSchema getTableSchema() {
-        return TableSchema.builder().fields(getFieldNames(), getTypeInformation()).build();
-    }
-
-    public static Schema getSchemaWithPickupTimeAsRowTime() {
-        return new Schema()
+        return TableSchema.builder()
                 .field("rideId", DataTypes.INT())
                 .field("vendorId", DataTypes.INT())
-                .field("dropOffTime", DataTypes.TIMESTAMP(3).bridgedTo(Timestamp.class))
+                .field("pickupTime", DataTypes.TIMESTAMP(3))
+                .field("dropOffTime", DataTypes.TIMESTAMP(3))
                 .field("passengerCount", DataTypes.INT())
                 .field("tripDistance", DataTypes.FLOAT())
                 .field("startLocationId", DataTypes.INT())
@@ -124,46 +74,7 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
                 .field("destLocationBorough", DataTypes.STRING())
                 .field("destLocationZone", DataTypes.STRING())
                 .field("destLocationServiceZone", DataTypes.STRING())
-                .field("pickupTime", DataTypes.TIMESTAMP(3).bridgedTo(Timestamp.class))
-                .rowtime(new Rowtime().timestampsFromField("pickupTime").watermarksPeriodicBounded(30000L));
-    }
-
-    public static Schema getSchemaWithDropOffTimeAsRowTime() {
-        return new Schema()
-                .field("rideId", DataTypes.INT())
-                .field("vendorId", DataTypes.INT())
-                .field("pickupTime", DataTypes.TIMESTAMP(3).bridgedTo(Timestamp.class))
-                .field("passengerCount", DataTypes.INT())
-                .field("tripDistance", DataTypes.FLOAT())
-                .field("startLocationId", DataTypes.INT())
-                .field("destLocationId", DataTypes.INT())
-                .field("startLocationBorough", DataTypes.STRING())
-                .field("startLocationZone", DataTypes.STRING())
-                .field("startLocationServiceZone", DataTypes.STRING())
-                .field("destLocationBorough", DataTypes.STRING())
-                .field("destLocationZone", DataTypes.STRING())
-                .field("destLocationServiceZone", DataTypes.STRING())
-                .field("dropOffTime", DataTypes.TIMESTAMP(3).bridgedTo(Timestamp.class))
-                .rowtime(new Rowtime().timestampsFromField("dropOffTime").watermarksPeriodicBounded(30000L));
-    }
-
-    public static Row transform(TripRecord tripRecord) {
-        Row row = new Row(getFieldNames().length);
-        row.setField(0, tripRecord.getRideId());
-        row.setField(1, tripRecord.getVendorId());
-        row.setField(2, tripRecord.getPickupTime());
-        row.setField(3, tripRecord.getDropOffTime());
-        row.setField(4, tripRecord.getPassengerCount());
-        row.setField(5, tripRecord.getTripDistance());
-        row.setField(6, tripRecord.getStartLocationId());
-        row.setField(7, tripRecord.getDestLocationId());
-        row.setField(8, tripRecord.getStartLocationBorough());
-        row.setField(9, tripRecord.getStartLocationZone());
-        row.setField(10, tripRecord.getStartLocationServiceZone());
-        row.setField(11, tripRecord.getDestLocationBorough());
-        row.setField(12, tripRecord.getDestLocationZone());
-        row.setField(13, tripRecord.getDestLocationServiceZone());
-        return row;
+                .build();
     }
 
     @Override
@@ -172,8 +83,8 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
             return 1;
         }
 
-        int pickupTime = Long.compare(this.getPickupTime().toEpochSecond(ZoneOffset.UTC), other.getPickupTime().toEpochSecond(ZoneOffset.UTC));
-        int dropOffTime = Long.compare(this.getDropOffTime().toEpochSecond(ZoneOffset.UTC), other.getDropOffTime().toEpochSecond(ZoneOffset.UTC));
+        int pickupTime = LocalDateTime.parse(this.getPickupTime(), TIME_FORMATTER).compareTo(LocalDateTime.parse(other.getPickupTime(), TIME_FORMATTER));
+        int dropOffTime = LocalDateTime.parse(this.getDropOffTime(), TIME_FORMATTER).compareTo(LocalDateTime.parse(other.getDropOffTime(), TIME_FORMATTER));
 
         if (pickupTime == 0) {
             return dropOffTime;
@@ -197,8 +108,8 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
         StringBuilder sb = new StringBuilder();
         sb.append(rideId).append(",");
         sb.append(vendorId).append(",");
-        sb.append(TIME_FORMATTER.format(pickupTime)).append(",");
-        sb.append(TIME_FORMATTER.format(dropOffTime)).append(",");
+        sb.append(pickupTime).append(",");
+        sb.append(dropOffTime).append(",");
         sb.append(passengerCount).append(",");
         sb.append(tripDistance).append(",");
         sb.append(startLocationId).append(",");
@@ -237,9 +148,9 @@ public final class TripRecord implements Serializable, Comparable<TripRecord> {
             if ( offset == 1 ) {
                 builder.vendorId(Integer.parseInt(data));
             } else if ( offset == 2 ) {
-                builder.pickupTime(LocalDateTime.parse(data, TIME_FORMATTER));
+                builder.pickupTime(data);
             } else if ( offset == 3 ) {
-                builder.dropOffTime(LocalDateTime.parse(data, TIME_FORMATTER));
+                builder.dropOffTime(data);
             } else if ( offset == 4 ) {
                 builder.passengerCount(Integer.parseInt(data));
             } else if ( offset == 5 ) {

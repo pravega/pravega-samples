@@ -28,6 +28,7 @@ dependencies {
     compile "io.pravega:pravega-connectors-flink-${flinkMajorMinorVersion}_${flinkScalaVersion}:${flinkConnectorVersion}"
     compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-clients_${flinkScalaVersion}:${flinkVersion}"
 
     compile "org.slf4j:slf4j-log4j12:1.7.14"
 }

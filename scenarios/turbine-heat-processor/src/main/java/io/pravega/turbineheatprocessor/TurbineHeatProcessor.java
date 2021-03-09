@@ -13,9 +13,10 @@ package io.pravega.turbineheatprocessor;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
-import io.pravega.connectors.flink.serialization.PravegaSerialization;
+import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -51,7 +52,7 @@ public class TurbineHeatProcessor {
         FlinkPravegaReader<String> source = FlinkPravegaReader.<String>builder()
                 .withPravegaConfig(pravegaConfig)
                 .forStream(stream)
-                .withDeserializationSchema(PravegaSerialization.deserializationFor(String.class))
+                .withDeserializationSchema(new PravegaDeserializationSchema<>(String.class, new JavaSerializer<>()))
                 .build();
         DataStream<SensorEvent> events = env.addSource(source, "input").map(new SensorMapper()).name("events");
 

@@ -12,8 +12,8 @@ developer guide](http://pravega.io).
 
 # Repository Structure
 
-This repository is divided into sub-projects (`pravega-client-examples`, `flink-connector-examples`
-and `hadoop-connector-examples`), each one addressed to demonstrate a specific component. In these sub-projects, 
+This repository is divided into sub-projects (`pravega-client-examples`, `flink-connector-examples`, 
+`hadoop-connector-examples`, `schema-registry-examples`, and `spark-connector-examples`), each one addressed to demonstrate a specific component. In these sub-projects, 
 we provide a battery of simple code examples aimed at illustrating how a particular 
 feature or API works. Moreover, we also include a `scenarios` folder that contains 
 more complex applications as sub-projects, which show use-cases exploiting one or multiple components.
@@ -58,6 +58,7 @@ The related documentation and instructions are [here](hadoop-connector-examples)
 
 ## Schema Registry Examples
 The prerequisite for running Schema Registry Examples is to deploy Pravega and Schema Registry Service. For instructions to run pravga schema registry, please see instructions [here](https://github.com/pravega/schema-registry) 
+
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
 | `Avro` | Samples for registering schema in avro format with registry service. Samples demonstrate how to use avro schemas and serializers for writing and reading data from pravega streams. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/avro)
@@ -67,6 +68,20 @@ The prerequisite for running Schema Registry Examples is to deploy Pravega and S
 | `Codec` | Samples that demonstrate how to use additional codecs and share encoding information using schema registry service. This sample demonstrates using compression codecs for snappy and gzip. | [Java](schema-registry-examples/src/main/java/io/pravega/schemaregistry/samples/codec)
 
 The related documentation and instructions are [here](schema-registry-examples).
+
+## Spark Connector Examples
+| Example Name  | Description  | Language |
+| ------------- |:-----| :-----|
+| `batch_file_to_pravega` | PySpark batch job that reads events from the file and writes to a Pravega stream | [Python](spark-connector-examples/src/main/python/batch_file_to_pravega.py)
+| `batch_pravega_to_console` | PySpark batch job that reads from a Pravega stream and writes to the console | [Python](spark-connector-examples/src/main/python/batch_pravega_to_console.py)
+| `stream_generated_data_to_pravega` | PySpark Streaming job that writes generated data to a Pravega stream | [Python](spark-connector-examples/src/main/python/stream_generated_data_to_pravega.py)
+| `stream_pravega_to_console` | PySpark Streaming job that reads from a Pravega stream and writes to the console | [Python](spark-connector-examples/src/main/python/stream_pravega_to_console.py)
+| `stream_bounded_pravega_to_console` | PySpark Streaming job that reads from a bounded Pravega stream and writes to the console | [Python](spark-connector-examples/src/main/python/stream_bounded_pravega_to_console.py)
+| `stream_pravega_to_pravega` | PySpark Streaming job that reads from a Pravega stream and writes to another Pravega stream | [Python](spark-connector-examples/src/main/python/stream_pravega_to_pravega.py)
+| `StreamPravegaToConsole` | Scala Spark Streaming job that reads from a Pravega stream and writes to the console | [Scala](spark-connector-examples/src/main/scala/io/pravega/example/spark/StreamPravegaToConsole.scala)
+| `StreamPravegaToPravega` | Scala Spark Streaming job that reads from a Pravega stream and writes to another Pravega stream | [Scala](spark-connector-examples/src/main/scala/io/pravega/example/spark/StreamPravegaToPravega.scala)
+
+The related documentation and instructions are [here](spark-connector-examples).
 
 # Build Instructions
 
