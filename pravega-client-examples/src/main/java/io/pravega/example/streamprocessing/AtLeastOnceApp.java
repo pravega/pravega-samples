@@ -90,14 +90,19 @@ public class AtLeastOnceApp {
                 .stream(Stream.of(getConfig().getScope(), getConfig().getStream1Name()))
                 .automaticCheckpointIntervalMillis(getConfig().getCheckpointPeriodMs())
                 .build();
-        @Cleanup ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), clientConfig);
+        @Cleanup
+        ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), clientConfig);
         // Create the Reader Group (ignored if it already exists)
         readerGroupManager.createReaderGroup(getConfig().getReaderGroup(), readerGroupConfig);
-        @Cleanup final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
-        @Cleanup final EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-        @Cleanup final SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
+        @Cleanup
+        final ReaderGroup readerGroup = readerGroupManager.getReaderGroup(getConfig().getReaderGroup());
+        @Cleanup
+        final EventStreamClientFactory eventStreamClientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+        @Cleanup
+        final SynchronizerClientFactory synchronizerClientFactory = SynchronizerClientFactory.withScope(getConfig().getScope(), clientConfig);
         // Create a Pravega stream writer that we will send our processed output to.
-        @Cleanup final EventStreamWriter<SampleEvent> writer = eventStreamClientFactory.createEventWriter(
+        @Cleanup
+        final EventStreamWriter<SampleEvent> writer = eventStreamClientFactory.createEventWriter(
                 getConfig().getStream2Name(),
                 new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                 EventWriterConfig.builder().build());

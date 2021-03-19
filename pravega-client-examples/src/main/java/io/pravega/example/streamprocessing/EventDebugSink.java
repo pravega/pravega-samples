@@ -69,7 +69,8 @@ public class EventDebugSink {
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(getConfig().getScope(), getConfig().getStream2Name()))
                 .build();
-        @Cleanup final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI());
+        @Cleanup
+        final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI());
         readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
         try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
              EventStreamReader<SampleEvent> reader = clientFactory.createReader(

@@ -145,12 +145,14 @@ public class StreamProcessingTest {
         final ClientConfig clientConfig = SETUP_UTILS.get().getClientConfig();
         final String inputStreamName = "stream-" + UUID.randomUUID().toString();
         SETUP_UTILS.get().createTestStream(inputStreamName, 6);
-        @Cleanup final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+        @Cleanup
+        final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
         // Prepare writer that will write to the stream.
         final Serializer<TestEvent> serializer = new JSONSerializer<>(new TypeToken<TestEvent>() {}.getType());
         final EventWriterConfig eventWriterConfig = EventWriterConfig.builder().build();
-        @Cleanup final EventStreamWriter<TestEvent> writer = clientFactory.createEventWriter(inputStreamName, serializer, eventWriterConfig);
+        @Cleanup
+        final EventStreamWriter<TestEvent> writer = clientFactory.createEventWriter(inputStreamName, serializer, eventWriterConfig);
 
         // Prepare reader that will read from the stream.
         final String outputStreamName = inputStreamName;
@@ -160,9 +162,11 @@ public class StreamProcessingTest {
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(SETUP_UTILS.get().getStream(outputStreamName))
                 .build();
-        @Cleanup final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
+        @Cleanup
+        final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
         readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-        @Cleanup final EventStreamReader<TestEvent> reader = clientFactory.createReader(
+        @Cleanup
+        final EventStreamReader<TestEvent> reader = clientFactory.createReader(
                 readerId,
                 readerGroup,
                 new JSONSerializer<>(new TypeToken<TestEvent>() {}.getType()),
@@ -181,14 +185,19 @@ public class StreamProcessingTest {
     @Builder
     protected static class EndToEndTestConfig {
         // number of stream segments
-        @Builder.Default public final int numSegments = 1;
+        @Builder.Default
+        public final int numSegments = 1;
         // number of unique routi
-        @Builder.Default public final int numKeys = 1;
+        @Builder.Default
+        public final int numKeys = 1;
         // number of initial processor instances
-        @Builder.Default public final int numInitialInstances = 1;
-        @Builder.Default public final WriteMode writeMode = WriteMode.Default;
+        @Builder.Default
+        public final int numInitialInstances = 1;
+        @Builder.Default
+        public final WriteMode writeMode = WriteMode.Default;
         // test-specific function to write and validate events, etc.
-        @Builder.Default public final Consumer<TestContext> func = (ctx) -> {};
+        @Builder.Default
+        public final Consumer<TestContext> func = (ctx) -> {};
     }
 
     /**

@@ -63,8 +63,10 @@ public class EventGenerator {
         }
 
         final Random rand = new Random(42);
-        @Cleanup final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-        @Cleanup final EventStreamWriter<SampleEvent> writer = clientFactory.createEventWriter(
+        @Cleanup
+        final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+        @Cleanup
+        final EventStreamWriter<SampleEvent> writer = clientFactory.createEventWriter(
                      getConfig().getStream1Name(),
                      new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
                      EventWriterConfig.builder().build());
