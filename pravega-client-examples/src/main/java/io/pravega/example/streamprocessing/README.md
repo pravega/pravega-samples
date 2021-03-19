@@ -64,7 +64,7 @@ These examples include:
   scripts/runAtLeastOnceApp.sh 2
   ```
   
-  You may view the log files `tmp/atLeastOnceApp-*.log`.
+  You may view the log files `/tmp/atLeastOnceApp-*.log`.
 
 - Start the event debug sink:
   ```shell script
