@@ -12,14 +12,10 @@ package io.pravega.utils;
 
 import com.google.common.base.Preconditions;
 import io.pravega.client.ClientConfig;
-import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.Controller;
-import io.pravega.client.stream.impl.ControllerImpl;
-import io.pravega.client.stream.impl.ControllerImplConfig;
 import io.pravega.common.concurrent.ExecutorServiceHelpers;
 import io.pravega.local.InProcPravegaCluster;
 import lombok.Cleanup;
@@ -31,12 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,9 +53,6 @@ public final class SetupUtils {
     // Set to true to enable TLS
     @Setter
     private boolean enableTls = false;
-
-    @Setter
-    private boolean enableHostNameValidation = false;
 
     private boolean enableRestServer = true;
 
@@ -122,58 +111,10 @@ public final class SetupUtils {
     }
 
     /**
-     * Get resources as temp file.
-     *
-     * @param resourceName    Name of the resource.
-     *
-     * @return Path of the temp file.
-     */
-    static String getFileFromResource(String resourceName)  {
-        try {
-            Path tempPath = Files.createTempFile("test-", ".tmp");
-            tempPath.toFile().deleteOnExit();
-            try (InputStream stream = SetupUtils.class.getClassLoader().getResourceAsStream(resourceName)) {
-                Files.copy(SetupUtils.class.getClassLoader().getResourceAsStream(resourceName), tempPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-            return tempPath.toFile().getAbsolutePath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    /**
-     * Fetch the controller endpoint for this cluster.
-     *
-     * @return URI The controller endpoint to connect to this cluster.
-     */
-    public URI getControllerUri() {
-        return getClientConfig().getControllerURI();
-    }
-
-    /**
      * Fetch the client configuration with which to connect to the controller.
      */
     public ClientConfig getClientConfig() {
         return this.gateway.getClientConfig();
-    }
-
-    /**
-     * Create a controller facade for this cluster.
-     * @return The controller facade, which must be closed by the caller.
-     */
-    public Controller newController() {
-        ControllerImplConfig config = ControllerImplConfig.builder()
-                .clientConfig(getClientConfig())
-                .build();
-        return new ControllerImpl(config, DEFAULT_SCHEDULED_EXECUTOR_SERVICE);
-    }
-
-    /**
-     * Create a {@link EventStreamClientFactory} for this cluster and scope.
-     */
-    public EventStreamClientFactory newClientFactory() {
-        return EventStreamClientFactory.withScope(this.scope, getClientConfig());
     }
 
     /**
@@ -261,14 +202,6 @@ public final class SetupUtils {
                     .enableMetrics(false)
                     .enableAuth(enableAuth)
                     .enableTls(enableTls)
-                    //.certFile(getFileFromResource(CERT_FILE))   // pravega #2519
-                    //.keyFile(getFileFromResource(KEY_FILE))
-                    //.jksKeyFile(getFileFromResource(STANDALONE_KEYSTORE_FILE))
-                    //.jksTrustFile(getFileFromResource(STANDALONE_TRUSTSTORE_FILE))
-                    //.keyPasswordFile(getFileFromResource(STANDALONE_KEYSTORE_PASSWD_FILE))
-                    //.passwdFile(getFileFromResource(PASSWD_FILE))
-                    //.userName(PRAVEGA_USERNAME)
-                    //.passwd(PRAVEGA_PASSWORD)
                     .build();
             log.info("Done building");
             this.inProcPravegaCluster.setControllerPorts(new int[]{controllerPort});
@@ -290,9 +223,6 @@ public final class SetupUtils {
             log.info("Getting client config");
             return ClientConfig.builder()
                     .controllerURI(URI.create(inProcPravegaCluster.getControllerURI()))
-                    //.credentials(new DefaultCredentials(PRAVEGA_PASSWORD, PRAVEGA_USERNAME))
-                    //.validateHostName(enableHostNameValidation)
-                    //.trustStore(getFileFromResource(CLIENT_TRUST_STORE_FILE))
                     .build();
         }
     }
@@ -317,9 +247,6 @@ public final class SetupUtils {
         public ClientConfig getClientConfig() {
             return ClientConfig.builder()
                     .controllerURI(controllerUri)
-                    //.credentials(new DefaultCredentials(PRAVEGA_PASSWORD, PRAVEGA_USERNAME))
-                    //.validateHostName(enableHostNameValidation)
-                    //.trustStore(getFileFromResource(CLIENT_TRUST_STORE_FILE))
                     .build();
         }
     }
