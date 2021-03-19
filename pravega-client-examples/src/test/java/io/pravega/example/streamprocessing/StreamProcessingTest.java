@@ -136,8 +136,7 @@ public class StreamProcessingTest {
      */
     @Test
     public void noProcessorTest() throws Exception {
-        final String methodName = (new Object() {
-        }).getClass().getEnclosingMethod().getName();
+        final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
         log.info("Test case: {}", methodName);
 
         // Create stream.

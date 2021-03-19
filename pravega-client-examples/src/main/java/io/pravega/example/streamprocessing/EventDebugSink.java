@@ -91,8 +91,7 @@ public class EventDebugSink {
                             eventRead.getEvent());
                 }
             }
-        }
-        finally {
+        } finally {
             readerGroupManager.deleteReaderGroup(readerGroup);
         }
     }
