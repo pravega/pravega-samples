@@ -211,7 +211,7 @@ public class StreamProcessingTest {
      */
     private void run(EndToEndTestConfig config) throws Exception {
         final String methodName = (new Object() {}).getClass().getEnclosingMethod().getName();
-        log.info("Test case: {}", methodName);
+        log.info("Test case: {}: BEGIN", methodName);
 
         final String scope = SETUP_UTILS.get().getScope();
         final ClientConfig clientConfig = SETUP_UTILS.get().getClientConfig();
@@ -272,7 +272,7 @@ public class StreamProcessingTest {
         final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup, config.checkpointPeriodMs);
         config.func.accept(ctx);
 
-        log.info("Cleanup");
+        log.info("Test case: {}: CLEANUP", methodName);
         workerProcessGroup.close();
         validationReader.close();
         readerGroupManager.deleteReaderGroup(inputStreamReaderGroupName);
@@ -283,6 +283,7 @@ public class StreamProcessingTest {
         streamManager.deleteStream(scope, inputStreamName);
         streamManager.deleteStream(scope, outputStreamName);
         streamManager.deleteStream(scope, membershipSynchronizerStreamName);
+        log.info("Test case: {}: END", methodName);
     }
 
     /**
@@ -525,7 +526,9 @@ public class StreamProcessingTest {
                 .writeMode(WriteMode.Default)
                 .func(ctx -> {
                     writeEventsAndValidate(ctx, 100, new int[]{0, 1, 2, 3, 4, 5});
+                    log.info("kill5of6Test: PAUSING WORKERS");
                     IntStream.rangeClosed(0, 4).forEach(i -> ctx.workerProcessGroup.get(i).pause());
+                    log.info("kill5of6Test: WRITING MORE EVENTS");
                     writeEventsAndValidate(ctx, 90, new int[]{5});
                 }).build());
     }

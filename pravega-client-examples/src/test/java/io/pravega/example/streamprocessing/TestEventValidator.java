@@ -62,10 +62,12 @@ public class TestEventValidator {
                 }
             }
         }
-        throw new NoMoreEventsException(MessageFormat.format(
+        final String msg = MessageFormat.format(
                 "No more events but all expected events were not received; " +
-                "receivedSequenceNumbers={0}, expectedLastSequenceNumbers={1}",
-                receivedSequenceNumbers, expectedLastSequenceNumbers));
+                        "receivedSequenceNumbers={0}, expectedLastSequenceNumbers={1}",
+                receivedSequenceNumbers, expectedLastSequenceNumbers);
+        log.error(msg);
+        throw new NoMoreEventsException(msg);
     }
 
     public void clearCounters() {
