@@ -11,73 +11,52 @@ system for Apache Spark.
 Install Ubuntu 18.04 LTS. Other operating systems can also be used but the commands below have only been tested
 on this version.
 
-### Install Java 8
+### Install Java 11
 
+```shell
+sudo apt-get install openjdk-11-jdk
 ```
-apt-get install openjdk-8-jdk
+
+You may have multiple versions of Java installed. Ensure that Java 11 is the default with the command below.
+
+```shell
+sudo update-alternatives --config java
 ```
-
-### Install Docker and Docker Compose
-
-See <https://docs.docker.com/install/linux/docker-ce/ubuntu/>
-and <https://docs.docker.com/compose/install/>.
 
 ### Run Pravega
 
 This will run a development instance of Pravega locally.
-Note that the default *standalone* Pravega used for development is likely insufficient for testing video because
-it stores all data in memory and quickly runs out of memory.
-Using the procedure below, all data will be stored in a small HDFS cluster in Docker.
 
-In the command below, replace x.x.x.x with the IP address of a local network interface such as eth0.
-
-```
+```shell
 cd
 git clone https://github.com/pravega/pravega
 cd pravega
-git checkout r0.8
-cd docker/compose
-export HOST_IP=x.x.x.x
-docker-compose up -d
+git checkout r0.9
+./gradlew startStandalone
 ```
-
-You can view the Pravega logs with `docker-compose logs --follow`.
-You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs dfs -ls -h -R /`.
 
 ### Install Apache Spark
 
 This will install a development instance of Spark locally.
 
-Download https://www.apache.org/dyn/closer.lua/spark/spark-2.4.6/spark-2.4.6-bin-hadoop2.7.tgz.
+Download https://www.apache.org/dyn/closer.lua/spark/spark-3.0.2/spark-3.0.2-bin-hadoop2.7.tgz.
 
-```
+```shell
 mkdir -p ~/spark
 cd ~/spark
-tar -xzvf ~/Downloads/spark-2.4.6-bin-hadoop2.7.tgz
-ln -s spark-2.4.6-bin-hadoop2.7 current
+tar -xzvf ~/Downloads/spark-3.0.2-bin-hadoop2.7.tgz
+ln -s spark-3.0.2-bin-hadoop2.7 current
 export PATH="$HOME/spark/current/bin:$PATH"
 ```
 
 By default, the script `run_spark_ap.sh` will use an in-process Spark mini-cluster
 that is started with the Spark job (`--master local[2]`). 
 
-### Build and Install the Spark Connector
-
-This will build the Spark Connector and publish it to your local Maven repository.
-
-```
-cd
-git clone https://github.com/pravega/spark-connectors
-cd spark-connectors
-./gradlew install
-ls -lhR ~/.m2/repository/io/pravega/pravega-connectors-spark
-```
-
 ### Run Examples
 
 #### Run a PySpark batch job that reads events from the file *sample_data.json* and writes to a Pravega stream
 
-```
+```shell
 ./run_pyspark_app.sh src/main/python/batch_file_to_pravega.py
 ```
 
@@ -105,7 +84,7 @@ You should see output similar to the following:
 
 #### Run a PySpark batch job that reads from a Pravega stream and writes to the console
 
-```
+```shell
 ./run_pyspark_app.sh src/main/python/batch_pravega_to_console.py
 ```
 
@@ -124,7 +103,7 @@ You should see output similar to the following:
 
 #### Run a PySpark Streaming job that writes generated data to a Pravega stream
 
-```
+```shell
 ./run_pyspark_app.sh src/main/python/stream_generated_data_to_pravega.py
 ```
 
@@ -132,7 +111,7 @@ This job will continue to run and write events until stopped.
 
 #### Run a PySpark Streaming job that reads from a Pravega stream and writes to the console
 
-```
+```shell
 rm -rf /tmp/spark-checkpoints-stream_pravega_to_console
 ./run_pyspark_app.sh src/main/python/stream_pravega_to_console.py
 ```
@@ -143,6 +122,9 @@ It will continue to run until stopped.
 You should see output similar to the following every 3 seconds:
 
 ```
+-------------------------------------------
+Batch: 0
+-------------------------------------------
 +-----------------------+--------+-----------------+----------+------+
 |event                  |scope   |stream           |segment_id|offset|
 +-----------------------+--------+-----------------+----------+------+
@@ -154,7 +136,7 @@ You should see output similar to the following every 3 seconds:
 
 #### Run a PySpark Streaming job that reads from a Pravega stream and writes to another Pravega stream
 
-```
+```shell
 rm -rf /tmp/spark-checkpoints-stream_pravega_to_pravega
 ./run_spark_app.sh src/main/python/stream_pravega_to_pravega.py
 ```
@@ -164,7 +146,7 @@ It will continue to run until stopped.
 
 #### Run a Java Spark Streaming job that reads from a Pravega stream and writes to the console
 
-```
+```shell
 rm -rf /tmp/spark-checkpoints-StreamPravegaToConsole
 ./run_java_spark_app.sh io.pravega.example.spark.StreamPravegaToConsole
 ```
@@ -184,11 +166,19 @@ You should see output similar to the following every 3 seconds:
 +-----------------------+--------+-----------------+----------+------+
 ```
 
+If you press Control-C to abort the job, and then restart it, you will see that it will start exactly where it left off.
+This will be apparent because the batch number will not start at 0.
+This recovery information stored in the checkpoint directory.
+If you delete the checkpoint directory, or specify an empty directory, it will start from the earliest event
+since the option `start_stream_cut` is set to `earliest`.
+If you make significant changes to your Spark application, Spark may encounter an error when it tries to load the checkpoint.
+In this case, you will need to delete the checkpoint directory.
+
 #### Run a PySpark Streaming job in a Spark Cluster
 
 Start a separate Spark server process.
 
-```
+```shell
 ~/spark/current/sbin/start-all.sh
 ```
 
@@ -196,7 +186,7 @@ Confirm that you can browse to the Spark Master UI at http://localhost:8080/.
 
 Submit the job.
 
-```
+```shell
 USE_IN_PROCESS_SPARK=0 ./run_pyspark_app.sh src/main/python/stream_generated_data_to_pravega.py
 USE_IN_PROCESS_SPARK=0 ./run_java_spark_app.sh io.pravega.example.spark.StreamPravegaToConsole
 ```
