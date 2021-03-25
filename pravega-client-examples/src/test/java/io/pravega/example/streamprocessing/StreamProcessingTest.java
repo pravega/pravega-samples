@@ -193,6 +193,10 @@ public class StreamProcessingTest {
         @Builder.Default
         public final int numInitialInstances = 1;
         @Builder.Default
+        public final long checkpointPeriodMs = 1000;
+        @Builder.Default
+        public final long heartbeatIntervalMillis = 1000;
+        @Builder.Default
         public final WriteMode writeMode = WriteMode.Default;
         // test-specific function to write and validate events, etc.
         @Builder.Default
@@ -215,7 +219,6 @@ public class StreamProcessingTest {
         final String outputStreamName = "output-stream-" + UUID.randomUUID().toString();
         final String membershipSynchronizerStreamName = "ms-" + UUID.randomUUID().toString();
         final String inputStreamReaderGroupName = "rg" + UUID.randomUUID().toString().replace("-", "");
-        final long checkpointPeriodMs = 1000;
 
         @Cleanup
         StreamManager streamManager = StreamManager.create(clientConfig);
@@ -228,7 +231,8 @@ public class StreamProcessingTest {
                 .outputStreamName(outputStreamName)
                 .membershipSynchronizerStreamName(membershipSynchronizerStreamName)
                 .numSegments(config.numSegments)
-                .checkpointPeriodMs(checkpointPeriodMs)
+                .checkpointPeriodMs(config.checkpointPeriodMs)
+                .heartbeatIntervalMillis(config.heartbeatIntervalMillis)
                 .writeMode(config.writeMode)
                 .build();
         @Cleanup
@@ -265,7 +269,7 @@ public class StreamProcessingTest {
         EventStreamReaderIterator<TestEvent> readerIterator = new EventStreamReaderIterator<>(validationReader, readTimeoutMills);
         final TestEventGenerator generator = new TestEventGenerator(config.numKeys);
         final TestEventValidator validator = new TestEventValidator();
-        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup, checkpointPeriodMs);
+        final TestContext ctx = new TestContext(writer, readerIterator, generator, validator, workerProcessGroup, config.checkpointPeriodMs);
         config.func.accept(ctx);
 
         log.info("Cleanup");
@@ -517,6 +521,7 @@ public class StreamProcessingTest {
                 .numSegments(6)
                 .numKeys(24)
                 .numInitialInstances(6)
+                .heartbeatIntervalMillis(200)
                 .writeMode(WriteMode.Default)
                 .func(ctx -> {
                     writeEventsAndValidate(ctx, 100, new int[]{0, 1, 2, 3, 4, 5});
