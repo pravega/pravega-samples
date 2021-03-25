@@ -514,7 +514,7 @@ public class StreamProcessingTest {
                             Assert.assertEquals(expectedDuplicateEventCount, ctx.validator.getDuplicateEventCount());
                         }).build());
                 break;
-            } catch (Exception e) {
+            } catch (AssertionError  e) {
                 // This test will occasionally fail because a checkpoint may have occurred.
                 // Such a failure should be rare so retrying should eventually work.
                 log.warn("Retrying failed test", e);
