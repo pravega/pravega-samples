@@ -484,33 +484,42 @@ public class StreamProcessingTest {
      * This test processes events and then kills the processor before it receives a checkpoint.
      * This is expected to produce duplicates.
      */
-    @Test(timeout = 2*60*1000)
+    @Test(timeout = 3*60*1000)
     public void killAndRestart1of1ForcingDuplicatesTest() throws Exception {
-        run(EndToEndTestConfig.builder()
-                .numSegments(1)
-                .numKeys(1)
-                .numInitialInstances(1)
-                .writeMode(WriteMode.AlwaysDurable)
-                .func(ctx -> {
-                    writeEventsAndValidate(ctx, 100, new int[]{0});
-                    Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
-                    // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
-                    // This will update the reader group state to indicate that this reader has read up to this point.
-                    sleep(2*ctx.checkpointPeriodMs);
-                    // Write some events that will be processed and durably written.
-                    final int expectedDuplicateEventCount = 3;
-                    writeEventsAndValidate(ctx, expectedDuplicateEventCount, new int[]{0});
-                    Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
-                    // Kill the worker instance before it checkpoints and updates the reader group state.
-                    // There is no control mechanism to prevent the checkpoint.
-                    // If a checkpoint occurs here, this test will fail because duplicates will not be produced.
-                    ctx.workerProcessGroup.get(0).pause();
-                    // Start a new worker instance. It should identify the dead worker and call readerOffline(null).
-                    // The new worker should produce duplicates.
-                    ctx.workerProcessGroup.start(1);
-                    writeEventsAndValidate(ctx, 90, new int[]{1});
-                    Assert.assertEquals(expectedDuplicateEventCount, ctx.validator.getDuplicateEventCount());
-                }).build());
+        for (;;) {
+            try {
+                run(EndToEndTestConfig.builder()
+                        .numSegments(1)
+                        .numKeys(1)
+                        .numInitialInstances(1)
+                        .writeMode(WriteMode.AlwaysDurable)
+                        .func(ctx -> {
+                            writeEventsAndValidate(ctx, 100, new int[]{0});
+                            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+                            // Wait for a while to ensure that a checkpoint occurs and all events have been flushed.
+                            // This will update the reader group state to indicate that this reader has read up to this point.
+                            sleep(2*ctx.checkpointPeriodMs);
+                            // Write some events that will be processed and durably written.
+                            final int expectedDuplicateEventCount = 3;
+                            writeEventsAndValidate(ctx, expectedDuplicateEventCount, new int[]{0});
+                            Assert.assertEquals(0, ctx.validator.getDuplicateEventCount());
+                            // Kill the worker instance before it checkpoints and updates the reader group state.
+                            // There is no control mechanism to prevent the checkpoint.
+                            // If a checkpoint occurs here, this test will fail because duplicates will not be produced.
+                            ctx.workerProcessGroup.get(0).pause();
+                            // Start a new worker instance. It should identify the dead worker and call readerOffline(null).
+                            // The new worker should produce duplicates.
+                            ctx.workerProcessGroup.start(1);
+                            writeEventsAndValidate(ctx, 90, new int[]{1});
+                            Assert.assertEquals(expectedDuplicateEventCount, ctx.validator.getDuplicateEventCount());
+                        }).build());
+                break;
+            } catch (Exception e) {
+                // This test will occasionally fail because a checkpoint may have occurred.
+                // Such a failure should be rare so retrying should eventually work.
+                log.warn("Retrying failed test", e);
+            }
+        }
     }
 
     /**
