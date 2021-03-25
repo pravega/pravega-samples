@@ -33,6 +33,7 @@ df.show(20, truncate=False)
 
 (df
     .write
+    .mode("append")
     .format("pravega")
     .option("allow_create_scope", allowCreateScope)
     .option("controller", controller)
