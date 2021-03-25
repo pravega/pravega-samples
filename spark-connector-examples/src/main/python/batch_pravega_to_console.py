@@ -33,5 +33,5 @@ event_count = df.count()
 
 df.show(1000, truncate=False)
 
-print(f"Number of events in Pravega stream: {event_count}")
+print("Number of events in Pravega stream: %s" % event_count)
 print("Done.")
