@@ -13,7 +13,7 @@
 
 set -ex
 
-EXAMPLES_VESION=${EXAMPLES_VERSION:-0.8.0-SNAPSHOT}
+EXAMPLES_VERSION=${EXAMPLES_VERSION:-0.10.0-SNAPSHOT}
 
 CLASS_TO_RUN=$1
 shift
@@ -22,5 +22,5 @@ shift
 
 ./run_spark_app.sh \
 --class $CLASS_TO_RUN \
-build/libs/pravega-spark-connector-examples-${EXAMPLES_VESION}.jar
+build/libs/pravega-spark-connector-examples-${EXAMPLES_VERSION}.jar
 $*

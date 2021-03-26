@@ -9,8 +9,10 @@
 from pyspark.sql import SparkSession
 import os
 
-controller = os.getenv("PRAVEGA_CONTROLLER", "tcp://127.0.0.1:9090")
+controller = os.getenv("PRAVEGA_CONTROLLER_URI", "tcp://127.0.0.1:9090")
 scope = os.getenv("PRAVEGA_SCOPE", "examples")
+allowCreateScope = os.getenv("PROJECT_NAME") is None
+checkPointLocation = os.getenv("CHECKPOINT_DIR", "/tmp/spark-checkpoints-stream_pravega_to_pravega")
 
 spark = (SparkSession
          .builder
@@ -20,7 +22,8 @@ spark = (SparkSession
 (spark
     .readStream 
     .format("pravega") 
-    .option("controller", controller) 
+    .option("allow_create_scope", allowCreateScope)
+    .option("controller", controller)
     .option("scope", scope) 
     .option("stream", "streamprocessing1")
     # If there is no checkpoint, start at the earliest event.
@@ -34,7 +37,7 @@ spark = (SparkSession
     .option("controller", controller) 
     .option("scope", scope) 
     .option("stream", "streamprocessing2") 
-    .option("checkpointLocation", "/tmp/spark-checkpoints-stream_pravega_to_pravega") 
+    .option("checkpointLocation", checkPointLocation)
     .start() 
     .awaitTermination()
  )
