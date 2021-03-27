@@ -50,18 +50,7 @@ public class EventGenerator {
 
     private void run() throws Exception {
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
-        try (StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
-            streamManager.createScope(getConfig().getScope());
-            StreamConfiguration streamConfig = StreamConfiguration.builder()
-                    .scalingPolicy(ScalingPolicy.byEventRate(
-                            getConfig().getTargetRateEventsPerSec(),
-                            getConfig().getScaleFactor(),
-                            getConfig().getMinNumSegments()))
-                    .build();
-            streamManager.createStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
-            streamManager.updateStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
-        }
-
+        createStreams();
         final Random rand = new Random(42);
         try (final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig)) {
             try (final EventStreamWriter<SampleEvent> writer = clientFactory.createEventWriter(
@@ -90,4 +79,17 @@ public class EventGenerator {
         }
     }
 
+    private void createStreams() {
+        try (StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
+            streamManager.createScope(getConfig().getScope());
+            StreamConfiguration streamConfig = StreamConfiguration.builder()
+                    .scalingPolicy(ScalingPolicy.byEventRate(
+                            getConfig().getTargetRateEventsPerSec(),
+                            getConfig().getScaleFactor(),
+                            getConfig().getMinNumSegments()))
+                    .build();
+            streamManager.createStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
+            streamManager.updateStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
+        }
+    }
 }
