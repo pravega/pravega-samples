@@ -45,6 +45,7 @@ public class AtLeastOnceApp {
     private static final Logger log = LoggerFactory.getLogger(AtLeastOnceApp.class);
     
     private final AppConfiguration config;
+    private final ClientConfig clientConfig;
 
     public static void main(String[] args) throws Exception {
         final AtLeastOnceApp app = new AtLeastOnceApp(new AppConfiguration(args));
@@ -53,6 +54,7 @@ public class AtLeastOnceApp {
 
     public AtLeastOnceApp(AppConfiguration config) {
         this.config = config;
+        this.clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
     }
 
     public AppConfiguration getConfig() {
@@ -65,26 +67,7 @@ public class AtLeastOnceApp {
         final String instanceId = getConfig().getInstanceId();
         log.info("instanceId={}", instanceId);
 
-        // Define configuration to connect to Pravega.
-        final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
-
-        // Create the input and output streams (ignored if they already exist).
-        try (StreamManager streamManager = StreamManager.create(clientConfig)) {
-            streamManager.createScope(getConfig().getScope());
-            final StreamConfiguration streamConfig = StreamConfiguration.builder()
-                    .scalingPolicy(ScalingPolicy.byEventRate(
-                            getConfig().getTargetRateEventsPerSec(),
-                            getConfig().getScaleFactor(),
-                            getConfig().getMinNumSegments()))
-                    .build();
-            streamManager.createStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
-            streamManager.createStream(getConfig().getScope(), getConfig().getStream2Name(), streamConfig);
-            // Create stream for the membership state synchronizer.
-            streamManager.createStream(
-                    getConfig().getScope(),
-                    getConfig().getMembershipSynchronizerStreamName(),
-                    StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
-        }
+        createStreams();
 
         final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(getConfig().getScope(), getConfig().getStream1Name()))
@@ -136,5 +119,27 @@ public class AtLeastOnceApp {
         }));
 
         processor.awaitTerminated();
+    }
+
+    /**
+     * Create the input and output streams (ignored if they already exist).
+     */
+    private void createStreams() {
+        try (StreamManager streamManager = StreamManager.create(clientConfig)) {
+            streamManager.createScope(getConfig().getScope());
+            final StreamConfiguration streamConfig = StreamConfiguration.builder()
+                    .scalingPolicy(ScalingPolicy.byEventRate(
+                            getConfig().getTargetRateEventsPerSec(),
+                            getConfig().getScaleFactor(),
+                            getConfig().getMinNumSegments()))
+                    .build();
+            streamManager.createStream(getConfig().getScope(), getConfig().getStream1Name(), streamConfig);
+            streamManager.createStream(getConfig().getScope(), getConfig().getStream2Name(), streamConfig);
+            // Create stream for the membership state synchronizer.
+            streamManager.createStream(
+                    getConfig().getScope(),
+                    getConfig().getMembershipSynchronizerStreamName(),
+                    StreamConfiguration.builder().scalingPolicy(ScalingPolicy.fixed(1)).build());
+        }
     }
 }
