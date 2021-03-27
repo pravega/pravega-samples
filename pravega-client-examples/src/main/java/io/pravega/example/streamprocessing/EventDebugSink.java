@@ -30,6 +30,7 @@ import java.util.UUID;
 
 /**
  * A simple example that continuously shows the events in a stream.
+ * Each instance of this class will read the entire stream.
  */
 public class EventDebugSink {
     private static final Logger log = LoggerFactory.getLogger(EventDebugSink.class);
@@ -51,9 +52,46 @@ public class EventDebugSink {
         return config;
     }
 
-    private void run() throws Exception {
+    private void run() {
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
-        try (StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
+        createStream();
+
+        // Create a reader group that begins at the earliest event.
+        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
+        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
+                .stream(Stream.of(getConfig().getScope(), getConfig().getStream2Name()))
+                .build();
+
+        try (final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI())) {
+            readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
+            try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
+                 EventStreamReader<SampleEvent> reader = clientFactory.createReader(
+                         "reader",
+                         readerGroup,
+                         new JSONSerializer<>(new TypeToken<SampleEvent>() {}.getType()),
+                         ReaderConfig.builder().build())) {
+                long eventCounter = 0;
+                long sum = 0;
+                for (; ; ) {
+                    final EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
+                    if (eventRead.getEvent() != null) {
+                        eventCounter++;
+                        sum += eventRead.getEvent().intData;
+                        log.info("eventCounter={}, sum={}, event={}",
+                                String.format("%6d", eventCounter),
+                                String.format("%8d", sum),
+                                eventRead.getEvent());
+                    }
+                }
+            } finally {
+                // Delete the reader group since it is not intended to be shared with any other instances.
+                readerGroupManager.deleteReaderGroup(readerGroup);
+            }
+        }
+    }
+
+    private void createStream() {
+        try (final StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
             streamManager.createScope(getConfig().getScope());
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .scalingPolicy(ScalingPolicy.byEventRate(
@@ -62,37 +100,6 @@ public class EventDebugSink {
                             getConfig().getMinNumSegments()))
                     .build();
             streamManager.createStream(getConfig().getScope(), getConfig().getStream2Name(), streamConfig);
-        }
-
-        // Create a reader group that begins at the earliest event.
-        final String readerGroup = UUID.randomUUID().toString().replace("-", "");
-        final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
-                .stream(Stream.of(getConfig().getScope(), getConfig().getStream2Name()))
-                .build();
-        @Cleanup
-        final ReaderGroupManager readerGroupManager = ReaderGroupManager.withScope(getConfig().getScope(), getConfig().getControllerURI());
-        readerGroupManager.createReaderGroup(readerGroup, readerGroupConfig);
-        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-             EventStreamReader<SampleEvent> reader = clientFactory.createReader(
-                     "reader",
-                     readerGroup,
-                     new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
-                     ReaderConfig.builder().build())) {
-            long eventCounter = 0;
-            long sum = 0;
-            for (;;) {
-                final EventRead<SampleEvent> eventRead = reader.readNextEvent(READER_TIMEOUT_MS);
-                if (eventRead.getEvent() != null) {
-                    eventCounter++;
-                    sum += eventRead.getEvent().intData;
-                    log.info("eventCounter={}, sum={}, event={}",
-                            String.format("%6d", eventCounter),
-                            String.format("%8d", sum),
-                            eventRead.getEvent());
-                }
-            }
-        } finally {
-            readerGroupManager.deleteReaderGroup(readerGroup);
         }
     }
 }
