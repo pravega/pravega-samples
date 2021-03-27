@@ -36,7 +36,7 @@ These examples include:
   ```
 
 -  Start the event generator.
-   ```shell script
+   ```shell
    cd ~/pravega-samples
    ./gradlew pravega-client-examples:startEventGenerator
    ```
@@ -45,31 +45,66 @@ These examples include:
    You can either set them in your shell (`export PRAVEGA_SCOPE=examples`) or use the below syntax.
 
    If you are using a non-local Pravega instance, specify the controller as follows:
-   ```shell script
+   ```shell
    PRAVEGA_CONTROLLER=tcp://pravega.example.com:9090 ./gradlew pravega-client-examples:startEventGenerator
    ```
 
    Multiple parameters can be specified as follows.
-   ```shell script
+   ```shell
    PRAVEGA_SCOPE=examples PRAVEGA_CONTROLLER=tcp://localhost:9090 ./gradlew pravega-client-examples:startEventGenerator
    ```
 
    See [AppConfiguration.java](AppConfiguration.java) for available parameters.
 
+-  You will see log lines showing the generated events, as follows: 
+   ```
+   EventGenerator: SampleEvent{sequenceNumber=   144, routingKey=819, intData=788, sum=   71872, timestampStr=2021-03-27T00:42:41.549Z, processedLatencyMs=     0, processedBy=null}
+   EventGenerator: SampleEvent{sequenceNumber=   145, routingKey=725, intData=590, sum=   72462, timestampStr=2021-03-27T00:42:42.551Z, processedLatencyMs=     0, processedBy=null}
+   ```
+
 - In another window, start one or more instances of the stream processor.
   The `runAtLeastOnceApp.sh` script can be used to run multiple instances concurrently.
   
-  ```shell script
+  ```shell
   cd ~/pravega-samples
   scripts/runAtLeastOnceApp.sh 2
   ```
   
   You may view the log files `/tmp/atLeastOnceApp-*.log`.
 
-- Start the event debug sink:
-  ```shell script
+- The log file `/tmp/atLeastOnceApp-02.log` will show the output of processor 02, which will process approximately half of the events.
+  ```
+  SampleEventProcessor: SampleEvent{sequenceNumber=   144, routingKey=819, intData=788, sum=   71872, timestampStr=2021-03-27T00:42:41.549Z, processedLatencyMs=    21, processedBy=02}
+  SampleEventProcessor: SampleEvent{sequenceNumber=   145, routingKey=725, intData=590, sum=   72462, timestampStr=2021-03-27T00:42:42.551Z, processedLatencyMs=   284, processedBy=02}
+  ```
+
+- Start a single instance of the event debug sink:
+  ```shell
   ./gradlew pravega-client-examples:startEventDebugSink
   ```
+  
+- The event debug sink will read from the sine Pravega stream that the multiple instances of AtLeastOnceApp are writing to. 
+  ```
+  EventDebugSink: eventCounter=   134, sum=   63485, event=SampleEvent{sequenceNumber=   144, routingKey=819, intData=788, sum=   71872, timestampStr=2021-03-27T00:42:41.549Z, processedLatencyMs=    21, processedBy=02}
+  EventDebugSink: eventCounter=   220, sum=  109622, event=SampleEvent{sequenceNumber=   145, routingKey=725, intData=590, sum=   72462, timestampStr=2021-03-27T00:42:42.551Z, processedLatencyMs=   284, processedBy=02}
+  ```
+
+- Go ahead and kill one of the AtLeastOnceApp processes.
+  ```shell
+  kill $(jps | grep AtLeastOnceApp | awk '{print $1;}')
+  ```
+  
+- The remaining AtLeastOnceApp will immediately begin processing any segments that were assigned to the killed process.
+  
+- Run the kill command again to kill the remaining process.
+  Now you will see that the event debug sink stops showing new events.
+  
+- Start one new processor with `scripts/runAtLeastOnceApp.sh 1`.
+  You will see the event debug sink resumes showing processed events, with no gaps.
+  Since the AtLeastOnceApp was stopped gracefully, there will also be no duplicates.
+  
+- Repeat this experiment with `kill -9` to see how it behaves with an ungraceful shutdown.
+  You may see duplicates.
 
 # Parallelism
 
@@ -162,9 +197,10 @@ stored positions.
 # Achieving Exactly Once Semantics
 
 Exactly-once semantics can be achieved by using an idempotent writer with an at-least-once processor.
-The `AtLeastOnceApp` writes its output to a Pravega stream using `EventStreamWriter` which is *not* idempotent.
+The `AtLeastOnceApp` writes its output to a non-transactional Pravega stream using `EventStreamWriter` which is *not* idempotent.
 However, if this were modified to write to a key/value store or relational database
 with a deterministic key, then the writer would be idempotent and the system would provide exactly-once semantics.
+Another technique is to use a transactional Pravega stream, which does offer idempotence.
 
 # Stateful Exactly-once Semantics with Apache Flink
 
