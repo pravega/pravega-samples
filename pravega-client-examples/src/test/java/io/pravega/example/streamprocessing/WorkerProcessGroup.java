@@ -20,6 +20,9 @@ import java.util.stream.IntStream;
 
 /**
  * This manages a group of WorkerProcess instances.
+ * The testing framework in {@link StreamProcessingTest} uses this class to
+ * start and stop multiple instances of {@link AtLeastOnceProcessorInstrumented}
+ * in a single process.
  */
 @Builder
 public class WorkerProcessGroup implements AutoCloseable {

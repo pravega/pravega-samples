@@ -59,7 +59,7 @@ public class AtLeastOnceApp {
         return config;
     }
     
-    public void run() throws Exception {
+    private void run() {
         // Get the provided instanceId that uniquely identifes this instances of AtLeastOnceApp.
         // It will be randomly generated if not provided by the user.
         final String instanceId = getConfig().getInstanceId();
