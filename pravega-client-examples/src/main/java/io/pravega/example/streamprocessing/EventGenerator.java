@@ -48,7 +48,7 @@ public class EventGenerator {
         return config;
     }
 
-    public void run() throws Exception {
+    private void run() throws Exception {
         final ClientConfig clientConfig = ClientConfig.builder().controllerURI(getConfig().getControllerURI()).build();
         try (StreamManager streamManager = StreamManager.create(getConfig().getControllerURI())) {
             streamManager.createScope(getConfig().getScope());
@@ -63,31 +63,30 @@ public class EventGenerator {
         }
 
         final Random rand = new Random(42);
-        @Cleanup
-        final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig);
-        @Cleanup
-        final EventStreamWriter<SampleEvent> writer = clientFactory.createEventWriter(
-                     getConfig().getStream1Name(),
-                     new JSONSerializer<>(new TypeToken<SampleEvent>(){}.getType()),
-                     EventWriterConfig.builder().build());
-        long sequenceNumber = 0;
-        long sum = 0;
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-        for (;;) {
-            sequenceNumber++;
-            final SampleEvent event = new SampleEvent();
-            event.sequenceNumber = sequenceNumber;
-            event.routingKey = String.format("%3d", rand.nextInt(1000));
-            event.intData = rand.nextInt(1000);
-            sum += event.intData;
-            event.sum = sum;
-            event.timestamp = System.currentTimeMillis();
-            event.timestampStr = dateFormat.format(new Date(event.timestamp));
-            log.info("{}", event);
-            final CompletableFuture<Void> writeFuture = writer.writeEvent(event.routingKey, event);
-            final long ackedSequenceNumber = sequenceNumber;
-            writeFuture.thenRun(() -> log.debug("Acknowledged: sequenceNumber={}", ackedSequenceNumber));
-            Thread.sleep(1000);
+        try (final EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(getConfig().getScope(), clientConfig)) {
+            try (final EventStreamWriter<SampleEvent> writer = clientFactory.createEventWriter(
+                    getConfig().getStream1Name(),
+                    new JSONSerializer<>(new TypeToken<SampleEvent>() {}.getType()),
+                    EventWriterConfig.builder().build())) {
+                long sequenceNumber = 0;
+                long sum = 0;
+                for (; ; ) {
+                    sequenceNumber++;
+                    final String routingKey = String.format("%3d", rand.nextInt(1000));
+                    final int intData = rand.nextInt(1000);
+                    sum += intData;
+                    final SampleEvent event = new SampleEvent(
+                            sequenceNumber,
+                            routingKey,
+                            intData,
+                            sum);
+                    log.info("{}", event);
+                    final CompletableFuture<Void> writeFuture = writer.writeEvent(event.routingKey, event);
+                    final long ackedSequenceNumber = sequenceNumber;
+                    writeFuture.thenRun(() -> log.debug("Acknowledged: sequenceNumber={}", ackedSequenceNumber));
+                    Thread.sleep(1000);
+                }
+            }
         }
     }
 

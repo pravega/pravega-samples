@@ -10,15 +10,44 @@
  */
 package io.pravega.example.streamprocessing;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class SampleEvent {
-    public long sequenceNumber;
-    public String routingKey;
-    public long intData;
-    public long sum;
-    public long timestamp;
-    public String timestampStr;
-    public long processedLatencyMs;
-    public String processedBy;
+    final public long sequenceNumber;
+    final public String routingKey;
+    final public long intData;
+    final public long sum;
+    final public long timestamp;
+    final public String timestampStr;
+    final public long processedLatencyMs;
+    final public String processedBy;
+
+    static final private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+    /// Create a new SampleEvent that represents an unprocessed event.
+    public SampleEvent(long sequenceNumber, String routingKey, long intData, long sum) {
+        this.sequenceNumber = sequenceNumber;
+        this.routingKey = routingKey;
+        this.intData = intData;
+        this.sum = sum;
+        this.timestamp = System.currentTimeMillis();
+        this.timestampStr = dateFormat.format(new Date(this.timestamp));
+        this.processedLatencyMs = 0;
+        this.processedBy = null;
+    }
+
+    /// Create a new SampleEvent that represents a processed event.
+    public SampleEvent(SampleEvent event, String processedBy) {
+        this.sequenceNumber = event.sequenceNumber;
+        this.routingKey = event.routingKey;
+        this.intData = event.intData;
+        this.sum = event.sum;
+        this.timestamp = event.timestamp;
+        this.timestampStr = event.timestampStr;
+        this.processedLatencyMs = System.currentTimeMillis() - event.timestamp;
+        this.processedBy = processedBy;
+    }
 
     @Override
     public String toString() {

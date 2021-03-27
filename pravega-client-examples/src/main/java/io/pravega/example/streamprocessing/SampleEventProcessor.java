@@ -50,10 +50,10 @@ public class SampleEventProcessor extends AtLeastOnceProcessor<SampleEvent> {
     @Override
     public void process(EventRead<SampleEvent> eventRead) {
         final SampleEvent event = eventRead.getEvent();
-        event.processedBy = instanceId;
-        event.processedLatencyMs = System.currentTimeMillis() - event.timestamp;
-        log.info("{}", event);
-        writer.writeEvent(event.routingKey, event);
+        // This is where we would do something useful with the event.
+        final SampleEvent processedEvent = new SampleEvent(event, instanceId);
+        log.info("{}", processedEvent);
+        writer.writeEvent(processedEvent.routingKey, processedEvent);
     }
 
     /**
