@@ -19,6 +19,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
@@ -73,8 +74,8 @@ public class WordCountReader {
         // count each word over a 10 second time period
         DataStream<WordCount> dataStream = env.addSource(source).name("Pravega Stream")
                 .flatMap(new WordCountReader.Splitter())
-                .keyBy("word")
-                .timeWindow(Time.seconds(10))
+                .keyBy(WordCount::getWord)
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
                 .sum("count");
 
         // create an output sink to print to stdout for verification

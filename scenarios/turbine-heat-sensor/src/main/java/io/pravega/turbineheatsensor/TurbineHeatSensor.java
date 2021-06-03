@@ -157,7 +157,7 @@ public class TurbineHeatSensor {
 
         options.addOption("help", false, "Help message");
 
-        CommandLineParser parser = new BasicParser();
+        CommandLineParser parser = new DefaultParser();
         try {
 
             CommandLine commandline = parser.parse(options, args);

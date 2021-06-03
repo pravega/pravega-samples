@@ -22,10 +22,10 @@ import io.pravega.example.flink.Utils;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
@@ -67,8 +67,6 @@ public class EventTimeAverage {
         // initialize the Flink execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Use event time characteristic
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         // Set the auto watermark interval to 2 seconds
         env.getConfig().setAutoWatermarkInterval(2000);
 
@@ -92,7 +90,7 @@ public class EventTimeAverage {
         // Calculate the average of each sensor in a 10 second period upon event-time clock.
         DataStream<SensorData> avgStream = dataStream
                 .keyBy(SensorData::getSensorId)
-                .timeWindow(Time.seconds(windowLength))
+                .window(TumblingEventTimeWindows.of(Time.seconds(windowLength)))
                 .aggregate(new WindowAverage(), new WindowProcess())
                 .uid("Count Event-time Average");
 
