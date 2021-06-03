@@ -14,6 +14,7 @@ import io.pravega.client.stream.impl.JavaSerializer
 import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
 import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema
 import io.pravega.connectors.flink.{FlinkPravegaReader, PravegaConfig}
+import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -49,13 +50,12 @@ object TurbineHeatProcessorScala {
     */
   case class SensorAggregate(startTime: Long, sensorId: Int, location: String, tempRange: (Float,Float))
 
-  object SensorAggregate {
+  object SensorAggregate extends AggregateFunction[SensorEvent, SensorAggregate, SensorAggregate]{
     val nothing = null.asInstanceOf[SensorAggregate]
 
-    /**
-      * Update the aggregate record as new events arrive.
-      */
-    def fold(acc: SensorAggregate, evt: SensorEvent) = {
+    override def createAccumulator(): SensorAggregate = nothing
+
+    override def add(evt: SensorEvent, acc: SensorAggregate): SensorAggregate = {
       acc match {
         case null =>
           SensorAggregate(evt.timestamp, evt.sensorId, evt.location, (evt.temp, evt.temp))
@@ -63,6 +63,11 @@ object TurbineHeatProcessorScala {
           SensorAggregate(acc.startTime, evt.sensorId, evt.location, (min(evt.temp, acc.tempRange._1), max(acc.tempRange._2, evt.temp)))
       }
     }
+
+    override def getResult(accumulator: SensorAggregate): SensorAggregate = accumulator
+
+    // This will not be called in time window
+    override def merge(a: SensorAggregate, b: SensorAggregate): SensorAggregate = nothing
   }
 
   def main(args: Array[String]) {
@@ -105,7 +110,7 @@ object TurbineHeatProcessorScala {
     val summaries = timestamped
       .keyBy(_.sensorId)
       .window(TumblingEventTimeWindows.of(Time.days(1),Time.hours(+8)))
-      .fold(SensorAggregate.nothing)(SensorAggregate.fold)
+      .aggregate(SensorAggregate)
       .name("summaries")
 
     // 4. save to HDFS and print to stdout.  Refer to the TaskManager's 'Stdout' view in the Flink UI.

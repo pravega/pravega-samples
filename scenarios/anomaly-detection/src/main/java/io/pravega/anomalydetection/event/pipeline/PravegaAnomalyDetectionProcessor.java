@@ -19,7 +19,7 @@ import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
 import io.pravega.shaded.com.google.gson.Gson;
-import org.apache.flink.api.common.functions.FoldFunction;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -33,9 +33,13 @@ import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.streaming.connectors.elasticsearch5.ElasticsearchSink;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
+
 import java.net.InetSocketAddress;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Processes network events to detect anomalous sequences.
@@ -88,7 +92,7 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 		DataStream<Result> aggregate = timestampedAnomalies
 				.keyBy("networkId")
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
-				.fold(new Result(), new FoldAlertsToResult())
+				.aggregate(new AggregateAlertsToResult())
 				.name("Aggregate");
 		aggregate.print();
 
@@ -113,10 +117,15 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 		}
 	}
 
-	public static class FoldAlertsToResult implements FoldFunction<Event.Alert, Result> {
+	public static class AggregateAlertsToResult implements AggregateFunction<Event.Alert, Result, Result> {
 
 		@Override
-		public Result fold(Result accumulator, Event.Alert value) throws Exception {
+		public Result createAccumulator() {
+			return new Result();
+		}
+
+		@Override
+		public Result add(Event.Alert value, Result accumulator) {
 			accumulator.setCount(accumulator.getCount() + 1);
 			accumulator.setNetworkId(value.getNetworkId());
 			accumulator.getIpAddress().add(Event.EventType.formatAddress(value.getEvent().getSourceAddress()));
@@ -138,6 +147,17 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 				accumulator.setLocation(value.getEvent().getLatlon().getLat() + "," + value.getEvent().getLatlon().getLon());
 			}
 			return accumulator;
+		}
+
+		@Override
+		public Result getResult(Result accumulator) {
+			return accumulator;
+		}
+
+		@Override
+		public Result merge(Result a, Result b) {
+			// This will not be called in time window
+			return null;
 		}
 	}
 

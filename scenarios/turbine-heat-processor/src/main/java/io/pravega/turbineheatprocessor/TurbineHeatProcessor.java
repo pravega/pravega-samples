@@ -17,7 +17,7 @@ import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
-import org.apache.flink.api.common.functions.FoldFunction;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
@@ -69,7 +69,7 @@ public class TurbineHeatProcessor {
         SingleOutputStreamOperator<SensorAggregate> summaries = timestamped
                 .keyBy("sensorId")
                 .window(TumblingEventTimeWindows.of(Time.days(1), Time.hours(8)))
-                .fold(null, new SensorAggregator()).name("summaries");
+                .aggregate(new SensorAggregator()).name("summaries");
 
         // 4. save to HDFS and print to stdout.  Refer to the TaskManager's 'Stdout' view in the Flink UI.
         summaries.print().name("stdout");
@@ -80,7 +80,7 @@ public class TurbineHeatProcessor {
         env.execute("TurbineHeatProcessor_" + stream);
     }
 
-    private static class SensorMapper implements MapFunction<String,SensorEvent> {
+    private static class SensorMapper implements MapFunction<String, SensorEvent> {
         @Override
         public SensorEvent map(String value) {
             String[] tokens = value.split(", ");
@@ -93,9 +93,26 @@ public class TurbineHeatProcessor {
         }
     }
 
-    private static class SensorAggregator implements FoldFunction<SensorEvent,SensorAggregate> {
+    private static class SensorAggregator implements AggregateFunction<SensorEvent, SensorAggregate, SensorAggregate> {
+
         @Override
-        public SensorAggregate fold(SensorAggregate accumulator, SensorEvent evt) throws Exception {
+        public SensorAggregate createAccumulator() {
+            return null;
+        }
+
+        @Override
+        public SensorAggregate merge(SensorAggregate a, SensorAggregate b) {
+            // This will not be called in time window
+            return null;
+        }
+
+        @Override
+        public SensorAggregate getResult(SensorAggregate accumulator) {
+            return accumulator;
+        }
+
+        @Override
+        public SensorAggregate add(SensorEvent evt, SensorAggregate accumulator) {
             if (accumulator == null) {
                 return new SensorAggregate(evt.getTimestamp(), evt.getSensorId(), evt.getLocation(),
                         evt.getTemp(), evt.getTemp());
