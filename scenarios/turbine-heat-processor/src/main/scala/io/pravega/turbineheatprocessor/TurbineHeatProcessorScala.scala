@@ -14,15 +14,15 @@ import io.pravega.client.stream.impl.JavaSerializer
 import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
 import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema
 import io.pravega.connectors.flink.{FlinkPravegaReader, PravegaConfig}
+import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
-import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 
+import java.time.Duration
 import scala.math._
 
 /**
@@ -85,7 +85,6 @@ object TurbineHeatProcessorScala {
 
     // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1) // required since on a multi core CPU machine, the watermark is not advancing due to idle sources and causing window not to trigger
 
     // 1. read and decode the sensor events from a Pravega stream
@@ -101,10 +100,11 @@ object TurbineHeatProcessorScala {
     }.name("events")
 
     // 2. extract timestamp information to support 'event-time' processing
-    val timestamped = events.assignTimestampsAndWatermarks(
-      new BoundedOutOfOrdernessTimestampExtractor[SensorEvent](Time.seconds(10)) {
-        override def extractTimestamp(element: SensorEvent): Long = element.timestamp
-      })
+    val timestamped = events.assignTimestampsAndWatermarks(WatermarkStrategy
+      .forBoundedOutOfOrderness[SensorEvent](Duration.ofSeconds(10))
+      .withTimestampAssigner(new SerializableTimestampAssigner[SensorEvent] {
+        override def extractTimestamp(element: SensorEvent, recordTimestamp: Long): Long = element.timestamp
+      }))
 
     // 3. summarize the temperature data for each sensor
     val summaries = timestamped
