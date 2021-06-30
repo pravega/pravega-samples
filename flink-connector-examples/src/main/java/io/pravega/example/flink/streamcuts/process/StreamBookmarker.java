@@ -100,7 +100,7 @@ public class StreamBookmarker {
         // Bookmark those sections of the stream with values < 0 and write the output (StreamCuts).
         DataStreamSink<SensorStreamSlice> dataStreamSink = env.addSource(reader)
                                                               .setParallelism(Constants.PARALLELISM)
-                                                              .keyBy(0)
+                                                              .keyBy(t -> t.f0)
                                                               .process((KeyedProcessFunction) new Bookmarker(pravegaControllerURI))
                                                               .addSink(writer);
 

@@ -93,6 +93,8 @@ public class ExactlyOnceChecker {
                         System.out.println("No duplicate found. EXACTLY_ONCE!");
                     } else {
                         System.out.println("Found duplicates");
+                        checker.clear();
+                        duplicates.clear();
                     }
                     System.out.println("============== Checker ends  ===============\n");
                 }

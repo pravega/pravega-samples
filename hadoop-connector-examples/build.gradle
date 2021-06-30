@@ -39,7 +39,7 @@ dependencies {
     compile     "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}"
     compileOnly "org.apache.hadoop:hadoop-common:${hadoopVersion}"
     compileOnly "org.apache.hadoop:hadoop-mapreduce-client-core:${hadoopVersion}"
-    compileOnly "org.apache.spark:spark-core_2.11:${sparkVersion}"
+    compileOnly "org.apache.spark:spark-core_2.12:${sparkVersion}"
 }
 
 shadowJar {

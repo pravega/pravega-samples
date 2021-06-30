@@ -17,17 +17,18 @@ import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
-import org.apache.flink.api.common.functions.FoldFunction;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+
+import java.time.Duration;
 
 public class TurbineHeatProcessor {
     public static void main(String[] args) throws Exception {
@@ -45,7 +46,6 @@ public class TurbineHeatProcessor {
 
         // set up the streaming execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1); // required since on a multi core CPU machine, the watermark is not advancing due to idle sources and causing window not to trigger
 
         // 1. read and decode the sensor events from a Pravega stream
@@ -57,19 +57,15 @@ public class TurbineHeatProcessor {
         DataStream<SensorEvent> events = env.addSource(source, "input").map(new SensorMapper()).name("events");
 
         // 2. extract timestamp information to support 'event-time' processing
-        SingleOutputStreamOperator<SensorEvent> timestamped = events.assignTimestampsAndWatermarks(
-                new BoundedOutOfOrdernessTimestampExtractor<SensorEvent>(Time.seconds(10)) {
-            @Override
-            public long extractTimestamp(SensorEvent element) {
-                return element.getTimestamp();
-            }
-        });
+        SingleOutputStreamOperator<SensorEvent> timestamped = events.assignTimestampsAndWatermarks(WatermarkStrategy
+                .<SensorEvent>forBoundedOutOfOrderness(Duration.ofSeconds(10))
+                .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
 
         // 3. summarize the temperature data for each sensor
         SingleOutputStreamOperator<SensorAggregate> summaries = timestamped
-                .keyBy("sensorId")
+                .keyBy(SensorEvent::getSensorId)
                 .window(TumblingEventTimeWindows.of(Time.days(1), Time.hours(8)))
-                .fold(null, new SensorAggregator()).name("summaries");
+                .aggregate(new SensorAggregator()).name("summaries");
 
         // 4. save to HDFS and print to stdout.  Refer to the TaskManager's 'Stdout' view in the Flink UI.
         summaries.print().name("stdout");
@@ -80,7 +76,7 @@ public class TurbineHeatProcessor {
         env.execute("TurbineHeatProcessor_" + stream);
     }
 
-    private static class SensorMapper implements MapFunction<String,SensorEvent> {
+    private static class SensorMapper implements MapFunction<String, SensorEvent> {
         @Override
         public SensorEvent map(String value) {
             String[] tokens = value.split(", ");
@@ -93,9 +89,26 @@ public class TurbineHeatProcessor {
         }
     }
 
-    private static class SensorAggregator implements FoldFunction<SensorEvent,SensorAggregate> {
+    private static class SensorAggregator implements AggregateFunction<SensorEvent, SensorAggregate, SensorAggregate> {
+
         @Override
-        public SensorAggregate fold(SensorAggregate accumulator, SensorEvent evt) throws Exception {
+        public SensorAggregate createAccumulator() {
+            return null;
+        }
+
+        @Override
+        public SensorAggregate merge(SensorAggregate a, SensorAggregate b) {
+            // This will not be called in time window
+            return null;
+        }
+
+        @Override
+        public SensorAggregate getResult(SensorAggregate accumulator) {
+            return accumulator;
+        }
+
+        @Override
+        public SensorAggregate add(SensorEvent evt, SensorAggregate accumulator) {
             if (accumulator == null) {
                 return new SensorAggregate(evt.getTimestamp(), evt.getSensorId(), evt.getLocation(),
                         evt.getTemp(), evt.getTemp());
