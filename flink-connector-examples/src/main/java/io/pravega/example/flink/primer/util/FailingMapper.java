@@ -11,7 +11,9 @@
 package io.pravega.example.flink.primer.util;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.streaming.api.checkpoint.ListCheckpointed;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 
 import java.util.List;
 
@@ -24,7 +26,7 @@ import java.util.List;
  * where a failure is never triggered (for example because of a too high value for
  * the number of elements to pass before failing).
  */
-public class FailingMapper<T> implements MapFunction<T, T>, ListCheckpointed<Integer> {
+public class FailingMapper<T> implements MapFunction<T, T>, CheckpointedFunction {
 
     /**
      * The number of elements to wait for, before failing
@@ -56,18 +58,20 @@ public class FailingMapper<T> implements MapFunction<T, T>, ListCheckpointed<Int
     @Override
     public String toString() {
         return "FAILING MAPPER: elementCount = " + elementCount + "," +
-                "failedAtElemtn = " + failAtElement + "," +
+                "failedAtElement = " + failAtElement + "," +
                 "restored = " + restored;
     }
 
     @Override
-    public void restoreState(List<Integer> list) throws Exception {
-        restored = true;
+    public void snapshotState(FunctionSnapshotContext context) throws Exception {
+        // do nothing
     }
 
     @Override
-    public List<Integer> snapshotState(long l, long l1) throws Exception {
-        return null;
+    public void initializeState(FunctionInitializationContext context) throws Exception {
+        if (context.isRestored()) {
+            restored = true;
+        }
     }
 
     public static class IntentionalException extends Exception {

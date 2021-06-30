@@ -18,7 +18,6 @@ import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.nytaxi.common.Helper;
 import lombok.Data;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.net.URI;
@@ -68,7 +67,6 @@ public abstract class AbstractHandler {
 
     public StreamExecutionEnvironment getStreamExecutionEnvironment() {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1);
         return env;
     }

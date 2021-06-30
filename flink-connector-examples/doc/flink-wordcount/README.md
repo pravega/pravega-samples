@@ -65,14 +65,14 @@ Suppose Flink is installed at /usr/share/flink. Before starting Flink you will n
 taskmanager.numberOfTaskSlots: 4
 ```
 
-By default, Flink job manager runs on port 6123.
+By default, Flink job manager rest API runs on port 8081 to receive job submission, and it is configurable via `rest.port`.
 
 Point your browser to `http://<your_flink_host>:8081` to make sure Flink is running; then click "Running Jobs"
 
 ### Start WordCountWriter
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ flink run -m localhost:6123 -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
+$ flink run -m localhost:8081 -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
 ```
 The `WordCountWriter` job should show up on the Flink UI as a running job.
 
@@ -80,7 +80,7 @@ The `WordCountWriter` job should show up on the Flink UI as a running job.
 In a different window:
 ```
 $ cd flink-examples/build/install/pravega-flink-examples
-$ flink run -m localhost:6123 -c io.pravega.example.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
+$ flink run -m localhost:8081 -c io.pravega.example.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
 ```
 The `WordCountReader` job should show up on the Flink UI as a running job.
 
