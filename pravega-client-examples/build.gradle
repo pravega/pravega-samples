@@ -26,6 +26,9 @@ ext {
 
 dependencies {
     testCompile "junit:junit:${junitVersion}"
+    testCompile "io.pravega:pravega-standalone:${pravegaVersion}"
+    testCompile "io.pravega:pravega-test-testcommon:${pravegaVersion}"
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
 
     compile "io.pravega:pravega-client:${pravegaVersion}",
             "io.pravega:pravega-common:${pravegaVersion}",
@@ -182,6 +185,44 @@ task startSecureBatchReader(type: JavaExec) {
     }
 }
 
+task scriptEventGenerator(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.streamprocessing.EventGenerator'
+    applicationName = 'eventGenerator'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startEventGenerator(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.EventGenerator"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task scriptAtLeastOnceApp(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.streamprocessing.AtLeastOnceApp'
+    applicationName = 'atLeastOnceApp'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startAtLeastOnceApp(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.AtLeastOnceApp"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task scriptEventDebugSink(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.streamprocessing.EventDebugSink'
+    applicationName = 'eventDebugSink'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startEventDebugSink(type: JavaExec) {
+    main = "io.pravega.example.streamprocessing.EventDebugSink"
+    classpath = sourceSets.main.runtimeClasspath
+}
 
 distributions {
     main {
@@ -198,6 +239,9 @@ distributions {
                 from project.scriptSecureWriter
                 from project.scriptSecureReader
                 from project.scriptSecureBatchReader
+                from project.scriptEventGenerator
+                from project.scriptAtLeastOnceApp
+                from project.scriptEventDebugSink
             }
             into('lib') {
                 from(jar)
