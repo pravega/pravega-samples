@@ -53,6 +53,7 @@ distributions {
         contents {
             into('bin') {
                 from project.scriptConnectorTableApiSamples
+                from "src/main/python"
             }
             into('lib') {
                 from shadowJar
