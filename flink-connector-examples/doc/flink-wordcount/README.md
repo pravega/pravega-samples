@@ -71,7 +71,7 @@ Point your browser to `http://<your_flink_host>:8081` to make sure Flink is runn
 
 ### Start WordCountWriter
 ```
-$ cd flink-examples/build/install/pravega-flink-examples
+$ cd flink-connector-examples/build/install/pravega-flink-examples
 $ flink run -m localhost:6123 -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
 ```
 The `WordCountWriter` job should show up on the Flink UI as a running job.
@@ -79,7 +79,7 @@ The `WordCountWriter` job should show up on the Flink UI as a running job.
 ### Start WordCountReader
 In a different window:
 ```
-$ cd flink-examples/build/install/pravega-flink-examples
+$ cd flink-connector-examples/build/install/pravega-flink-examples
 $ flink run -m localhost:6123 -c io.pravega.example.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
 ```
 The `WordCountReader` job should show up on the Flink UI as a running job.
@@ -106,7 +106,7 @@ Submit `WordCountWriter` job
 
 - Click **Submit new Job**
 - Click **Add New** button
-- Browser to flink-examples/build/install/pravega-flink-examples/lib and select the uber jar file: pravega-flink-examples-0.2.0-SNAPSHOT-**all**.jar
+- Browser to flink-connector-examples/build/install/pravega-flink-examples/lib and select the uber jar file: pravega-flink-examples-0.2.0-SNAPSHOT-**all**.jar
 - Click **Upload** button
 - Click the checkbox next to the uploaded jar file.
 - In the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountWriter```
