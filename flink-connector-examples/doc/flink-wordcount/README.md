@@ -31,7 +31,7 @@ All args are optional, if not specified, the defaults are:
  * stream - "wordcount"
  * controller - "tcp://localhost:9090"
 
-### Start WordCountReader
+## Start WordCountReader
 The application reads data from a Pravega stream and prints the data.
 ```
 $ bin/wordCountReader [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
@@ -58,7 +58,7 @@ In the windows where `WordCountReader` is running, it should show output similar
 
 ### Start Flink
 
-Follow the instruction [here](https://ci.apache.org/projects/flink/flink-docs-release-1.4/quickstart/setup_quickstart.html) to download and start Flink. 
+Follow the instruction [here](https://ci.apache.org/projects/flink/flink-docs-release-1.12/try-flink/local_installation.html) to download and start Flink.
 
 Suppose Flink is installed at /usr/share/flink. Before starting Flink you will need to edit /usr/share/flink/conf/flink-conf.yaml to increase the number of task slots, for example, 4.
 ```
@@ -67,26 +67,32 @@ taskmanager.numberOfTaskSlots: 4
 
 By default, Flink job manager rest API runs on port 8081 to receive job submission, and it is configurable via `rest.port`.
 
-Point your browser to `http://<your_flink_host>:8081` to make sure Flink is running; then click "Running Jobs"
+Point your browser to `http://<your_flink_host>:8081` to make sure Flink is running, then click "Running Jobs".
 
 ### Start WordCountWriter
-```
+
+```bash
 $ cd flink-examples/build/install/pravega-flink-examples
-$ flink run -m localhost:8081 -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
+$ flink run -m localhost:8081 -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-0.10.0-SNAPSHOT-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
 ```
+
 The `WordCountWriter` job should show up on the Flink UI as a running job.
 
 ### Start WordCountReader
+
 In a different window:
-```
+
+```bash
 $ cd flink-examples/build/install/pravega-flink-examples
-$ flink run -m localhost:8081 -c io.pravega.example.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.2.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
+$ flink run -m localhost:8081 -c io.pravega.example.flink.wordcount.WordCountReader lib/pravega-flink-examples-0.10.0-SNAPSHOT-all.jar --controller tcp://localhost:9090
 ```
+
 The `WordCountReader` job should show up on the Flink UI as a running job.
 
 ### View Output
 Now in the windows where `netcat` is running, enter some text, for example,
-```
+
+```bash
 $ nc -lk 9999
 aa bb cc aa
 ```
@@ -135,7 +141,6 @@ Repeat the steps above except
 
 - Run Configuration for `WordCountWriter`
 ![](image/flink-wordcount-intellij-04.png)
-
 
 ## Contributors ##
 * [Kartik Vandra](https://github.com/kvandra)   <img src="https://avatars3.githubusercontent.com/u/5042709?s=460&v=4" width="30" height="30">
