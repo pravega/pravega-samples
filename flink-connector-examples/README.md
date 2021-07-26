@@ -5,7 +5,7 @@ system for Apache Flink.
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-3. Apache Flink running
+3. Apache Flink (version 1.11) running
 
 
 ## Distributing Flink Samples
