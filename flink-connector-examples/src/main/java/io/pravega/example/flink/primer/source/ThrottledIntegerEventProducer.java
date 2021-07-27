@@ -13,20 +13,22 @@ package io.pravega.example.flink.primer.source;
 
 
 import io.pravega.example.flink.primer.datatype.IntegerEvent;
-import org.apache.flink.runtime.state.CheckpointListener;
-import org.apache.flink.streaming.api.checkpoint.ListCheckpointed;
+import org.apache.flink.api.common.state.CheckpointListener;
+import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.api.common.typeutils.base.LongSerializer;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.SerializableObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-
 public class ThrottledIntegerEventProducer
         extends RichParallelSourceFunction<IntegerEvent>
-        implements ListCheckpointed<Long>, CheckpointListener {
+        implements CheckpointedFunction, CheckpointListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThrottledIntegerEventProducer.class);
 
@@ -52,7 +54,7 @@ public class ThrottledIntegerEventProducer
     private long lastCheckpointConfirmed;
 
     // The position of last checkpoint
-    private long checkpointPosition = -1;
+    private ListState<Long> checkpointPosition = null;
 
     // Set to true after restore
     private boolean restored = false;
@@ -164,29 +166,34 @@ public class ThrottledIntegerEventProducer
     }
 
     @Override
-    public List<Long> snapshotState(long checkpointId, long checkpointTimestamp) throws Exception {
-        this.lastCheckpointTriggered = checkpointId;
-        this.checkpointPosition = this.currentPosition;
+    public void snapshotState(FunctionSnapshotContext context) throws Exception {
+        this.checkpointPosition.clear();
+        this.checkpointPosition.add(this.currentPosition);
+        this.lastCheckpointTriggered = context.getCheckpointId();
         System.out.println("Start checkpointing at position " + this.currentPosition);
-        return Collections.singletonList(this.currentPosition);
     }
 
     @Override
-    public void restoreState(List<Long> state) throws Exception {
-        this.currentPosition = state.get(0);
+    public void initializeState(FunctionInitializationContext context) throws Exception {
+        this.checkpointPosition = context.getOperatorStateStore().getListState(new ListStateDescriptor<>(
+                "state",
+                LongSerializer.INSTANCE));
 
-        // at least one checkpoint must have happened so far
-        this.lastCheckpointTriggered = 1L;
-        this.lastCheckpointConfirmed = 1L;
-        this.restored = true;
-        System.out.println("Restore from checkpoint at position " + this.currentPosition);
+        if (context.isRestored()) {
+            this.currentPosition = checkpointPosition.get().iterator().next();
+            // at least one checkpoint must have happened so far
+            this.lastCheckpointTriggered = 1L;
+            this.lastCheckpointConfirmed = 1L;
+            this.restored = true;
+            System.out.println("Restore from checkpoint at position " + this.currentPosition);
+        }
     }
 
     @Override
     public void notifyCheckpointComplete(long checkpointId) throws Exception {
 
         synchronized (blocker) {
-            if (checkpointPosition > -1) {
+            if (checkpointPosition.get().iterator().next() > -1) {
                 // confirm only after a "real" checkpoint, i.e., position is greater than -1.
                 this.lastCheckpointConfirmed = checkpointId;
                 System.out.println("Complete checkpointing at position " + this.checkpointPosition);
@@ -194,5 +201,4 @@ public class ThrottledIntegerEventProducer
             blocker.notifyAll();
         }
     }
-
 }
