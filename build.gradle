@@ -8,11 +8,6 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *   
  */
- buildscript {
-    repositories {
-        jcenter()
-    }
-}
 
 plugins {
     id 'org.hidetake.ssh' version '2.8.0'
@@ -35,14 +30,17 @@ subprojects {
     }
     repositories {
         mavenLocal()
-        jcenter()
         mavenCentral()
         maven {
             url "https://repository.apache.org/snapshots"
         }
-        maven {
-            url "https://oss.jfrog.org/jfrog-dependencies"
-        }
+	maven {
+	    url "https://maven.pkg.github.com/pravega/pravega"
+	    credentials {
+        	username = "pravega-public"
+	        password = "\u0067\u0068\u0070\u005F\u0048\u0034\u0046\u0079\u0047\u005A\u0031\u006B\u0056\u0030\u0051\u0070\u006B\u0079\u0058\u006D\u0035\u0063\u0034\u0055\u0033\u006E\u0032\u0065\u0078\u0039\u0032\u0046\u006E\u0071\u0033\u0053\u0046\u0076\u005A\u0049"
+	    }
+	}
     }
     plugins.withType(org.gradle.api.plugins.JavaPlugin) {
         group "io.pravega"
