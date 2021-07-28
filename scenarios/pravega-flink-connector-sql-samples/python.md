@@ -9,13 +9,8 @@ https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv
 
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
-2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-3. Python version 3.8
-4. (optional) Prepare a virtual environment:
-   `pip install virtualenv && virtualenv pyflink && cd pyflink && source bin/activate`
-5. `pip install apache-flink 1.12.4`
-6. (optional) Redirect the python you want to use to `python`:
-   `sudo ln -s /usr/bin/python3 /usr/bin/python`
+2. Build the [pravega-samples](https://github.com/pravega/pravega-samples) by following the [instructions](https://github.com/pravega/pravega-samples#pravega-samples-build-instructions)
+3. Python and its packages, see [pyflink setup](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/python/installation/)
 
 ## Running the samples
 
