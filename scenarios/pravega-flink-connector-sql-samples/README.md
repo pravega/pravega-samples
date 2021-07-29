@@ -10,6 +10,7 @@ https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
+3. Apache Flink 1.12 running
 
 ## Running the samples
 

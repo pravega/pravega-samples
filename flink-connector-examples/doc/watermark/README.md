@@ -1,10 +1,10 @@
 # Pravega Watermark Flink Example 
 
 ## Event time and Watermark Introduction
-Flink offers [event-time characteristic](https://ci.apache.org/projects/flink/flink-docs-stable/dev/event_time.html).
+Flink offers [event-time characteristic](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/generating_watermarks/).
 The mechanism in Flink to measure progress in event time is watermarks.
 Watermarks flow as part of the data stream and carry a timestamp `t`.
-A `Watermark(t)` declares that event time has reached time `t` in that stream, meaning that there should be no more elements from the stream with a timestamp `t’` <= `t` 
+A `Watermark(t)` declares that event time has reached time `t` in that stream, meaning that there should be no more elements from the stream with a timestamp `t'` <= `t` 
 (i.e. events with timestamps older or equal to the watermark).
 
 Pravega has innovated a strategy to generate the watermark within the stream in 0.6 release.
@@ -42,7 +42,7 @@ You can run it recursively by reusing the result of the smaller window.
 ## How to run the application and verify
 The scripts can be found under the flink-examples directory in:
 ```
-flink-connector-examples/build/install/pravega-flink-examples/bin
+$ cd flink-connector-examples/build/install/pravega-flink-examples/bin
 ```
 
 Start the `PravegaWatermarkIngestion` app in one window by
@@ -99,4 +99,4 @@ For a better knowledge about event time and watermarks, the following articles c
 - [Streaming 101](https://www.oreilly.com/ideas/the-world-beyond-batch-streaming-101) by Tyler Akidau
 - The [Dataflow Model paper](https://research.google.com/pubs/archive/43864.pdf)
 - Flink introductions for [event time](https://ci.apache.org/projects/flink/flink-docs-stable/dev/event_time.html).
-- Pravega design detail [PDP-33](https://github.com/pravega/pravega/wiki/PDP-33:-Watermarking)
+- Pravega design detail [PDP-33](https://github.com/pravega/pravega/wiki/PDP-33-%28Watermarking%29)
