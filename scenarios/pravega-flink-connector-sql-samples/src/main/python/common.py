@@ -40,7 +40,7 @@ def get_arguments() -> Arguments:
                         type=int,
                         nargs='?')
     args = Arguments()
-    parser.parse_args(namespace=args)
+    parser.parse_known_args(namespace=args)
     return args
 
 
