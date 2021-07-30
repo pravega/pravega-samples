@@ -37,7 +37,7 @@ Snippets of output shown below:
 
 Start checkpointing at position -1
 Start checkpointing at position 16
-Complete checkpointing at position PartitionableListState{stateMetaInfo=RegisteredOperatorBackendStateMetaInfo{name='state', assignmentMode=SPLIT_DISTRIBUTE, partitionStateSerializer=org.apache.flink.api.common.typeutils.base.LongSerializer@51c668e3}, internalList=[16]}
+Complete checkpointing at position 16
 Artificial failure at position 26
 Start checkpointing at position 24
 14:49:29,061 WARN  org.apache.flink.runtime.taskmanager.Task                     - Source: Custom Source -> Map (1/1)#0 (e6b800f2f4df24ee86f699dc83847f96) switched from RUNNING to FAILED.
@@ -45,9 +45,9 @@ io.pravega.example.flink.primer.util.FailingMapper$IntentionalException: artific
 
 ......
 
-Restore from checkpoint at position 24
+Restore from checkpoint at position 16
 Start checkpointing at position 50
-Complete checkpointing at position PartitionableListState{stateMetaInfo=RegisteredOperatorBackendStateMetaInfo{name='state', assignmentMode=SPLIT_DISTRIBUTE, partitionStateSerializer=org.apache.flink.api.common.typeutils.base.LongSerializer@51c668e3}, internalList=[50]}
+Complete checkpointing at position 50
 
 ......
 
@@ -55,8 +55,8 @@ Complete checkpointing at position PartitionableListState{stateMetaInfo=Register
 The app completes checkpointing at position 16, and in the meantime, continues to write to the 
 Pravega stream until it introduces an artificial exception to simulate transaction failure 
 at position 26. Upon the failure, the app restores from its last successful checkpoint 
-at position 24. Without the Pravega EXACTLY_ONCE enabled, it is likely that duplicate events, 
-from position 25 to 26, will be written to the Pravega stream. 
+at position 16. Without the Pravega EXACTLY_ONCE enabled, it is likely that duplicate events, 
+from position 17 to 26, will be written to the Pravega stream. 
 
 And indeed, that's what checker app shows. Note that output of duplicate events may not necessarily 
 be within the checker start and end block. 

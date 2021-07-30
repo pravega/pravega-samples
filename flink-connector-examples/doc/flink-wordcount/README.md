@@ -58,7 +58,7 @@ In the windows where `WordCountReader` is running, it should show output similar
 
 ### Start Flink
 
-Follow the instruction [here](https://ci.apache.org/projects/flink/flink-docs-stable/quickstart/setup_quickstart.html) to download and start Flink.
+Follow the instruction [here](https://ci.apache.org/projects/flink/flink-docs-stable/docs/deployment/resource-providers/standalone/overview/) to download and start Flink.
 
 Suppose Flink is installed at /usr/share/flink. Before starting Flink you will need to edit /usr/share/flink/conf/flink-conf.yaml to increase the number of task slots, for example, 4.
 ```
@@ -116,7 +116,7 @@ Submit `WordCountWriter` job
 
 - Click **Submit new Job**
 - Click the **Add New** button
-- Browser to `flink-connector-examples/build/install/pravega-flink-examples/lib` and select the uber jar file: `pravega-flink-examples-\<samples version\>-SNAPSHOT-**all**.jar`
+- Browser to `flink-connector-examples/build/install/pravega-flink-examples/lib` and select the uber jar file: `pravega-flink-examples-<samples version>-**all**.jar`
 - Click the **Upload** button
 - Click the uploaded jar file
 - In the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountWriter```
