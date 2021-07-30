@@ -13,6 +13,8 @@ https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv
 3. Python and its packages, see [pyflink setup](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/python/installation/)
 4. Get the latest Pravega Flink connectors at [the release page](https://github.com/pravega/flink-connectors/releases)
 
+> If you wish to use Anaconda instead, replace `pip` with `conda` in the steps above.
+
 ## Running the samples
 
 After building the samples, navigate to the application install location.
