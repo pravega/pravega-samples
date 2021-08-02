@@ -38,6 +38,7 @@ import io.pravega.client.tables.Remove;
 import io.pravega.client.tables.TableKey;
 import io.pravega.common.Exceptions;
 import io.pravega.common.concurrent.ExecutorServiceHelpers;
+import io.pravega.common.concurrent.Futures;
 import io.pravega.shared.NameUtils;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -259,9 +260,9 @@ class ChatClient implements AutoCloseable {
     }
 
     void publish(String channelName, String fromUserName, String message) {
-        validateChannelName(channelName);
         validateUserName(fromUserName);
         val channelStreamName = getChannelStreamName(channelName);
+        validateChannelName(channelStreamName);
         try (val w = this.clientFactory.createEventWriter(channelStreamName, new UTF8StringSerializer(), EventWriterConfig.builder().build())) {
             w.writeEvent(fromUserName, message);
         }
@@ -424,27 +425,22 @@ class ChatClient implements AutoCloseable {
         private final AtomicReference<Map<String, SubscriptionListener>> currentSubscriptions = new AtomicReference<>();
         private final AtomicBoolean closed = new AtomicBoolean(false);
 
-        private TableKey getSubscriptionKey(String channelName) {
-            return new TableKey(USERNAME_SERIALIZER.serialize(userName), CHANNEL_NAME_SERIALIZER.serialize(channelName));
-        }
-
         void subscribe(String channelName) {
             channelName = getChannelName(channelName);
             Preconditions.checkArgument(channelTable.exists(toKey(channelName, CHANNEL_NAME_SERIALIZER)).join(),
                     "Channel '%s' does not exist.", channelName);
-            val key = getSubscriptionKey(channelName);
-            if (userSubscriptionTable.exists(key).join()) {
+            boolean subscribed = subscribeUserToChannel(userName, channelName);
+            if (subscribed) {
                 System.out.println(String.format("User '%s' is already subscribed to '%s'.", this.userName, channelName));
             } else {
-                val update = new Put(key, STRING_SERIALIZER.serialize(StreamCut.UNBOUNDED.asText()));
-                userSubscriptionTable.update(update).join();
                 System.out.println(String.format("User '%s' has been subscribed to '%s'.", this.userName, channelName));
             }
         }
 
         void unsubscribe(String channelName) {
             Exceptions.checkNotNullOrEmpty(channelName, "channelName");
-            userSubscriptionTable.update(new Remove(getSubscriptionKey(channelName)));
+            val key = new TableKey(USERNAME_SERIALIZER.serialize(userName), CHANNEL_NAME_SERIALIZER.serialize(channelName));
+            userSubscriptionTable.update(new Remove(key));
             System.out.println(String.format("User '%s' has been unsubscribed from '%s'.", this.userName, channelName));
         }
 
@@ -457,14 +453,11 @@ class ChatClient implements AutoCloseable {
                 // Create a chat client, if needed.
                 createDirectMessageChannel(channelName);
 
-                // Subscribe this user to this channel, if necessary
-                val insert = new Insert(getSubscriptionKey(channelName), STRING_SERIALIZER.serialize(StreamCut.UNBOUNDED.asText()));
-                userSubscriptionTable.update(insert).join();
+                // Subscribe this user to this channel, if necessary.
+                subscribeUserToChannel(userName, channelName);
 
-                // Subscribe that user to this channel, if necessary.
-                val otherUserKey = new TableKey(USERNAME_SERIALIZER.serialize(target), CHANNEL_NAME_SERIALIZER.serialize(channelName));
-                val otherUserInsert = new Insert(otherUserKey, STRING_SERIALIZER.serialize(StreamCut.UNBOUNDED.asText()));
-                userSubscriptionTable.update(otherUserInsert).join();
+                // Subscribe the other user to this channel, if necessary.
+                subscribeUserToChannel(target, channelName);
             }
 
             // Publish the message.
@@ -490,6 +483,16 @@ class ChatClient implements AutoCloseable {
             // Periodically list all keys in UserSubscriptions-{Session.userName} to detect new channels.
             this.subscriptionListener.set(executor.scheduleWithFixedDelay(this::refreshSubscriptionList, 1000, 1000, TimeUnit.MILLISECONDS));
             System.out.println(String.format("Listening to all subscriptions for user '%s'.", this.userName));
+        }
+
+        private boolean subscribeUserToChannel(String userName, String channelName) {
+            val key = new TableKey(USERNAME_SERIALIZER.serialize(userName), CHANNEL_NAME_SERIALIZER.serialize(channelName));
+            val insert = new Insert(key, STRING_SERIALIZER.serialize(StreamCut.UNBOUNDED.asText()));
+            return Futures.exceptionallyExpecting(
+                    userSubscriptionTable.update(insert).thenApply(v -> true),
+                    ex -> ex instanceof ConditionalTableUpdateException, // If this user is already subscribed, the update will be rejected.
+                    false)
+                    .join();
         }
 
         private void refreshSubscriptionList() {

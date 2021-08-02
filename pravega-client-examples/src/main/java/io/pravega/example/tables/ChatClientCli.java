@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory;
 /**
  * TODO
  */
-public class ChatServiceCli {
+public class ChatClientCli {
     private static final AtomicReference<ChatClient> CHAT_CLIENT = new AtomicReference<>();
     private static final String DEFAULT_CONTROLLER_URI = "tcp://localhost:9090";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.getLoggerList().get(0).setLevel(Level.ERROR);
 
