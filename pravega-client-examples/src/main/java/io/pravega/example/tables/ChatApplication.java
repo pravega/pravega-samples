@@ -65,71 +65,61 @@ import lombok.SneakyThrows;
 import lombok.val;
 
 /**
- * TODO update javadoc
- * This demo implements a simple chat service using Pravega Streams, StreamCuts and Key-Value Tables.
+ * This implements a simple Chat Application using Pravega Streams, StreamCuts and Key-Value Tables. All the logic for the
+ * Chat Application lies within this class, and Pravega is used solely for data storage (there is no "Chat Service" that
+ * this application talks to).
+ * <p>
  * <p/>
  * In this implementation:
- * - Streams are used to record messages sent in conversations.
- * - Stream Cuts are used to record how far has a user "read" a conversation.
- * - Key-Value Tables are used to hold metadata about conversations, users and what conversations a user is subscribed to
- * (as well as the position (Stream Cut) within those conversations.
- * - When a user "logs in", their conversation subscriptions are read from the Key-Value Table and the latest read message;
- * after that EventStreamReaders (Subscriptionlisteners) are used to tail the appropriate conversations after that point.
- * <p/>
+ * <ul>
+ * <li>Streams are used to record messages sent in conversations.
+ * <li>Stream Cuts are used to record how far has a user "read" a conversation.
+ * <li>Key-Value Tables are used to hold 1) metadata about conversations, 2) users and 3) what conversations a user is
+ * subscribed to (as well as the position (Stream Cut) within those conversations).
+ * <li>When a user "logs in", their conversation subscriptions are read from the Key-Value Table and the latest read message.
+ * {@link EventStreamReader}s (Subscription listeners) are used to tail the appropriate conversations after that point.
+ * </ul>
+ * <p>
  * Chat Service architecture:
- * - There is a set of Users with unique user names.
- * - There is a set of Public Channels with unique names.
- * - A Conversation is either a Public Channel or a direct-message conversation (between two or more users).
- * - Each Conversation (whether direct or Public Channel) is backed by a single Pravega Stream (1:1 mapping).
- * - A single Key-Value Table (String-String) is used for the following:
- * -- To store Users (Key Family "Users").
- * -- To store Public Channels (Key Family "Channels")
- * -- To store conversation subscriptions for each user. Each user gets a Key Family in the form "UserSubscription-{username}".
- * <p/>
- * How to use this:
- * - This is a command-line demo. The user types in instructions on the command line and they get executed.
- * - Syntax: {command-name} {arguments}
- * -- If {command-name} is prefixed by {@code @}, that will indicate it's a message to send to a user/channel.
- * -- Any other {command-name}s will be interpreted as actions. See below.
+ * <ul>
+ * <li>There is a set of Users with unique user names. The users are stored in a Key-Value Table, keyed by username.
+ * <li>There is a set of Public Channels with unique names. The Channels are stored in a Key-Value Table, keyed by
+ * channel name.
+ * <li>A Conversation is either a Public Channel or a direct-message conversation (between two users).
+ * <li>Each Conversation (whether direct or Public Channel) is backed by a single Pravega Stream (1:1 mapping).
+ * <li>User-Channel Subscriptions are stored in a Key-Value Table, keyed by "Username-Channelname".
+ * </ul>
  * <p>
- * The following are a list of commands:
- * <p>
- * - exit: Exits the demo application.
- * - create-user {username}: Creates a new user with the given username.
- * - create-channel {channelname}: Creates a new Public Channel with the given name.
- * - list-users: List all the users in the system.
- * - list-channels: Lists all channels in the system.
- * - login: {username}: The user by the specified user name is now active in this session.
- * - subscribe {channelname}: Subscribes the currently logged in user to the given channel. Until unsubscribed, all messages
- * published to this channel will be displayed as soon as they are published.
- * - unsubscribe {channelname}: Unsubscribes the currently logged in user from the given channel.
- * - list-subscriptions: Lists all subscriptions the currently logged in user has.
- * <p>
- * Example:
- * {@code
- * create-user user1
- * create-user user2
- * create-channel ch1
- * list-users
- * list-channels
- * login user1
- * subscribe #ch1
- *
- * @user2 Hey user2! How are you?
- * @#ch1 Hey everyone. This is the first message ever on this channel.
- * login user2
- * @#ch1 Hey there. Everything is good.
- * login user1
- * exit
- * }
+ * See {@link ChatClientCli} for instructions on how to run.
  */
 @SuppressWarnings("UnstableApiUsage")
-class ChatClient implements AutoCloseable {
-    private static final String CHAT_SCOPE = "PravegaChatServiceDemo";
-    private static final String USER_TABLE_NAME = "ChatUsers";
-    private static final String CHANNEL_TABLE_NAME = "ChatChannels";
-    private static final String USER_SUBSCRIPTIONS_TABLE_NAME = "ChatUserSubscriptions";
+final class ChatApplication implements AutoCloseable {
+    //region Members
+
+    /**
+     * Scope to use in Pravega cluster. All Streams and Key-Value Tables will be created under this Scope.
+     */
+    private static final String CHAT_SCOPE = "PravegaChatApplicationDemo";
+    /**
+     * Key-Value Table name for Users.
+     */
+    private static final String USER_TABLE_NAME = "Users";
+    /**
+     * Key-Value Table name for Channels.
+     */
+    private static final String CHANNEL_TABLE_NAME = "Channels";
+    /**
+     * Key-Value Table name for User-Channel subscriptions.
+     */
+    private static final String USER_SUBSCRIPTIONS_TABLE_NAME = "UserSubscriptions";
+    /**
+     * Usernames may be up to 64 latin characters and numbers.
+     */
     private static final PaddedStringSerializer USERNAME_SERIALIZER = new PaddedStringSerializer(64);
+    /**
+     * Channel names may be up to 64 latin characters and numbers. To accommodate user-user channels, we allow double that
+     * amount for keys.
+     */
     private static final PaddedStringSerializer CHANNEL_NAME_SERIALIZER = new PaddedStringSerializer(USERNAME_SERIALIZER.getMaxLength() * 2);
     private static final UTF8StringSerializer STRING_SERIALIZER = new UTF8StringSerializer();
 
@@ -148,7 +138,16 @@ class ChatClient implements AutoCloseable {
     private KeyValueTable channelTable;
     private User userSession;
 
-    ChatClient(@NonNull URI controllerUri) {
+    //endregion
+
+    //region Constructor
+
+    /**
+     * Creates a new instance of the {@link ChatApplication} class.
+     *
+     * @param controllerUri A {@link URI} pointing to the Pravega Controller to connect to.
+     */
+    ChatApplication(@NonNull URI controllerUri) {
         this.controllerUri = controllerUri;
         this.streamManager = StreamManager.create(controllerUri);
         this.keyValueTableManager = KeyValueTableManager.create(controllerUri);
@@ -181,6 +180,8 @@ class ChatClient implements AutoCloseable {
             c.close();
         }
     }
+
+    //endregion
 
     //region Helpers
 
@@ -216,6 +217,9 @@ class ChatClient implements AutoCloseable {
 
     //region API
 
+    /**
+     * Attempts to establish a connection to the Pravega Controller and create necessary Scope(s) and Key-Value Tables.
+     */
     void connect() {
         System.out.println(String.format("Connecting to '%s' ...", this.controllerUri));
         val scopeCreated = this.streamManager.createScope(CHAT_SCOPE);
@@ -253,12 +257,24 @@ class ChatClient implements AutoCloseable {
         return this.keyValueTableFactory.forKeyValueTable(tableName, KeyValueTableClientConfiguration.builder().build());
     }
 
+    /**
+     * Returns the currently logged-in {@link User} session.
+     *
+     * @return The user session.
+     */
     User getUserSession() {
         ensureConnected();
         Preconditions.checkArgument(this.userSession != null, "No user logged in yet.");
         return this.userSession;
     }
 
+    /**
+     * Publishes a message by appending (writing) an Event to the Stream associated with the given channel.
+     *
+     * @param channelName  The name of the channel to publish.
+     * @param fromUserName The username of the user that publishes the message.
+     * @param message      The message to publish.
+     */
     void publish(String channelName, String fromUserName, String message) {
         validateUserName(fromUserName);
         val channelStreamName = getChannelStreamName(channelName);
@@ -268,6 +284,12 @@ class ChatClient implements AutoCloseable {
         }
     }
 
+    /**
+     * Logs in a user by retrieving that user's state from the User Key-Value Table and establishes that {@link User}'s
+     * session. If another user is already logged in, that user will be logged out.
+     *
+     * @param userName The username of the user to login.
+     */
     void login(String userName) {
         validateUserName(userName);
         ensureConnected();
@@ -283,6 +305,11 @@ class ChatClient implements AutoCloseable {
         getUserSession().startListening();
     }
 
+    /**
+     * Creates a new user by (conditionally) inserting an entry into the User Key-Value Table.
+     *
+     * @param userName The username of the user to create.
+     */
     void createUser(String userName) {
         validateUserName(userName);
         ensureConnected();
@@ -304,6 +331,13 @@ class ChatClient implements AutoCloseable {
                 }).join();
     }
 
+    /**
+     * Creates a new (public) channel by:
+     * 1. Conditionally inserting a new entry into the Channel Key-Value Table.
+     * 2. (If the above is successful) Creating a new Stream associated with the given Channel.
+     *
+     * @param channelName The name of the channel to create.
+     */
     void createPublicChannel(String channelName) {
         validateChannelName(channelName);
         ensureConnected();
@@ -338,6 +372,13 @@ class ChatClient implements AutoCloseable {
                 }).join();
     }
 
+    /**
+     * Creates a new (private/direct-message) channel by:
+     * 1. Conditionally inserting a new entry into the Channel Key-Value Table.
+     * 2. (If the above is successful) Creating a new Stream associated with the given Channel.
+     *
+     * @param channelName The name of the channel to create.
+     */
     void createDirectMessageChannel(String channelName) {
         validateChannelName(channelName);
         ensureConnected();
@@ -360,6 +401,9 @@ class ChatClient implements AutoCloseable {
 
     }
 
+    /**
+     * Lists all created (public) channels by performing a Key Iterator over the Channel Key-Value Table.
+     */
     void listAllChannels() {
         ensureConnected();
         val count = new AtomicInteger(0);
@@ -379,6 +423,9 @@ class ChatClient implements AutoCloseable {
         System.out.println(String.format("Total channel count: %s.", count));
     }
 
+    /**
+     * Lists all registered users by performing a Key Iterator over the User Key-Value Table.
+     */
     void listAllUsers() {
         ensureConnected();
         val count = new AtomicInteger(0);
@@ -418,6 +465,9 @@ class ChatClient implements AutoCloseable {
 
     //region User
 
+    /**
+     * User Session.
+     */
     @Data
     class User implements AutoCloseable {
         private final String userName;
@@ -425,18 +475,29 @@ class ChatClient implements AutoCloseable {
         private final AtomicReference<Map<String, SubscriptionListener>> currentSubscriptions = new AtomicReference<>();
         private final AtomicBoolean closed = new AtomicBoolean(false);
 
+        /**
+         * Subscribes the current user to a channel.
+         *
+         * @param channelName The name of the channel to subscribe to.
+         */
         void subscribe(String channelName) {
             channelName = getChannelName(channelName);
             Preconditions.checkArgument(channelTable.exists(toKey(channelName, CHANNEL_NAME_SERIALIZER)).join(),
                     "Channel '%s' does not exist.", channelName);
             boolean subscribed = subscribeUserToChannel(userName, channelName);
             if (subscribed) {
-                System.out.println(String.format("User '%s' is already subscribed to '%s'.", this.userName, channelName));
-            } else {
                 System.out.println(String.format("User '%s' has been subscribed to '%s'.", this.userName, channelName));
+            } else {
+                System.out.println(String.format("User '%s' is already subscribed to '%s'.", this.userName, channelName));
             }
         }
 
+        /**
+         * Unsubscribes the current user from a channel, by removing the Entry keyed by the current user's username and
+         * the given channel from the Channel Key-Value Table.
+         *
+         * @param channelName The name of the channel to unsubscribe from.
+         */
         void unsubscribe(String channelName) {
             Exceptions.checkNotNullOrEmpty(channelName, "channelName");
             val key = new TableKey(USERNAME_SERIALIZER.serialize(userName), CHANNEL_NAME_SERIALIZER.serialize(channelName));
@@ -444,6 +505,11 @@ class ChatClient implements AutoCloseable {
             System.out.println(String.format("User '%s' has been unsubscribed from '%s'.", this.userName, channelName));
         }
 
+        /**
+         * Sends a message.
+         * @param target The target channel name.
+         * @param message The message.
+         */
         void sendMessage(String target, String message) {
             String channelName = target;
             if (!target.startsWith("#")) {
@@ -465,6 +531,9 @@ class ChatClient implements AutoCloseable {
             publish(channelName, this.userName, message);
         }
 
+        /**
+         * Lists all subscriptions for this user.
+         */
         void listSubscriptions() {
             val subscriptions = this.currentSubscriptions.get();
             if (subscriptions == null || subscriptions.isEmpty()) {
@@ -476,6 +545,9 @@ class ChatClient implements AutoCloseable {
             subscriptions.keySet().forEach(channelName -> System.out.println(String.format("\t%s", channelName)));
         }
 
+        /**
+         * Initiates listening to changes to the User-Channel Subscription table for new/updated subscriptions.
+         */
         void startListening() {
             Preconditions.checkState(this.subscriptionListener.get() == null, "Already listening.");
 
@@ -485,6 +557,13 @@ class ChatClient implements AutoCloseable {
             System.out.println(String.format("Listening to all subscriptions for user '%s'.", this.userName));
         }
 
+        /**
+         * Subscribes the given user to the given channel by (conditionally) inserting an entry into the User-Channel
+         * subscription Key-Value Table.
+         * @param userName The name of the user to subscribe.
+         * @param channelName The channel name to subscribe the user to.
+         * @return True if the subscription was successful, false otherwise (i.e., the user was already subscribed).
+         */
         private boolean subscribeUserToChannel(String userName, String channelName) {
             val key = new TableKey(USERNAME_SERIALIZER.serialize(userName), CHANNEL_NAME_SERIALIZER.serialize(channelName));
             val insert = new Insert(key, STRING_SERIALIZER.serialize(StreamCut.UNBOUNDED.asText()));
@@ -495,6 +574,10 @@ class ChatClient implements AutoCloseable {
                     .join();
         }
 
+        /**
+         * Refreshes the subscription list for the given user by performing a Primary-Key Key Iterator on the User-Channel
+         * Subscription Table (for all Keys where Primary Key matches the current user).
+         */
         private void refreshSubscriptionList() {
             val currentSubscribedChannels = new HashSet<String>();
             userSubscriptionTable.iterator()
