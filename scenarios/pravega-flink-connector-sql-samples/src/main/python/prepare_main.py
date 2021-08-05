@@ -12,8 +12,15 @@ from pathlib import Path
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.table.table_environment import StreamTableEnvironment
 
+from common import args
 
-def prepare_main():
+
+def prepare_main(table_filepath: Path) -> None:
+    """Import the table data from csv to pravega.
+
+    Args:
+        table_filepath (Path): Path of the table_data.csv
+    """
     env = StreamExecutionEnvironment.get_execution_environment()
     env.set_parallelism(1)
     t_env = StreamTableEnvironment.create(stream_execution_environment=env)
@@ -35,12 +42,11 @@ def prepare_main():
     destLocationServiceZone STRING
 ) WITH (
     'connector' = 'filesystem',
-    'path' = 'file:///tmp/table_data.csv',
-    'format' = 'csv',
-    'csv.ignore-parse-errors' = 'true'
+    'path' = 'file://{table_filepath}',
+    'format' = 'csv'
 )""")
 
-    t_env.execute_sql("""CREATE TABLE source (
+    t_env.execute_sql(f"""CREATE TABLE source (
     rideId INT,
     vendorId INT,
     pickupTime TIMESTAMP(3),
@@ -57,10 +63,9 @@ def prepare_main():
     destLocationServiceZone STRING
 ) WITH (
     'connector' = 'pravega',
-    'controller-uri' = 'tcp://127.0.0.1:9090',
-    'scope' = 'taxi',
-    'scan.streams' = 'trip',
-    'sink.stream' = 'trip',
+    'controller-uri' = 'tcp://{args.controller_uri}',
+    'scope' ='{args.scope}',
+    'sink.stream' = '{args.stream}',
     'format' = 'json'
 )""")
 
@@ -68,4 +73,4 @@ def prepare_main():
 
 
 if __name__ == '__main__':
-    prepare_main()
+    prepare_main(Path('/') / 'tmp' / 'table_data.csv')

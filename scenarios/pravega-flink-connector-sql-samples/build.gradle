@@ -53,7 +53,6 @@ distributions {
         contents {
             into('bin') {
                 from project.scriptConnectorTableApiSamples
-                from "src/main/python"
             }
             into('lib') {
                 from shadowJar
@@ -63,9 +62,6 @@ distributions {
             }
             into('conf') {
                 from(project.file('src/main/dist/conf/logback.xml'))
-            }
-            into('res') {
-                from 'src/main/resources'
             }
         }
     }
