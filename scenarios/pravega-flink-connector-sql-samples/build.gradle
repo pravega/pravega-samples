@@ -64,6 +64,9 @@ distributions {
             into('conf') {
                 from(project.file('src/main/dist/conf/logback.xml'))
             }
+            into('res') {
+                from 'src/main/resources'
+            }
         }
     }
 }
