@@ -9,14 +9,14 @@ system for Apache Flink.
 
 ## Distributing Flink Samples
 Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy 
-uber-jar called `pravega-flink-examples-<VERSION>-all.jar`:
+uber-jar called `pravega-flink-examples-<samples-version>-all.jar`:
 
 ```bash
 $ ./gradlew installDist
 ...
 $ ls flink-connector-examples/build/install/pravega-flink-examples/lib
 ...
-pravega-flink-examples-0.10.0-SNAPSHOT-all.jar
+pravega-flink-examples-<samples-version>-all.jar
 ...
 ```
 
