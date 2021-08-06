@@ -117,13 +117,12 @@ def generate_table_data(zone_data: ZoneLookup,
     with gzip.open(trip_filepath, mode='rt', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter=',', quotechar='"')
         next(reader)  # skip the first line
-        for row in reader:
+        for ride_id, row in enumerate(reader, start=1):
             table_data.append(
                 TripRecord(ride_id,
                            *(map(row.__getitem__, [0, 1, 2, 3, 4, 7, 8])),
                            *dataclasses.astuple(zone_data[row[7]])[1:],
                            *dataclasses.astuple(zone_data[row[8]])[1:]))
-            ride_id += 1
 
     return table_data
 
@@ -157,7 +156,7 @@ if __name__ == '__main__':
                                 'taxi_zone_lookup.csv.gz')
 
     # read the trip data and use the zone dict to generate
-    # the final data imported by the flink
+    # the final data processed by the flink
     table_data = generate_table_data(
         zone_data,
         Path.cwd().parent / 'resources' /
