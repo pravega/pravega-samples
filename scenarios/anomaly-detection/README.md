@@ -85,7 +85,7 @@ $ bin/anomaly-detection --configDir conf/ --mode 2
 
 - To run on a cluster (given a pre-configured Flink client):
 ```
-$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-scenario-anomaly-detection-<samples-version>-all.jar --configDir conf/ --mode 2
+$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-scenario-anomaly-detection-<VERSION>-all.jar --configDir conf/ --mode 2
 ```
 
 Leave the program running for a while, to generate a few events per second for a number 
@@ -113,7 +113,7 @@ $ bin/anomaly-detection --configDir conf/ --mode 3
 
 - To run on a cluster:
 ```
-$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-scenario-anomaly-detection-<samples-version>-all.jar --configDir conf/ --mode 3
+$ flink run -c io.pravega.anomalydetection.ApplicationMain lib/pravega-flink-scenario-anomaly-detection-<VERSION>-all.jar --configDir conf/ --mode 3
 ```
 
 _Ensure that `$FLINK_HOME/bin` is on your path to use the `flink` command shown above._
@@ -139,7 +139,7 @@ bin/flink cancel -s <JOB_ID>
 2) To resume from a savepoint, run the below command:
 
 ```
-bin/flink run -s <SAVEPOINT_LOCATION> -c io.pravega.anomalydetection.ApplicationMain <PATH_TO_pravega-flink-scenario-anomaly-detection-<samples-version>-all.jar> --configDir <APP_CONFIG_DIR> --mode 3
+bin/flink run -s <SAVEPOINT_LOCATION> -c io.pravega.anomalydetection.ApplicationMain <PATH_TO_pravega-flink-scenario-anomaly-detection-<VERSION>-all.jar> --configDir <APP_CONFIG_DIR> --mode 3
 ```
 The job should nicely recover from the last checkpointed state. As mentioned, you should not see any spurious alerts.
 
