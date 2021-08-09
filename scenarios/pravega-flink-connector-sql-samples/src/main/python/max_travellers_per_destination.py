@@ -36,10 +36,12 @@ def max_travellers_per_destination():
     t_env.to_append_stream(
         no_of_travelers_per_dest,
         Types.ROW_NAMED(['destLocationZone', 'start', 'end', 'cnt'],
-            [Types.INT(),
+            [Types.STRING(),
              Types.SQL_TIMESTAMP(),
              Types.SQL_TIMESTAMP(),
              Types.LONG()])).print()
+
+    env.execute('Max-Travellers-Per-Destination')
 
 
 if __name__ == '__main__':

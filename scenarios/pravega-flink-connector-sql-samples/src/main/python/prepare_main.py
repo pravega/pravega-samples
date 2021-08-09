@@ -143,10 +143,17 @@ def write_data_to_pravega(controller_uri: str, scope: str, stream: str,
                           stream_name=stream,
                           initial_segments=3)
 
+    uncapitalize = lambda s: s[0].lower() + s[1:] if s else ''
+
     writer = manager.create_writer(scope, stream)
     for row in table_data:
-        print(row)
-        writer.write_event(json.dumps(dataclasses.asdict(row)),
+        event = {
+            # convert dataclass to dict with key in camel case
+            uncapitalize(''.join(w.title() for w in k.split('_'))): v
+            for k, v in dataclasses.asdict(row).items()
+        }
+        print(event)
+        writer.write_event(json.dumps(event),
                            routing_key=str(row.start_location_id))
 
 
