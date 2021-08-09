@@ -5,24 +5,19 @@ system for Apache Flink.
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-3. Apache Flink running
-
+3. Apache Flink 1.12 running
 
 ## Distributing Flink Samples
 Use gradle to assemble a distribution folder containing the Flink programs as a ready-to-deploy 
 uber-jar called `pravega-flink-examples-<VERSION>-all.jar`:
 
-```
+```bash
 $ ./gradlew installDist
 ...
-$ ls -R flink-connector-examples/build/install/pravega-flink-examples
-bin	lib
-
-flink-connector-examples/build/install/pravega-flink-examples/bin:
-run-example
-
-flink-connector-examples/build/install/pravega-flink-examples/lib:
-pravega-flink-examples-VERSION-all.jar
+$ ls flink-connector-examples/build/install/pravega-flink-examples/lib
+...
+pravega-flink-examples-<VERSION>-all.jar
+...
 ```
 
 ---

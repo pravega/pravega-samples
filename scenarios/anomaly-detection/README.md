@@ -35,7 +35,7 @@ The following diagram depicts the state machine used in this example.
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-3. Apache Flink running
+3. Apache Flink 1.12 running
 4. ELK running (optional)
 
 ## Execution
