@@ -35,11 +35,13 @@ Snippets of output shown below:
 ```
 ......
 
+Start checkpointing at position -1
 Start checkpointing at position 16
 Complete checkpointing at position 16
 Artificial failure at position 26
-05/02/2018 17:02:02	Source: Custom Source -> Map(1/1) switched to FAILED 
-io.pravega.examples.flink.primer.util.FailingMapper$IntentionalException: artificial failure
+Start checkpointing at position 24
+14:49:29,061 WARN  org.apache.flink.runtime.taskmanager.Task                     - Source: Custom Source -> Map (1/1)#0 (e6b800f2f4df24ee86f699dc83847f96) switched from RUNNING to FAILED.
+io.pravega.example.flink.primer.util.FailingMapper$IntentionalException: artificial failure
 
 ......
 
