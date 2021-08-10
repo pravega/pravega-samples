@@ -15,18 +15,18 @@ The application reads text from a socket, once every 5 seconds prints the distin
 
 First, use `netcat` to start local server via
 ```
-$ nc -lk 9999
+$ nc -lk 9998
 ```
 
 Then start the `WordCountWriter`:
 ```
-$ bin/wordCountWriter [-host localhost] [-port 9999] [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
+$ bin/wordCountWriter [-host localhost] [-port 9998] [-scope examples] [-stream wordcount] [-controller tcp://localhost:9090]
 ```
 
 All args are optional, if not specified, the defaults are:
 
  * host - "localhost"
- * port - "9999"
+ * port - "9998"
  * scope - "examples" 
  * stream - "wordcount"
  * controller - "tcp://localhost:9090"
@@ -43,7 +43,7 @@ All args are optional, if not included, the defaults are:
 
 Now in the windows where `netcat` is running, enter some text, for example,
 ```
-$ nc -lk 9999
+$ nc -lk 9998
 aa bb cc aa
 ```
 
@@ -73,8 +73,7 @@ Point your browser to `http://<your_flink_host>:8081` to make sure Flink is runn
 
 ```bash
 $ cd flink-connector-examples/build/install/pravega-flink-examples
-$ flink run -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-<VERSION>-all.jar --host localhost --port 9999 --controller tcp://localhost:9090
-```
+$ flink run -c io.pravega.example.flink.wordcount.WordCountWriter lib/pravega-flink-examples-<VERSION>-all.jar --host localhost --port 9998 --controller tcp://localhost:9090
 
 The `WordCountWriter` job should show up on the Flink UI as a running job.
 
@@ -93,7 +92,7 @@ The `WordCountReader` job should show up on the Flink UI as a running job.
 Now in the windows where `netcat` is running, enter some text, for example,
 
 ```bash
-$ nc -lk 9999
+$ nc -lk 9998
 aa bb cc aa
 ```
 
@@ -120,8 +119,8 @@ Submit `WordCountWriter` job
 - Click the **Upload** button
 - Click the uploaded jar file
 - In the **Entry Class** field, enter: ```io.pravega.example.flink.wordcount.WordCountWriter```
-- In the **Program Arguments** field, enter: ```--host localhost --port 9999 --controller tcp://localhost:9090```
-- Click the **Submit** button
+- In the **Program Arguments** field, enter: ```--host localhost --port 9998 --controller tcp://localhost:9090```
+- Click **Submit** button
 
 ![](image/flink-wordcount-submit-writer.png)
 

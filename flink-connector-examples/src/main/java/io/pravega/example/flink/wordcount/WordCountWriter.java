@@ -45,7 +45,7 @@ public class WordCountWriter {
 
     // Application parameters
     //   host - host running netcat, default 127.0.0.1
-    //   port - port on which netcat listens, default 9999
+    //   port - port on which netcat listens, default 9998
     //   stream - the Pravega stream to write data to, default examples/wordcount
     //   controller - the Pravega controller uri, default tcp://127.0.0.1:9090
 
