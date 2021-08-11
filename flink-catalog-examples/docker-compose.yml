@@ -1,0 +1,75 @@
+version: '2.1'
+services:
+  sql-client:
+    image: fyang86/catalog-demo-sql-client:0.1
+    depends_on:
+      - pravega
+      - schemaregistry
+      - jobmanager
+      - elasticsearch
+    environment:
+      FLINK_JOBMANAGER_HOST: jobmanager
+      ZOOKEEPER_CONNECT: zookeeper
+      ES_HOST: elasticsearch
+  jobmanager:
+    image: flink:1.13.1-scala_2.12
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+  taskmanager:
+    image: flink:1.13.1-scala_2.12
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 10
+  pravega:
+    image: fyang86/pravega:0.10.0-test1
+    ports:
+      - "9090:9090"
+      - "12345:12345"
+    command: "standalone"
+  schemaregistry:
+    image: pravega/schemaregistry:0.2.0
+    depends_on:
+      - pravega
+    ports:
+      - "9092:9092"
+    environment:
+      CONTROLLER_URL: tcp://pravega:9090
+  datagen:
+    image: fyang86/catalog-demo-datagen:0.1
+    command: >
+      sh -c "sleep 60 &&
+              java -classpath /opt/datagen/datagen.jar sender --input /opt/datagen/user_behavior.log --speedup 1000 --ctrluri tcp://pravega:9090 --scmrgsturi http://schemaregistry:9092"
+    depends_on:
+      - pravega
+      - schemaregistry
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.0
+    ports:
+      - "5601:5601"
