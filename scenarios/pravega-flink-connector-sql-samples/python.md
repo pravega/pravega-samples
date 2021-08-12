@@ -11,8 +11,8 @@ https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)(https://github.com/pravega/pravega-samples#pravega-samples-build-instructions)
 2. Python and its packages, see [pyflink setup](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/python/installation/)
 3. Install Pravega Python client via `pip install pravega`
-3. Get the latest Pravega Flink connectors at [the release page](https://github.com/pravega/flink-connectors/releases)
-4. Apache Flink running
+4. Get the latest Pravega Flink connectors at [the release page](https://github.com/pravega/flink-connectors/releases)
+5. Apache Flink running
 
 > If you wish to use Anaconda instead, replace `pip` with `conda` in the steps above.
 
