@@ -11,14 +11,15 @@ import io.pravega.schemaregistry.client.SchemaRegistryClientFactory;
 import io.pravega.schemaregistry.client.exceptions.RegistryExceptions;
 import io.pravega.schemaregistry.contract.data.Compatibility;
 import io.pravega.schemaregistry.contract.data.GroupProperties;
-import io.pravega.schemaregistry.contract.data.SchemaInfo;
 import io.pravega.schemaregistry.contract.data.SerializationFormat;
-import io.pravega.schemaregistry.serializer.json.schemas.JSONSchema;
-import io.pravega.schemaregistry.serializer.shared.codec.Encoder;
-import io.pravega.schemaregistry.serializer.shared.impl.AbstractSerializer;
+import io.pravega.schemaregistry.serializer.avro.schemas.AvroSchema;
 import io.pravega.schemaregistry.serializer.shared.impl.SerializerConfig;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import io.pravega.schemaregistry.serializers.SerializerFactory;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.flink.formats.avro.typeutils.AvroSchemaConverter;
+import org.apache.flink.table.types.DataType;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,15 +27,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.URI;
-import java.time.Instant;
 import java.util.TimeZone;
+
+import static org.apache.flink.table.api.DataTypes.FIELD;
+import static org.apache.flink.table.api.DataTypes.ROW;
+import static org.apache.flink.table.api.DataTypes.STRING;
+import static org.apache.flink.table.api.DataTypes.TIMESTAMP;
 
 public class sender {
 
     private static final String DEFAULT_SCOPE = "examples";
-    private static final String DEFAULT_STREAM = "testStream";
+    private static final String DEFAULT_STREAM = "userBehavior";
     private final static TimeZone tz = TimeZone.getTimeZone("Asia/Shanghai");
 
     public static void main(String[] args) throws Exception {
@@ -77,7 +81,7 @@ public class sender {
         }
 
         // add schema registry group
-        GroupProperties groupProperties = new GroupProperties(SerializationFormat.Json, Compatibility.allowAny(), false);
+        GroupProperties groupProperties = new GroupProperties(SerializationFormat.Avro, Compatibility.allowAny(), false);
         try (SchemaRegistryClient client = SchemaRegistryClientFactory.withNamespace(DEFAULT_SCOPE, schemaRegistryClientConfig)) {
             if (!schemaGroupExist(client, DEFAULT_STREAM)) {
                 client.addGroup(DEFAULT_STREAM, groupProperties);
@@ -94,38 +98,40 @@ public class sender {
                 .groupId(DEFAULT_STREAM)
                 .registerSchema(true)
                 .build();
-        String schemaString = "{\"type\": \"object\", \"title\": \"user_behavior\", \"properties\": {\"user_id\": " +
-                "{\"type\": \"string\"}, \"item_id\": {\"type\": \"string\"}, \"category_id\": " +
-                "{\"type\": \"string\"}, \"behavior\": {\"type\": \"string\"}, \"ts\": {\"type\": \"string\", \"format\": \"date-time\"}}}";
-        Serializer<JsonNode> serializer = new FlinkJsonSerializer(
-                DEFAULT_STREAM,
-                SchemaRegistryClientFactory.withNamespace(DEFAULT_SCOPE, schemaRegistryClientConfig),
-                JSONSchema.of("", schemaString, JsonNode.class),
-                serializerConfig.getEncoder(),
-                serializerConfig.isRegisterSchema(),
-                serializerConfig.isWriteEncodingHeader());
 
+        DataType dataType =
+                ROW(
+                        FIELD("user_id", STRING()),
+                        FIELD("item_id", STRING()),
+                        FIELD("category_id", STRING()),
+                        FIELD("behavior", STRING()),
+                        FIELD("ts", TIMESTAMP(3))).notNull();
+        Schema avroSchema = AvroSchemaConverter.convertToSchema(dataType.getLogicalType());
+        Serializer<GenericRecord> serializer = SerializerFactory.avroSerializer(serializerConfig, AvroSchema.ofRecord(avroSchema));
 
         try (
                 EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(DEFAULT_SCOPE, clientConfig);
-                EventStreamWriter<JsonNode> writer = clientFactory.createEventWriter(DEFAULT_STREAM, serializer,
+                EventStreamWriter<GenericRecord> writer = clientFactory.createEventWriter(DEFAULT_STREAM, serializer,
                         EventWriterConfig.builder().build());
                 InputStream inputStream = new FileInputStream(userBehaviorFile)) {
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             int counter = 0;
             long start = System.nanoTime();
-            ObjectMapper mapper = new ObjectMapper();
             while (true) {
                 while (reader.ready()) {
                     String line = reader.readLine();
                     String[] splits = line.split(",");
                     long ts = Long.parseLong(splits[4]) * 1000L;
-                    Instant instant = Instant.ofEpochMilli(ts + (long) tz.getOffset(ts));
-                    String instantString = instant.toString().substring(0, instant.toString().length() - 1);
-                    String outline = String.format("{\"user_id\": \"%s\", \"item_id\":\"%s\", \"category_id\": \"%s\", \"behavior\": \"%s\", \"ts\": \"%s\"}", splits[0], splits[1], splits[2], splits[3], instantString);
-                    writer.writeEvent(mapper.readTree(outline));
-                    System.out.println("Write success!" + outline);
+                    ts += tz.getOffset(ts);
+                    GenericRecord record = new GenericData.Record(avroSchema);
+                    record.put(0, splits[0]);
+                    record.put(1, splits[1]);
+                    record.put(2, splits[2]);
+                    record.put(3, splits[3]);
+                    record.put(4, ts);
+                    writer.writeEvent(record);
+                    System.out.println("Write success!" + record);
                     ++counter;
                     if ((long) counter >= speed) {
                         long end = System.nanoTime();
@@ -152,21 +158,5 @@ public class sender {
             return false;
         }
         return true;
-    }
-
-    private static class FlinkJsonSerializer extends AbstractSerializer<JsonNode> {
-        private final ObjectMapper objectMapper;
-
-        public FlinkJsonSerializer(String groupId, SchemaRegistryClient client, JSONSchema schema,
-                                   Encoder encoder, boolean registerSchema, boolean encodeHeader) {
-            super(groupId, client, schema, encoder, registerSchema, encodeHeader);
-            objectMapper = new ObjectMapper();
-        }
-
-        @Override
-        protected void serialize(JsonNode jsonNode, SchemaInfo schemaInfo, OutputStream outputStream) throws IOException {
-            objectMapper.writeValue(outputStream, jsonNode);
-            outputStream.flush();
-        }
     }
 }

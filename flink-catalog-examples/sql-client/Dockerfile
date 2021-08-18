@@ -32,10 +32,8 @@ FROM flink:1.13.1-scala_2.12
 COPY bin/* /opt/sql-client/
 RUN mkdir -p /opt/sql-client/lib
 
-# Download connector libraries
-RUN wget -P /opt/sql-client/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-elasticsearch7_2.12/1.13.1/flink-sql-connector-elasticsearch7_2.12-1.13.1.jar; \
-    wget -P /opt/sql-client/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc_2.11/1.11.0/flink-connector-jdbc_2.11-1.11.0.jar; \
-    wget -P /opt/sql-client/lib/ https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/8.0.19/mysql-connector-java-8.0.19.jar; \
+# Download related libraries
+RUN wget -P /opt/sql-client/lib/ https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.13.1/flink-avro-1.13.1.jar; \
     wget -P /opt/sql-client/lib/ https://repo1.maven.org/maven2/io/pravega/schemaregistry-serializers/0.2.0/schemaregistry-serializers-0.2.0-all.jar;
 
 # Copy pravega connector library
