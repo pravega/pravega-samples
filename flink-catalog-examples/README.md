@@ -220,7 +220,7 @@ WHERE behavior = 'buy' AND HOUR(ts) <= 2;
 ![image1](images/image1.png)
 Check result in Pravega:
 ```
-docker-compose exec pravega bin/pravega-cli stream read examples/buyBehavior
+docker-compose exec pravega bin/pravega-cli stream list examples
 ```
 ![image5](images/image5.png)
 We can also check by querying in the sql client:
