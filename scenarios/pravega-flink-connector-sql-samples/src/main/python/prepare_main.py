@@ -12,7 +12,7 @@ import dataclasses
 import gzip
 import json
 from pathlib import Path
-from typing import List
+from typing import Generator
 
 import pravega_client
 
@@ -99,8 +99,9 @@ def parse_zone_data(zone_filepath: Path) -> ZoneLookup:
     return zone_data
 
 
-def generate_table_data(zone_data: ZoneLookup,
-                        trip_filepath: Path) -> List[TripRecord]:
+def generate_table_data(
+        zone_data: ZoneLookup,
+        trip_filepath: Path) -> Generator[TripRecord, None, None]:
     """Generate the table data imported by the flink run in the prepare_main.
 
     Args:
@@ -108,34 +109,28 @@ def generate_table_data(zone_data: ZoneLookup,
         trip_filepath (Path): Path of the yellow_tripdata_2018-01-segment.csv.gz
 
     Returns:
-        List[TripRecord]: The table data
-        `List` could be changed to `list` in py3.9
+        Generator[TripRecord, None, None]: The table data
     """
-    table_data: list[TripRecord] = []
-    ride_id = 1
-
     with gzip.open(trip_filepath, mode='rt', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter=',', quotechar='"')
         next(reader)  # skip the first line
         for ride_id, row in enumerate(reader, start=1):
-            table_data.append(
-                TripRecord(ride_id,
-                           *(map(row.__getitem__, [0, 1, 2, 3, 4, 7, 8])),
-                           *dataclasses.astuple(zone_data[row[7]])[1:],
-                           *dataclasses.astuple(zone_data[row[8]])[1:]))
-
-    return table_data
+            yield TripRecord(ride_id,
+                             *(map(row.__getitem__, [0, 1, 2, 3, 4, 7, 8])),
+                             *dataclasses.astuple(zone_data[row[7]])[1:],
+                             *dataclasses.astuple(zone_data[row[8]])[1:])
 
 
-def write_data_to_pravega(controller_uri: str, scope: str, stream: str,
-                          table_data: List[TripRecord]) -> None:
+def write_data_to_pravega(
+        controller_uri: str, scope: str, stream: str,
+        table_data: Generator[TripRecord, None, None]) -> None:
     """Write data directly to the Pravega, without the help of Flink.
 
     Args:
         controller_uri (str): The pravega uri
         scope (str): Scope name
         stream (str): Stream name
-        table_data (List[TripRecord]): The data processed by Flink
+        table_data (Generator[TripRecord, None, None]): Data processed by Flink
     """
     manager = pravega_client.StreamManager(controller_uri)
     manager.create_scope(scope_name=scope)
@@ -143,7 +138,7 @@ def write_data_to_pravega(controller_uri: str, scope: str, stream: str,
                           stream_name=stream,
                           initial_segments=3)
 
-    uncapitalize = lambda s: s[0].lower() + s[1:] if s else ''
+    uncapitalize = lambda s: f'{s[0].lower()}{s[1:]}' if s else ''
 
     writer = manager.create_writer(scope, stream)
     for row in table_data:
