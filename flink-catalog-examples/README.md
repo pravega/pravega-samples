@@ -18,7 +18,7 @@ This demo is inspired by @wuchong's excellent work. [Flink-SQL demo](https://fli
 The components required in this demo are all managed in containers, so we will use docker-compose to start them.
 
 We have already provided `datagen` and `sql-client` images for the demo. You can also choose to build these two images on your own following the next steps.
-If you don't want to build images on your own just jump to [Start the Docker Compose Environment](#Start the Docker Compose Environment).
+If you don't want to build images on your own just jump to [Start the Docker Compose Environment](#start-the-docker-compose-environment).
 
 ### Get the data
 The dataset we are using is from the Alibaba Cloud Tianchi public dataset. It contains the user behavior on the day of November 27, 2017 (behaviors include “click”, “like”, “purchase” and “add to shopping cart” events). Each row represents a user behavior event, with the user ID, product ID, product category ID, event type, and timestamp.
