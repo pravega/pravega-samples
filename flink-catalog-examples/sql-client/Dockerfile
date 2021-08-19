@@ -34,7 +34,8 @@ RUN mkdir -p /opt/sql-client/lib
 
 # Download related libraries
 RUN wget -P /opt/sql-client/lib/ https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.13.1/flink-avro-1.13.1.jar; \
-    wget -P /opt/sql-client/lib/ https://repo1.maven.org/maven2/io/pravega/schemaregistry-serializers/0.2.0/schemaregistry-serializers-0.2.0-all.jar;
+    wget -P /opt/sql-client/lib/ https://repo1.maven.org/maven2/io/pravega/schemaregistry-serializers/0.2.0/schemaregistry-serializers-0.2.0-all.jar; \
+    wget -P /opt/sql-client/lib/ https://github.com/pravega/flink-connectors/releases/download/v0.10.0/pravega-connectors-flink-1.13_2.12-0.10.0.jar; \
 
 # Copy pravega connector library
 COPY lib/* /opt/sql-client/lib/

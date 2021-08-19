@@ -1,8 +1,8 @@
 version: '2.1'
 services:
   sql-client:
-    image: fyang86/catalog-demo-sql-client:0.1
-    build: ./sql-client
+    image: fyang86/catalog-demo-sql-client:0.1  # change to your own docker repo if you want to build this image
+#    build: ./sql-client  # uncomment this line to build image on your own
     depends_on:
       - pravega
       - schemaregistry
@@ -30,7 +30,7 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 10
   pravega:
-    image: fyang86/pravega:0.10.0-test1
+    image: pravega/pravega:0.10.0
     ports:
       - "9090:9090"
       - "12345:12345"
@@ -44,8 +44,8 @@ services:
     environment:
       CONTROLLER_URL: tcp://pravega:9090
   datagen:
-    image: fyang86/catalog-demo-datagen:0.1
-    build: ./datagen
+    image: fyang86/catalog-demo-datagen:0.1 # change to your own docker repo if you want to build this image
+#    build: ./datagen  # uncomment this line to build image on your own
     command: >
       sh -c "sleep 60 &&
               java -classpath /opt/datagen/datagen.jar sender --input /opt/datagen/user_behavior.log --speedup 1000 --ctrluri tcp://pravega:9090 --scmrgsturi http://schemaregistry:9092"
