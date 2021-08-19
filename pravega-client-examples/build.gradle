@@ -134,6 +134,22 @@ task startStreamCutsCli(type: JavaExec) {
     }
 }
 
+task scriptChatClientCli(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.tables.ChatClientCli'
+    applicationName = 'chatClientCli'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+task startChatClientCli(type: JavaExec) {
+    main = "io.pravega.example.tables.ChatClientCli"
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
 task scriptSecureWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.secure.SecureWriter'

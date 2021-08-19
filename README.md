@@ -28,6 +28,7 @@ more complex applications as sub-projects, which show use-cases exploiting one o
 | `noop` | Example of how to add a simple callback executed upon a read event. | [Java](pravega-client-examples/src/main/java/io/pravega/example/noop)
 | `statesynchronizer` | Application that allows users to work with `StateSynchronizer` API via CLI. | [Java](pravega-client-examples/src/main/java/io/pravega/example/statesynchronizer)
 | `streamcuts` | Application examples demonstrating the use of `StreamCut`s via CLI. | [Java](pravega-client-examples/src/main/java/io/pravega/example/streamcuts) 
+| `tables` | Application examples demonstrating the use of `KeyValueTable`s via CLI. | [Java](pravega-client-examples/src/main/java/io/pravega/example/tables) 
 
 The related documentation and instructions are [here](pravega-client-examples).
 
