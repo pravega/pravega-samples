@@ -10,3 +10,5 @@ build/
 *.log
 out/
 .DS_Store
+*.pyc
+__pycache__/
