@@ -94,7 +94,8 @@ section `Building Pravega Components from Source (Optional)` before building `pr
 
 ## Pre-requisites
 
-* Java 8
+* Java 11
+* Python 3.8 (if you wish to run the python examples)
 
 ## Building Pravega Components from Source (Optional)
 
