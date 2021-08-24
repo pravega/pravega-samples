@@ -150,26 +150,28 @@ SELECT * FROM userBehavior;
 
 ### Running queries
 
-We run a query of unique visitors (UV) where the number of UV at 10:00 represents the total number of UV from 00:00 to 10:00. 
-We need 3 columns in this case: date, time and cumulative UVs.
+We can run a query of cumulative unique visitors from 00:00 to every minute, where the number of UV at 10:00 represents the total number of UV from 00:00 to 10:00.
+This can be easily and efficiently implemented by `CUMULATE` windowing.
 
-We can extract the date and time using `DATE_FORMAT` function based on the `ts` field. As the section title describes, 
-we only need to report every 10 minutes. So, we can use SUBSTR and the string concat function || to convert 
-the time value into a 10-minute interval time string, such as `12:00`, `12:10`. Next, we group data by `date_str` and
-perform a `COUNT DISTINCT` aggregation on `user_id` to get the current cumulative UV in this day. 
-Additionally, we perform a `MAX` aggregation on `time_str` field to get the current stream time: 
-the maximum event time observed so far. As the maximum time is also a part of the primary key of the sink, 
-the final result is that we will insert a new point into the elasticsearch every 10 minute. 
-And every latest point will be updated continuously until the next 10-minute point is generated.
+To use `CUMULATE` function, we need to create a new table in other catalog since Pravega catalog do not support
+watermark which is needed in `CUMULATE` function. 
 ```sql
-SELECT date_str, time_str, COUNT(DISTINCT user_id) as uv
-FROM (
-   SELECT
-     DATE_FORMAT(ts, 'yyyy-MM-dd') as date_str,
-     SUBSTR(DATE_FORMAT(ts, 'HH:mm'),1,4) || '0' as time_str,
-     user_id
-   FROM userBehavior)
-GROUP BY date_str, time_str;
+USE CATALOG default_catalog;
+CREATE TABLE user_behavior (
+  WATERMARK FOR ts as ts - INTERVAL '5' SECOND
+) LIKE pravega.examples.userBehavior;
+
+INSERT INTO user_behavior
+SELECT * FROM pravega.examples.userBehavior;
+```
+
+We can have a cumulating window for 10 min step and 1 day max size and get the windows [00:00, 00:10), [00:10, 00:20),
+..., [23:50, 24:00):
+```sql
+SELECT window_start, window_end, COUNT(DISTINCT user_id) as UV
+FROM Table(
+    CUMULATE(Table user_behavior, DESCRIPTOR(ts), INTERVAL '10' MINUTES, INTERVAL '1' DAY))
+GROUP BY window_start,window_end;
 ```
 ![image3](images/image3.gif)
 
@@ -177,12 +179,13 @@ GROUP BY date_str, time_str;
 
 With the help of catalog, we can also easily write data back to Pravega.
 
-First let's create a table to store all buy behavior transaction between 0:00 to 03:00 everyday.
+First let's switch to Pravega catalog and create a table to store all buy behavior transaction between 0:00 to 03:00 everyday.
 
 The Pravega Catalog will first create a stream with table name in Pravega. 
 Then it will convert flink table schema to schema info which can be read by Schema Registry so that this schema can be registered in
 schema registry service, which will be used to write data into the Pravega stream later.
 ```sql
+USE CATALOG PRAVEGA;
 CREATE TABLE buyBehavior (
     user_id STRING,
     item_id STRING,
