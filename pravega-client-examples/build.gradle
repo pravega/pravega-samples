@@ -142,8 +142,15 @@ task scriptChatClientCli(type: CreateStartScripts) {
     classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
 }
 
+/**
+ * This will only work well from the console if all Gradle output is suppressed. That's because it requires user input
+ * and output using the Console.
+ *
+ * Example: ./gradlew startChatClientCli -q --console=plain
+ */
 task startChatClientCli(type: JavaExec) {
     main = "io.pravega.example.tables.ChatClientCli"
+    standardInput = System.in
     classpath = sourceSets.main.runtimeClasspath
     if(System.getProperty("exec.args") != null) {
         args System.getProperty("exec.args").split()
@@ -211,6 +218,7 @@ distributions {
                 from project.scriptSharedConfigCli
                 from project.scriptNoopReader
                 from project.scriptStreamCutsCli
+                from project.scriptChatClientCli
                 from project.scriptSecureWriter
                 from project.scriptSecureReader
                 from project.scriptSecureBatchReader
