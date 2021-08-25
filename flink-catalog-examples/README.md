@@ -151,18 +151,22 @@ SELECT * FROM userBehavior;
 ### Running queries
 
 We can run a query of cumulative unique visitors from 00:00 to every minute, where the number of UV at 10:00 represents the total number of UV from 00:00 to 10:00.
-This can be easily and efficiently implemented by `CUMULATE` windowing.
+This can be easily and efficiently implemented by `CUMULATE` windowing. The `CUMULATE` functions assigns windows based on a time attribute column and returns
+a new relation that includes all columns of original relation as well as additional 3 columns named “window_start”, “window_end”, “window_time” to indicate the assigned window.
+
+The `CUMULATE` function takes 4 required parameters: `CUMULATE(TABLE data, DESCRIPTOR(timecol), step, size)` where `data` is a table with
+an time attribute column, `timecol` is the time attribute column should be mapped to tumbling windows, `step` is a duration specifying the increased window size
+and `size` is a duration specifying the max width of the cumulating windows. You can check more about `CUMULATE` and other Windowing TVFs [here](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/table/sql/queries/window-tvf/).
 
 To use `CUMULATE` function, we need to create a new table in other catalog since Pravega catalog do not support
 watermark which is needed in `CUMULATE` function. 
 ```sql
-USE CATALOG default_catalog;
-CREATE TABLE user_behavior (
+CREATE TABLE default_catalog.default_database.user_behavior (
   WATERMARK FOR ts as ts - INTERVAL '5' SECOND
-) LIKE pravega.examples.userBehavior;
+) LIKE userBehavior;
 
-INSERT INTO user_behavior
-SELECT * FROM pravega.examples.userBehavior;
+INSERT INTO default_catalog.default_database.user_behavior
+SELECT * FROM userBehavior;
 ```
 
 We can have a cumulating window for 10 min step and 1 day max size and get the windows [00:00, 00:10), [00:10, 00:20),
@@ -170,7 +174,7 @@ We can have a cumulating window for 10 min step and 1 day max size and get the w
 ```sql
 SELECT window_start, window_end, COUNT(DISTINCT user_id) as UV
 FROM Table(
-    CUMULATE(Table user_behavior, DESCRIPTOR(ts), INTERVAL '10' MINUTES, INTERVAL '1' DAY))
+    CUMULATE(Table default_catalog.default_database.user_behavior, DESCRIPTOR(ts), INTERVAL '10' MINUTES, INTERVAL '1' DAY))
 GROUP BY window_start,window_end;
 ```
 ![image3](images/image3.gif)
@@ -179,13 +183,12 @@ GROUP BY window_start,window_end;
 
 With the help of catalog, we can also easily write data back to Pravega.
 
-First let's switch to Pravega catalog and create a table to store all buy behavior transaction between 0:00 to 03:00 everyday.
+First let's create a table to store all buy behavior transaction between 0:00 to 03:00 everyday.
 
 The Pravega Catalog will first create a stream with table name in Pravega. 
 Then it will convert flink table schema to schema info which can be read by Schema Registry so that this schema can be registered in
 schema registry service, which will be used to write data into the Pravega stream later.
 ```sql
-USE CATALOG PRAVEGA;
 CREATE TABLE buyBehavior (
     user_id STRING,
     item_id STRING,
