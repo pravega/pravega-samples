@@ -11,10 +11,30 @@
 package io.pravega.example.consolerw;
 
 import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
+import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.EventRead;
+import io.pravega.client.stream.EventStreamReader;
+import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroup;
+import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.ReinitializationRequiredException;
+import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
+import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.StreamCut;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import io.pravega.common.concurrent.ExecutorServiceHelpers;
+import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,25 +53,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.EventRead;
-import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.ReaderConfig;
-import io.pravega.client.stream.ReaderGroupConfig;
-import io.pravega.client.stream.ReinitializationRequiredException;
-import io.pravega.client.stream.ScalingPolicy;
-import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.JavaSerializer;
 
 /**
  * This class implements a simple console interface with the client for demonstration purposes. Specifically, this class
@@ -231,7 +232,7 @@ public class ConsoleReader implements Closeable {
         try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
                 ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamReader<String> reader = clientFactory.createReader("streamcut-reader",
-                     readerGroup, new JavaSerializer<>(), ReaderConfig.builder().build())) {
+                     readerGroup, new UTF8StringSerializer(), ReaderConfig.builder().build())) {
 
             // The reader(s) will only read and display events within the StreamCut boundaries defined.
             output("StreamCuts: Bounded processing example in stream %s/%s%n", scope, streamName);
@@ -363,7 +364,7 @@ class BackgroundReader implements Closeable, Runnable {
             ReaderGroup readerGroup = readerGroupManager.getReaderGroup(readerGroupName);
 
             EventStreamReader<String> reader = clientFactory.createReader("backgroundReader", readerGroupName,
-                    new JavaSerializer<>(), ReaderConfig.builder().build());
+                    new UTF8StringSerializer(), ReaderConfig.builder().build());
             EventRead<String> event;
 
             // Start main loop to continuously read and display events written to the scope/stream.

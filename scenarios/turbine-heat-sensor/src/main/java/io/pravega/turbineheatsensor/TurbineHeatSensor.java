@@ -15,7 +15,7 @@ import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.*;
-import io.pravega.client.stream.impl.JavaSerializer;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.apache.commons.cli.*;
 
 import java.net.URI;
@@ -283,7 +283,7 @@ public class TurbineHeatSensor {
 
     private static class TemperatureSensors implements Runnable {
 
-        final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
+        final UTF8StringSerializer SERIALIZER = new UTF8StringSerializer();
 
         final EventStreamWriter<String> producer;
         private final TemperatureSensor sensor;
@@ -403,7 +403,7 @@ public class TurbineHeatSensor {
         }
 
         BiFunction<String, String, Future> sendFunction() {
-            return  ( key, data) -> {
+            return (key, data) -> {
                 try {
                     transaction.writeEvent(key, data);
                 } catch (TxnFailedException e) {
@@ -420,7 +420,7 @@ public class TurbineHeatSensor {
      */
     private static class SensorReader implements Runnable {
 
-        private final JavaSerializer<String> SERIALIZER = new JavaSerializer<>();
+        final UTF8StringSerializer SERIALIZER = new UTF8StringSerializer();
         final EventStreamReader<String> reader;
         private int totalEvents;
 
