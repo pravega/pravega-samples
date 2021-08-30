@@ -30,7 +30,10 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.StreamCut;
-import io.pravega.client.stream.impl.JavaSerializer;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
+import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.Closeable;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
@@ -42,8 +45,6 @@ import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.function.Consumer;
-import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StreamCutsExample implements Closeable {
@@ -101,7 +102,7 @@ public class StreamCutsExample implements Closeable {
             ReaderGroup readerGroup = manager.getReaderGroup(readerGroupName);
             @Cleanup
             EventStreamReader<String> reader = clientFactory.createReader(randomId, readerGroup.getGroupName(),
-                    new JavaSerializer<>(), ReaderConfig.builder().build());
+                    new UTF8StringSerializer(), ReaderConfig.builder().build());
 
             // Read streams and create the StreamCuts during the read process.
             int eventIndex = 0;
@@ -112,7 +113,7 @@ public class StreamCutsExample implements Closeable {
                     reader.close();
                     streamCuts.add(readerGroup.getStreamCuts().get(Stream.of(scope, streamName)));
                     reader = clientFactory.createReader(randomId, readerGroup.getGroupName(),
-                            new JavaSerializer<>(), ReaderConfig.builder().build());
+                            new UTF8StringSerializer(), ReaderConfig.builder().build());
                 }
 
                 event = reader.readNextEvent(1000);
@@ -153,7 +154,7 @@ public class StreamCutsExample implements Closeable {
             manager.createReaderGroup(readerGroupName, config);
             @Cleanup
             EventStreamReader<String> reader = clientFactory.createReader(randomId, readerGroupName,
-                    new JavaSerializer<>(), ReaderConfig.builder().build());
+                    new UTF8StringSerializer(), ReaderConfig.builder().build());
 
             // Write dummy events that identify each Stream.
             EventRead<String> event;
@@ -199,7 +200,7 @@ public class StreamCutsExample implements Closeable {
 
                 // We basically sum up all the values of events within the ranges.
                 for (SegmentRange range: ranges) {
-                    List<String> eventData = Lists.newArrayList(batchClient.readSegment(range, new JavaSerializer<>()));
+                    List<String> eventData = Lists.newArrayList(batchClient.readSegment(range, new UTF8StringSerializer()));
                     totalSumValuesInDay += eventData.stream().map(s -> s.split(eventSeparator)[2]).mapToInt(Integer::valueOf).sum();
                 }
             }
@@ -241,7 +242,7 @@ public class StreamCutsExample implements Closeable {
             try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
                     ClientConfig.builder().controllerURI(controllerURI).build());
                  EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                         new JavaSerializer<>(), EventWriterConfig.builder().build())) {
+                         new UTF8StringSerializer(), EventWriterConfig.builder().build())) {
 
                 // Write data to the streams according to our preferences
                 final SimpleEntry<EventStreamWriter<String>, String> writerAndStreamName = new SimpleEntry<>(writer, streamName);
