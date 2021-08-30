@@ -10,6 +10,25 @@
  */
 package io.pravega.example.consolerw;
 
+import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.Transaction;
+import io.pravega.client.stream.Transaction.Status;
+import io.pravega.client.stream.TransactionalEventStreamWriter;
+import io.pravega.client.stream.TxnFailedException;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,20 +39,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import io.pravega.client.ClientConfig;
-import io.pravega.client.stream.*;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.Transaction.Status;
-import io.pravega.client.stream.impl.JavaSerializer;
 
 /**
  * Uses the Console to present a CLI to write events to a Stream or a Transaction.
@@ -409,8 +414,8 @@ public class ConsoleWriter implements AutoCloseable {
         streamManager.createStream(scope, streamName, streamConfig);
         
         try(EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, ClientConfig.builder().controllerURI(controllerURI).build());
-            EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName, new JavaSerializer<>(), EventWriterConfig.builder().build());
-            TransactionalEventStreamWriter<String> writerTxn = clientFactory.createTransactionalEventWriter(streamName, new JavaSerializer<>(),
+            EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName, new UTF8StringSerializer(), EventWriterConfig.builder().build());
+            TransactionalEventStreamWriter<String> writerTxn = clientFactory.createTransactionalEventWriter(streamName, new UTF8StringSerializer(),
                     EventWriterConfig.builder().build());
             ConsoleWriter cw = new ConsoleWriter(scope, streamName, writer, writerTxn)){
             cw.run();

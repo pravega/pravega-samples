@@ -10,36 +10,25 @@
  */
 package io.pravega.example.secure;
 
-import com.google.common.collect.Lists;
 import io.pravega.client.BatchClientFactory;
 import io.pravega.client.ClientConfig;
-import io.pravega.client.SynchronizerClientFactory;
-import io.pravega.client.admin.StreamManager;
 import io.pravega.client.batch.SegmentIterator;
 import io.pravega.client.batch.SegmentRange;
-import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamCut;
 import io.pravega.client.stream.impl.DefaultCredentials;
-import io.pravega.client.stream.impl.JavaSerializer;
-import io.pravega.common.concurrent.Futures;
-import java.net.URI;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.Random;
-import java.util.UUID;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static io.pravega.common.concurrent.ExecutorServiceHelpers.newScheduledThreadPool;
 
@@ -192,7 +181,7 @@ public class SecureBatchReader implements AutoCloseable {
     }
 
     private int readFromSegments(BatchClientFactory batchClient, List<SegmentRange> segments) throws Exception {
-        JavaSerializer<String> serializer = new JavaSerializer<>();
+        UTF8StringSerializer serializer = new UTF8StringSerializer();
         int count = segments
                 .stream()
                 .mapToInt(segment -> {
