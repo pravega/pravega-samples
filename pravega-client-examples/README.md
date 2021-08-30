@@ -140,6 +140,24 @@ To demonstrate the use of `StreamCut`s, we provide a CLI. To use it, please exec
 $ bin/streamCutsCli [-scope myScope] [-name myStream] [-uri tcp://127.0.0.1:9090]
 ```
 
+## `tables` (ChatApplication)
+This application aims to demonstrate the use of `KeyValueTable`s, `Stream`s and`StreamCut`s 
+for implementing a "serverless" chat application (with Pravega being used as the sole "server" - 
+there is no specialized chat server). The sample application allows defining users, chat 
+channels and let users subscribe to those channels; it also enables uses to send messages to each
+other. Users receive messages in near-realtime and, upon logging in, get all the messages that
+they received while offline. Please refer to the 
+[ChatClientCli Javadoc](pravega-client-examples/src/main/java/io/pravega/example/tables/ChatClientCli)
+for all supported commands within the application.
+
+### Execution
+
+The `ChatApplication` can be run by means of a CLI. To use it, please execute:
+
+```
+$ bin/chatClientCli
+```
+
 ## `secure`
 This example includes three applications `SecureReader`, `SecureWriter` and a `SecureBatchReader` 
 which instantiate the corresponding Pravega clients on the data path. These applications illustrate
