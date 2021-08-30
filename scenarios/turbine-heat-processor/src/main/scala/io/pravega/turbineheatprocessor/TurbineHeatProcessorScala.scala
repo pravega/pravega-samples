@@ -8,14 +8,13 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.turbineheatprocessor;
+package io.pravega.turbineheatprocessor
 
-import io.pravega.client.stream.impl.JavaSerializer
 import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
-import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema
 import io.pravega.connectors.flink.{FlinkPravegaReader, PravegaConfig}
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.common.functions.AggregateFunction
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.streaming.api.scala._
@@ -91,7 +90,7 @@ object TurbineHeatProcessorScala {
     val source = FlinkPravegaReader.builder()
       .withPravegaConfig(pravegaConfig)
       .forStream(stream)
-      .withDeserializationSchema(new PravegaDeserializationSchema(classOf[String], new JavaSerializer[String]()))
+      .withDeserializationSchema(new SimpleStringSchema())
       .build()
 
     val events: DataStream[SensorEvent] = env.addSource(source).name("input").map { line =>

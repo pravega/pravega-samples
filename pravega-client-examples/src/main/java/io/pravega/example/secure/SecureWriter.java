@@ -18,8 +18,7 @@ import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.DefaultCredentials;
-import io.pravega.client.stream.impl.JavaSerializer;
-
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -128,7 +127,7 @@ public class SecureWriter {
             clientFactory = EventStreamClientFactory.withScope(this.scope, clientConfig);
             System.out.println("Done creating a client factory with the specified scope and client config.");
 
-            writer = clientFactory.createEventWriter(this.stream, new JavaSerializer<String>(),
+            writer = clientFactory.createEventWriter(this.stream, new UTF8StringSerializer(),
                     EventWriterConfig.builder().build());
             System.out.println("Done creating a writer.");
 
