@@ -134,6 +134,29 @@ task startStreamCutsCli(type: JavaExec) {
     }
 }
 
+task scriptChatClientCli(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.tables.ChatClientCli'
+    applicationName = 'chatClientCli'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+/**
+ * This will only work well from the console if all Gradle output is suppressed. That's because it requires user input
+ * and output using the Console.
+ *
+ * Example: ./gradlew startChatClientCli -q --console=plain
+ */
+task startChatClientCli(type: JavaExec) {
+    main = "io.pravega.example.tables.ChatClientCli"
+    standardInput = System.in
+    classpath = sourceSets.main.runtimeClasspath
+    if(System.getProperty("exec.args") != null) {
+        args System.getProperty("exec.args").split()
+    }
+}
+
 task scriptSecureWriter(type: CreateStartScripts) {
     outputDir = file('build/scripts')
     mainClassName = 'io.pravega.example.secure.SecureWriter'
@@ -195,6 +218,7 @@ distributions {
                 from project.scriptSharedConfigCli
                 from project.scriptNoopReader
                 from project.scriptStreamCutsCli
+                from project.scriptChatClientCli
                 from project.scriptSecureWriter
                 from project.scriptSecureReader
                 from project.scriptSecureBatchReader
