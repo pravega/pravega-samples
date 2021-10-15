@@ -8,7 +8,7 @@ This demo is inspired by @wuchong's excellent work. [Flink-SQL demo](https://fli
 
 ## Prerequsites
 
-- A Linux or MacOS computer.
+- A Linux or MacOS computer with minimum 2GB memory.
 - Docker and docker compose installed.
 
 

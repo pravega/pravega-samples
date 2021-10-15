@@ -28,7 +28,7 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 10
+        taskmanager.numberOfTaskSlots: 3
   pravega:
     image: pravega/pravega:0.10.0
     ports:
