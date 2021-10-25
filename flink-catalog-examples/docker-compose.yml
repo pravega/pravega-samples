@@ -4,9 +4,12 @@ services:
     image: fyang86/catalog-demo-sql-client:0.1  # change to your own docker repo if you want to build this image
 #    build: ./sql-client  # uncomment this line to build image on your own
     depends_on:
-      - pravega
-      - schemaregistry
-      - jobmanager
+      pravega:
+        condition: service_healthy
+      schemaregistry:
+        condition: service_healthy
+      jobmanager:
+        condition: service_started
     environment:
       FLINK_JOBMANAGER_HOST: jobmanager
       ZOOKEEPER_CONNECT: zookeeper
@@ -35,20 +38,25 @@ services:
       - "9090:9090"
       - "12345:12345"
     command: "standalone"
+    healthcheck:
+      test: grep -F "Controller Services started successfullyaaaaa." standalone.log
   schemaregistry:
     image: pravega/schemaregistry:0.3.0
     depends_on:
-      - pravega
+      pravega:
+        condition: service_healthy
     ports:
       - "9092:9092"
     environment:
       CONTROLLER_URL: tcp://pravega:9090
+    healthcheck:
+      test: grep -F "Starting REST server listening on port" schema-registry.log
   datagen:
     image: fyang86/catalog-demo-datagen:0.1 # change to your own docker repo if you want to build this image
 #    build: ./datagen  # uncomment this line to build image on your own
-    command: >
-      sh -c "sleep 60 &&
-              java -classpath /opt/datagen/datagen.jar sender --input /opt/datagen/user_behavior.log --speedup 1000 --ctrluri tcp://pravega:9090 --scmrgsturi http://schemaregistry:9092"
+    command: "java -classpath /opt/datagen/datagen.jar sender --input /opt/datagen/user_behavior.log --speedup 1000 --ctrluri tcp://pravega:9090 --scmrgsturi http://schemaregistry:9092"
     depends_on:
-      - pravega
-      - schemaregistry
+      pravega:
+        condition: service_healthy
+      schemaregistry:
+        condition: service_healthy
