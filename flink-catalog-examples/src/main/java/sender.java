@@ -78,6 +78,9 @@ public class sender {
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .build();
             streamManager.createStream(DEFAULT_SCOPE, DEFAULT_STREAM, streamConfig);
+        } catch (Exception e) {
+            System.out.printf("Meet error when creating stream", e);
+            throw e;
         }
 
         // add schema registry group
