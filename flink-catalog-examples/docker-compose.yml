@@ -39,7 +39,7 @@ services:
       - "12345:12345"
     command: "standalone"
     healthcheck:
-      test: grep -F "Controller Services started successfullyaaaaa." standalone.log
+      test: grep -F "Controller Services started successfully." standalone.log
   schemaregistry:
     image: pravega/schemaregistry:0.3.0
     depends_on:
