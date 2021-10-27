@@ -1,0 +1,62 @@
+version: "3.9"
+services:
+  pravega:
+    image: fyang86/pravega:0.10.1-65df3fbd-set-published-ip
+    ports:
+      - "9090:9090"
+      - "12345:12345"
+    command: standalone
+
+  mysql:
+    image: thekingofcity/pravega-cdc-demo-mysql:0.1
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=dbz
+
+  datagen:
+    image: thekingofcity/pravega-cdc-demo-datagen:0.1
+    depends_on:
+      - mysql
+    environment:
+      - wait_for=45
+
+  debezium:
+    image: thekingofcity/pravega-cdc-demo-debezium:0.1
+    depends_on:
+      - pravega
+      - datagen
+    command: sh -c "
+      sleep 60 &&
+      /debezium/run.sh"
+
+  flink-jobmanager:
+    image: flink:1.13.2-scala_2.12
+    ports:
+      - "12081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+
+  flink-taskmanager:
+    image: flink:1.13.2-scala_2.12
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    scale: 1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+
+  flink-sql-client:
+    image: thekingofcity/pravega-cdc-demo-flink-sql-client:0.1
+    depends_on:
+      - flink-taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
