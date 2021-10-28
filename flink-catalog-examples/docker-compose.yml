@@ -33,13 +33,15 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 3
   pravega:
-    image: fyang86/pravega:0.10.1-65df3fbd-set-published-ip
+    image: pravega/pravega:0.10.1
     ports:
       - "9090:9090"
       - "12345:12345"
     command: "standalone"
     healthcheck:
       test: grep -F "Controller Services started successfully." standalone.log
+    environment:
+      HOST_IP: pravega
   schemaregistry:
     image: pravega/schemaregistry:0.3.0
     depends_on:
