@@ -14,7 +14,7 @@ print("Create scope and stream for pravega.")
 
 import pravega_client
 
-manager = pravega_client.StreamManager("pravega:9090")
+manager = pravega_client.StreamManager("tcp://pravega:9090")
 manager.create_scope('stock')
 manager.create_stream('stock', 'dbserver1', 1)
 manager.create_stream('stock', 'dbserver1.stock.stock', 1)
