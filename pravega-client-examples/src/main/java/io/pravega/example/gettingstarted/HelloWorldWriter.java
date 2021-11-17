@@ -10,10 +10,14 @@
  */
 package io.pravega.example.gettingstarted;
 
-import java.net.URI;
-import java.util.concurrent.CompletableFuture;
-
 import io.pravega.client.ClientConfig;
+import io.pravega.client.EventStreamClientFactory;
+import io.pravega.client.admin.StreamManager;
+import io.pravega.client.stream.EventStreamWriter;
+import io.pravega.client.stream.EventWriterConfig;
+import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -21,13 +25,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.EventStreamWriter;
-import io.pravega.client.stream.EventWriterConfig;
-import io.pravega.client.stream.ScalingPolicy;
-import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.JavaSerializer;
+import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A simple example app that uses a Pravega Writer to write to a given scope and stream.
@@ -56,9 +55,9 @@ public class HelloWorldWriter {
         try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope,
                 ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamWriter<String> writer = clientFactory.createEventWriter(streamName,
-                                                                                 new JavaSerializer<String>(),
-                                                                                 EventWriterConfig.builder().build())) {
-            
+                     new UTF8StringSerializer(),
+                     EventWriterConfig.builder().build())) {
+
             System.out.format("Writing message: '%s' with routing-key: '%s' to stream '%s / %s'%n",
                     message, routingKey, scope, streamName);
             final CompletableFuture writeFuture = writer.writeEvent(routingKey, message);

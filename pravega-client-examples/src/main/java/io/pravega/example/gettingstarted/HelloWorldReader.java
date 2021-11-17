@@ -10,18 +10,7 @@
  */
 package io.pravega.example.gettingstarted;
 
-import java.net.URI;
-import java.util.UUID;
-
 import io.pravega.client.ClientConfig;
-import io.pravega.client.stream.Stream;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamManager;
@@ -31,8 +20,18 @@ import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.JavaSerializer;
+import io.pravega.client.stream.impl.UTF8StringSerializer;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
+import java.net.URI;
+import java.util.UUID;
 
 /**
  * A simple example app that uses a Pravega Reader to read from a given scope and stream.
@@ -71,7 +70,7 @@ public class HelloWorldReader {
                 ClientConfig.builder().controllerURI(controllerURI).build());
              EventStreamReader<String> reader = clientFactory.createReader("reader",
                                                                            readerGroup,
-                                                                           new JavaSerializer<String>(),
+                                                                           new UTF8StringSerializer(),
                                                                            ReaderConfig.builder().build())) {
             System.out.format("Reading all the events from %s/%s%n", scope, streamName);
             EventRead<String> event = null;

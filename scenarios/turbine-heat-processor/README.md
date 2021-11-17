@@ -9,7 +9,7 @@ Automatically creates a scope (default: `examples`) and stream (default: `turbin
 ## Pre-requisites
 1. Pravega running (see [here](http://pravega.io/docs/latest/getting-started/) for instructions)
 2. Build [pravega-samples](https://github.com/pravega/pravega-samples) repository
-3. Apache Flink running
+3. Apache Flink 1.12 running
 
 
 ## Execution
@@ -24,18 +24,16 @@ Alternately, run the sample from the Flink UI.
 
 ## Outputs
 The application outputs the daily summary as a comma-separated values (CSV) file, one line per sensor per day. The data is
-also emitted to stdout (which may be viewed in the Flink UI). For example:
+also visable in the Flink UI. For example:
 
 ```
 ...
-SensorAggregate(1065600000,12,Illinois,(60.0,100.0))
-SensorAggregate(1065600000,3,Arkansas,(60.0,100.0))
-SensorAggregate(1065600000,7,Delaware,(60.0,100.0))
-SensorAggregate(1065600000,15,Kansas,(40.0,80.0))
-SensorAggregate(1152000000,3,Arkansas,(60.0,100.0))
-SensorAggregate(1152000000,12,Illinois,(60.0,100.0))
-SensorAggregate(1152000000,15,Kansas,(40.0,80.0))
-SensorAggregate(1152000000,7,Delaware,(60.0,100.0))
+SensorAggregate{startTime=28800000, sensorId=2, location='Arizona', tempMin=50.0, tempMax=90.0}
+SensorAggregate{startTime=28800000, sensorId=18, location='Maine', tempMin=30.0, tempMax=70.0}
+SensorAggregate{startTime=28800000, sensorId=10, location='Hawaii', tempMin=40.0, tempMax=80.0}
+SensorAggregate{startTime=28800000, sensorId=3, location='Arkansas', tempMin=60.0, tempMax=100.0}
+SensorAggregate{startTime=28800000, sensorId=0, location='Alabama', tempMin=50.0, tempMax=90.0}
+SensorAggregate{startTime=28800000, sensorId=17, location='Louisiana', tempMin=70.0, tempMax=110.0}
+SensorAggregate{startTime=28800000, sensorId=19, location='Maryland', tempMin=60.0, tempMax=100.0}
 ...
 ```
-

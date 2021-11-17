@@ -20,11 +20,14 @@ object StreamPravegaToConsole {
       .getOrCreate()
 
     val scope = sys.env.getOrElse("PRAVEGA_SCOPE", "examples")
-    val controller = sys.env.getOrElse("PRAVEGA_CONTROLLER", "tcp://127.0.0.1:9090")
+    val allowCreateScope = !sys.env.contains("PROJECT_NAME")
+    val controller = sys.env.getOrElse("PRAVEGA_CONTROLLER_URI", "tcp://127.0.0.1:9090")
+    val checkpointLocation = sys.env.getOrElse("CHECKPOINT_DIR", "/tmp/spark-checkpoints-StreamPravegaToConsole")
 
     spark
       .readStream
       .format("pravega")
+      .option("allow_create_scope", allowCreateScope)
       .option("controller", controller)
       .option("scope", scope)
       .option("stream", "streamprocessing1")
@@ -37,7 +40,7 @@ object StreamPravegaToConsole {
       .outputMode("append")
       .format("console")
       .option("truncate", "false")
-      .option("checkpointLocation", "/tmp/spark-checkpoints-StreamPravegaToConsole")
+      .option("checkpointLocation", checkpointLocation)
       .start()
       .awaitTermination()
   }

@@ -8,20 +8,20 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package io.pravega.turbineheatprocessor;
+package io.pravega.turbineheatprocessor
 
-import io.pravega.client.stream.impl.JavaSerializer
 import io.pravega.client.stream.{ScalingPolicy, StreamConfiguration}
-import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema
 import io.pravega.connectors.flink.{FlinkPravegaReader, PravegaConfig}
+import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.functions.AggregateFunction
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.core.fs.FileSystem
-import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 
+import java.time.Duration
 import scala.math._
 
 /**
@@ -49,13 +49,12 @@ object TurbineHeatProcessorScala {
     */
   case class SensorAggregate(startTime: Long, sensorId: Int, location: String, tempRange: (Float,Float))
 
-  object SensorAggregate {
+  object SensorAggregate extends AggregateFunction[SensorEvent, SensorAggregate, SensorAggregate]{
     val nothing = null.asInstanceOf[SensorAggregate]
 
-    /**
-      * Update the aggregate record as new events arrive.
-      */
-    def fold(acc: SensorAggregate, evt: SensorEvent) = {
+    override def createAccumulator(): SensorAggregate = nothing
+
+    override def add(evt: SensorEvent, acc: SensorAggregate): SensorAggregate = {
       acc match {
         case null =>
           SensorAggregate(evt.timestamp, evt.sensorId, evt.location, (evt.temp, evt.temp))
@@ -63,6 +62,11 @@ object TurbineHeatProcessorScala {
           SensorAggregate(acc.startTime, evt.sensorId, evt.location, (min(evt.temp, acc.tempRange._1), max(acc.tempRange._2, evt.temp)))
       }
     }
+
+    override def getResult(accumulator: SensorAggregate): SensorAggregate = accumulator
+
+    // This will not be called in time window
+    override def merge(a: SensorAggregate, b: SensorAggregate): SensorAggregate = nothing
   }
 
   def main(args: Array[String]) {
@@ -80,14 +84,13 @@ object TurbineHeatProcessorScala {
 
     // set up the streaming execution environment
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.setParallelism(1) // required since on a multi core CPU machine, the watermark is not advancing due to idle sources and causing window not to trigger
 
     // 1. read and decode the sensor events from a Pravega stream
     val source = FlinkPravegaReader.builder()
       .withPravegaConfig(pravegaConfig)
       .forStream(stream)
-      .withDeserializationSchema(new PravegaDeserializationSchema(classOf[String], new JavaSerializer[String]()))
+      .withDeserializationSchema(new SimpleStringSchema())
       .build()
 
     val events: DataStream[SensorEvent] = env.addSource(source).name("input").map { line =>
@@ -96,16 +99,17 @@ object TurbineHeatProcessorScala {
     }.name("events")
 
     // 2. extract timestamp information to support 'event-time' processing
-    val timestamped = events.assignTimestampsAndWatermarks(
-      new BoundedOutOfOrdernessTimestampExtractor[SensorEvent](Time.seconds(10)) {
-        override def extractTimestamp(element: SensorEvent): Long = element.timestamp
-      })
+    val timestamped = events.assignTimestampsAndWatermarks(WatermarkStrategy
+      .forBoundedOutOfOrderness[SensorEvent](Duration.ofSeconds(10))
+      .withTimestampAssigner(new SerializableTimestampAssigner[SensorEvent] {
+        override def extractTimestamp(element: SensorEvent, recordTimestamp: Long): Long = element.timestamp
+      }))
 
     // 3. summarize the temperature data for each sensor
     val summaries = timestamped
       .keyBy(_.sensorId)
       .window(TumblingEventTimeWindows.of(Time.days(1),Time.hours(+8)))
-      .fold(SensorAggregate.nothing)(SensorAggregate.fold)
+      .aggregate(SensorAggregate)
       .name("summaries")
 
     // 4. save to HDFS and print to stdout.  Refer to the TaskManager's 'Stdout' view in the Flink UI.

@@ -19,8 +19,7 @@ import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.impl.DefaultCredentials;
-import io.pravega.client.stream.impl.JavaSerializer;
-
+import io.pravega.client.stream.impl.UTF8StringSerializer;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -126,7 +125,7 @@ public class SecureReader {
             System.out.println("Done creating a client factory with the specified scope and client config.");
 
             reader = clientFactory.createReader("readerId", readerGroupName,
-                    new JavaSerializer<>(), ReaderConfig.builder().build());
+                    new UTF8StringSerializer(), ReaderConfig.builder().build());
             System.out.println("Done creating a reader.");
 
             String readMessage = reader.readNextEvent(2000).getEvent();

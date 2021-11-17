@@ -19,13 +19,12 @@ import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.PravegaConfig;
 import io.pravega.connectors.flink.serialization.PravegaDeserializationSchema;
 import io.pravega.shaded.com.google.gson.Gson;
-import org.apache.flink.api.common.functions.FoldFunction;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.streaming.api.CheckpointingMode;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkFunction;
@@ -33,9 +32,15 @@ import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.streaming.connectors.elasticsearch5.ElasticsearchSink;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.xcontent.XContentFactory;
+
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Processes network events to detect anomalous sequences.
@@ -58,7 +63,6 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 
 		// Configure the Flink job environment
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 		env.setParallelism(appConfiguration.getPipeline().getParallelism());
 		if(!appConfiguration.getPipeline().isDisableCheckpoint()) {
 			long checkpointInterval = appConfiguration.getPipeline().getCheckpointIntervalInMilliSec();
@@ -73,7 +77,7 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 
 		// 2. detect anomalies in event sequences
 		DataStream<Event.Alert> anomalies = events
-				.keyBy("sourceAddress")
+				.keyBy(Event::getSourceAddress)
 				.flatMap(new EventStateMachineMapper())
 				.name("AnomalyDetector");
 		anomalies.print();
@@ -81,14 +85,16 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 		// 3. aggregate the alerts by network over time
 		long maxOutOfOrderness = appConfiguration.getPipeline().getWatermarkOffsetInSec();
 		DataStream<Event.Alert> timestampedAnomalies = anomalies
-				.assignTimestampsAndWatermarks(new EventTimeExtractor(Time.seconds(maxOutOfOrderness)))
+				.assignTimestampsAndWatermarks(WatermarkStrategy
+						.<Event.Alert>forBoundedOutOfOrderness(Duration.ofSeconds(maxOutOfOrderness))
+						.withTimestampAssigner((event, timestamp) -> event.getEvent().getEventTime().toEpochMilli()))
 				.name("TimeExtractor");
 
 		long windowIntervalInSeconds = appConfiguration.getPipeline().getWindowIntervalInSeconds();
 		DataStream<Result> aggregate = timestampedAnomalies
-				.keyBy("networkId")
+				.keyBy(Event.Alert::getNetworkId)
 				.window(TumblingEventTimeWindows.of(Time.seconds(windowIntervalInSeconds)))
-				.fold(new Result(), new FoldAlertsToResult())
+				.aggregate(new AggregateAlertsToResult())
 				.name("Aggregate");
 		aggregate.print();
 
@@ -102,21 +108,15 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 		env.execute(appConfiguration.getName());
 	}
 
-	public static class EventTimeExtractor extends BoundedOutOfOrdernessTimestampExtractor<Event.Alert> {
-
-		public EventTimeExtractor(Time time) { super(time); }
+	public static class AggregateAlertsToResult implements AggregateFunction<Event.Alert, Result, Result> {
 
 		@Override
-		public long extractTimestamp(Event.Alert element) {
-			long timestamp = element.getEvent().getEventTime().toEpochMilli();
-			return timestamp;
+		public Result createAccumulator() {
+			return new Result();
 		}
-	}
-
-	public static class FoldAlertsToResult implements FoldFunction<Event.Alert, Result> {
 
 		@Override
-		public Result fold(Result accumulator, Event.Alert value) throws Exception {
+		public Result add(Event.Alert value, Result accumulator) {
 			accumulator.setCount(accumulator.getCount() + 1);
 			accumulator.setNetworkId(value.getNetworkId());
 			accumulator.getIpAddress().add(Event.EventType.formatAddress(value.getEvent().getSourceAddress()));
@@ -138,6 +138,17 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 				accumulator.setLocation(value.getEvent().getLatlon().getLat() + "," + value.getEvent().getLatlon().getLon());
 			}
 			return accumulator;
+		}
+
+		@Override
+		public Result getResult(Result accumulator) {
+			return accumulator;
+		}
+
+		@Override
+		public Result merge(Result a, Result b) {
+			// This will not be called in time window
+			return null;
 		}
 	}
 
@@ -186,7 +197,7 @@ public class PravegaAnomalyDetectionProcessor extends AbstractPipeline {
 					.index(index)
 					.type(type)
 					.id(element.getNetworkId())
-					.source(resultAsJson);
+					.source(resultAsJson, XContentFactory.xContentType(resultAsJson));
 		}
 	}
 }

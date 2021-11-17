@@ -41,5 +41,5 @@ dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: scalaVersion
     compile group: 'org.scala-lang', name: 'scala-reflect', version: scalaVersion
     compile group: 'org.scala-lang', name: 'scala-compiler', version: scalaVersion
-    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: sparkVersion
+    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.12', version: sparkVersion
 }
