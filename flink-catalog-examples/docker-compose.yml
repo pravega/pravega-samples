@@ -1,0 +1,64 @@
+version: '2.1'
+services:
+  sql-client:
+    image: fyang86/catalog-demo-sql-client:0.1  # change to your own docker repo if you want to build this image
+#    build: ./sql-client  # uncomment this line to build image on your own
+    depends_on:
+      pravega:
+        condition: service_healthy
+      schemaregistry:
+        condition: service_healthy
+      jobmanager:
+        condition: service_started
+    environment:
+      FLINK_JOBMANAGER_HOST: jobmanager
+      ZOOKEEPER_CONNECT: zookeeper
+  jobmanager:
+    image: flink:1.13.1-scala_2.12
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+  taskmanager:
+    image: flink:1.13.1-scala_2.12
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 3
+  pravega:
+    image: fyang86/pravega:0.10.1-65df3fbd-set-published-ip
+    ports:
+      - "9090:9090"
+      - "12345:12345"
+    command: "standalone"
+    healthcheck:
+      test: grep -F "Controller Services started successfully." standalone.log
+    environment:
+      HOST_IP: pravega
+  schemaregistry:
+    image: pravega/schemaregistry:0.3.0
+    depends_on:
+      pravega:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      CONTROLLER_URL: tcp://pravega:9090
+    healthcheck:
+      test: grep -F "Starting REST server listening on port" schema-registry.log
+  datagen:
+    image: fyang86/catalog-demo-datagen:0.1 # change to your own docker repo if you want to build this image
+#    build: ./datagen  # uncomment this line to build image on your own
+    command: "java -classpath /opt/datagen/datagen.jar sender --input /opt/datagen/user_behavior.log --speedup 1000 --ctrluri tcp://pravega:9090 --scmrgsturi http://schemaregistry:9092"
+    depends_on:
+      pravega:
+        condition: service_healthy
+      schemaregistry:
+        condition: service_healthy
