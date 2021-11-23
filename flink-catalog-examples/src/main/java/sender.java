@@ -1,3 +1,19 @@
+/**
+ * Copyright Pravega Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
@@ -15,11 +31,17 @@ import io.pravega.schemaregistry.contract.data.SerializationFormat;
 import io.pravega.schemaregistry.serializer.avro.schemas.AvroSchema;
 import io.pravega.schemaregistry.serializer.shared.impl.SerializerConfig;
 import io.pravega.schemaregistry.serializers.SerializerFactory;
+import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.flink.formats.avro.typeutils.AvroSchemaConverter;
-import org.apache.flink.table.types.DataType;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,50 +52,59 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.TimeZone;
 
-import static org.apache.flink.table.api.DataTypes.FIELD;
-import static org.apache.flink.table.api.DataTypes.ROW;
-import static org.apache.flink.table.api.DataTypes.STRING;
-import static org.apache.flink.table.api.DataTypes.TIMESTAMP;
-
+/**
+ * This class reads data from input dataset, register the
+ * schema to Pravega schema registry service and then send the generated data to Pravega.
+ */
 public class sender {
+
+    private static final String DEFAULT_FILE_PATH = "/opt/datagen/user_behavior.log";
+    private static final long DEFAULT_SPEED = 1000L;
+    private static final URI DEFAULT_CONTROLLER_URI = URI.create("tcp://pravega:9090");
+    private static final URI DEFAULT_SCHEMAREGISTRY_URI = URI.create("http://schemaregistry:9092");
 
     private static final String DEFAULT_SCOPE = "examples";
     private static final String DEFAULT_STREAM = "userBehavior";
-    private final static TimeZone tz = TimeZone.getTimeZone("Asia/Shanghai");
+    private final static TimeZone TIME_ZONE = TimeZone.getTimeZone("Asia/Shanghai");
 
+
+    /**
+     * Parameters
+     *     -input Input dataset file path, default:/opt/datagen/user_behavior.log
+     *     -speedup Data generating speed, default:1000
+     *     -controlleruri Pravega controller uri, default:tcp://pravega:9090
+     *     -schemaregistryuri Schema registry service uri, default:http://schemaregistry:9092
+     */
     public static void main(String[] args) throws Exception {
 
-        // --input
-        String arg0 = args[0];
-        // input file
-        String arg1 = args[1];
-        // --speedup
-        String arg2 = args[2];
-        // speed
-        long arg3 = Long.parseLong(args[3]);
-        // --ctrluri
-        String arg4 = args[4];
-        // controller uri
-        String arg5 = args[5];
-        // --scmrgsturi
-        String arg6 = args[6];
-        // schemaregistry uri
-        String arg7 = args[7];
+        Options options = getOptions();
+        CommandLine cmd = null;
+        try {
+            cmd = parseCommandLineArgs(options, args);
+        } catch (ParseException e) {
+            System.out.format("%s.%n", e.getMessage());
+            final HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("sender", options);
+            System.exit(1);
+        }
 
-        final URI DEFAULT_CONTROLLER_URI = URI.create(arg5);
-        final URI DEFAULT_SCHEMAREGISTRY_URI = URI.create(arg7);
-
-        File userBehaviorFile = new File(arg1);
-        long speed = arg3 == 0 ? 1000L : arg3;
+        final String filePath = cmd.getOptionValue("input") == null ? DEFAULT_FILE_PATH : cmd.getOptionValue("input");
+        File userBehaviorFile = new File(filePath);
+        final long speed = cmd.getOptionValue("speedup") == null ?
+                DEFAULT_SPEED : Long.parseLong(cmd.getOptionValue("speedup"));
+        final URI controllerUri = cmd.getOptionValue("controlleruri") == null ?
+                DEFAULT_CONTROLLER_URI : URI.create(cmd.getOptionValue("controlleruri"));
+        final URI schemaregistryUri = cmd.getOptionValue("schemaregistryuri") == null ?
+                DEFAULT_SCHEMAREGISTRY_URI : URI.create(cmd.getOptionValue("schemaregistryuri"));
 
         ClientConfig clientConfig = ClientConfig.builder()
-                .controllerURI(DEFAULT_CONTROLLER_URI)
+                .controllerURI(controllerUri)
                 .build();
         SchemaRegistryClientConfig schemaRegistryClientConfig = SchemaRegistryClientConfig.builder()
-                .schemaRegistryUri(DEFAULT_SCHEMAREGISTRY_URI)
+                .schemaRegistryUri(schemaregistryUri)
                 .build();
 
-        try (StreamManager streamManager = StreamManager.create(DEFAULT_CONTROLLER_URI)){
+        try (StreamManager streamManager = StreamManager.create(controllerUri)){
             streamManager.createScope(DEFAULT_SCOPE);
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .build();
@@ -102,15 +133,17 @@ public class sender {
                 .registerSchema(true)
                 .build();
 
-        DataType dataType =
-                ROW(
-                        FIELD("user_id", STRING()),
-                        FIELD("item_id", STRING()),
-                        FIELD("category_id", STRING()),
-                        FIELD("behavior", STRING()),
-                        FIELD("ts", TIMESTAMP(3))).notNull();
-        Schema avroSchema = AvroSchemaConverter.convertToSchema(dataType.getLogicalType());
-        Serializer<GenericRecord> serializer = SerializerFactory.avroSerializer(serializerConfig, AvroSchema.ofRecord(avroSchema));
+        Schema userBehavior = SchemaBuilder
+                .record("UserBehavior")
+                .fields()
+                .name("user_id").type(Schema.create(Schema.Type.STRING)).noDefault()
+                .name("item_id").type(Schema.create(Schema.Type.STRING)).noDefault()
+                .name("category_id").type(Schema.create(Schema.Type.STRING)).noDefault()
+                .name("behavior").type(Schema.create(Schema.Type.STRING)).noDefault()
+                .name("ts").type(LogicalTypes.timestampMillis().
+                        addToSchema(Schema.create(Schema.Type.LONG))).noDefault()
+                .endRecord();
+        Serializer<GenericRecord> serializer = SerializerFactory.avroSerializer(serializerConfig, AvroSchema.ofRecord(userBehavior));
 
         try (
                 EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(DEFAULT_SCOPE, clientConfig);
@@ -126,8 +159,8 @@ public class sender {
                     String line = reader.readLine();
                     String[] splits = line.split(",");
                     long ts = Long.parseLong(splits[4]) * 1000L;
-                    ts += tz.getOffset(ts);
-                    GenericRecord record = new GenericData.Record(avroSchema);
+                    ts += TIME_ZONE.getOffset(ts);
+                    GenericRecord record = new GenericData.Record(userBehavior);
                     record.put(0, splits[0]);
                     record.put(1, splits[1]);
                     record.put(2, splits[2]);
@@ -152,6 +185,21 @@ public class sender {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private static Options getOptions() {
+        final Options options = new Options();
+        options.addOption("input", true, "The input file path of dataset.");
+        options.addOption("speedup", true, "The data generating speed.");
+        options.addOption("controlleruri", true, "The Pravega controller uri");
+        options.addOption("schemaregistryuri", true, "The schema-registry service uri.");
+        return options;
+    }
+
+    private static CommandLine parseCommandLineArgs(Options options, String[] args) throws ParseException {
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args);
+        return cmd;
     }
 
     private static boolean schemaGroupExist(SchemaRegistryClient client, String groupId) {
