@@ -20,7 +20,7 @@ limitations under the License.
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
-    <artifactId>Dategen</artifactId>
+    <artifactId>Datagen</artifactId>
     <version>1.0-SNAPSHOT</version>
     <build>
         <plugins>
@@ -39,7 +39,7 @@ limitations under the License.
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>sender</mainClass>
+                            <mainClass>Datagen</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

@@ -56,7 +56,7 @@ import java.util.TimeZone;
  * This class reads data from input dataset, register the
  * schema to Pravega schema registry service and then send the generated data to Pravega.
  */
-public class sender {
+public class Datagen {
 
     private static final String DEFAULT_FILE_PATH = "/opt/datagen/user_behavior.log";
     private static final long DEFAULT_SPEED = 1000L;
@@ -84,7 +84,7 @@ public class sender {
         } catch (ParseException e) {
             System.out.format("%s.%n", e.getMessage());
             final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("sender", options);
+            formatter.printHelp("Datagen", options);
             System.exit(1);
         }
 

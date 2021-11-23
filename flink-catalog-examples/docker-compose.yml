@@ -69,9 +69,9 @@ services:
     healthcheck:
       test: grep -F "Starting REST server listening on port" schema-registry.log
   datagen:
-    image: fyang86/catalog-demo-datagen:0.1 # change to your own docker repo if you want to build this image
+    image: fyang86/catalog-demo-datagen:0.1-test # change to your own docker repo if you want to build this image
 #    build: ./datagen  # uncomment this line to build image on your own
-    command: "java -classpath /opt/datagen/datagen.jar sender -input /opt/datagen/user_behavior.log -speedup 1000
+    command: "java -classpath /opt/datagen/datagen.jar Datagen -input /opt/datagen/user_behavior.log -speedup 1000
               -controlleruri tcp://pravega:9090 -schemaregistryuri http://schemaregistry:9092"
     depends_on:
       pravega:
