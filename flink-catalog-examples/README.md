@@ -25,6 +25,8 @@ This demo is inspired by @wuchong's excellent work. [Flink-SQL demo](https://fli
 Flink Catalogs provide metadata such as databases, tables, partitions, views, functions and information needed to access data stored 
 in a database or other external systems. It provides a unified API for managing metadata and making it accessible from the Table API and SQL Queries. 
 A Catalog enables users to reference existing metadata in their data systems and automatically maps them to Flink's corresponding metadata.
+Pravega `scope` is mapped to Flink catalog `database` while Pravega `stream` is mapped to Flink catalog `table` automatically
+so that we don't need to manually rewrite DDLs to create tables.
 It let us clearly separate making the data available from consuming it. That separation improves productivity, security, and compliance when working with data.
 
 [Pravega](https://github.com/pravega/pravega), as a storage service, uses terms such as streams and scopes for managing streaming data, but it does not have the concepts of tables and databases.
@@ -45,25 +47,24 @@ To use Pravega Catalog, users can use SQL DDL or Java/Scala programatically to c
 - Docker and docker compose installed.
 
 
-### Starting the Demo Environment
+### Prepare the Demo Environment
 
-The components required in this demo are all managed in containers, so we will use docker-compose to start them.
-
-We have already provided `datagen` and `sql-client` images for the demo. You can also choose to build these two images on your own following the next steps.
-If you don't want to dive into the detail of the data ingestion, just jump to [Start the Docker Compose Environment](#start-the-docker-compose-environment).
+The components required in this demo are all managed in containers, we have already provided `datagen` and `sql-client` images for the demo. 
+You can also choose to build these two images on your own following the next steps.
+If you don't want to dive into the detail of the data ingestion, just jump to [The Demo](#the-demo).
 
 ### Get the data
-The dataset we are using is from the Alibaba Cloud Tianchi public dataset. It contains the user behavior on the day of November 27,
-2017 (behaviors include “click”, “like”, “purchase” and “add to shopping cart” events). Each row represents a user behavior event, 
-with the user ID, item ID, product category ID, behavior type, and timestamp as the following table shows:
+The dataset we are using is from the [Alibaba Cloud Tianchi public dataset](https://tianchi.aliyun.com/dataset/dataDetail?dataId=649). 
+It contains the user behavior on the day of November 27, 2017 (behaviors include “click”, “like”, “purchase” and “add to shopping cart” events).
+Each row represents a user behavior event, with the user ID, item ID, product category ID, behavior type, and timestamp as the following table shows:
 
-| Field         | Explanation                                                                                        |
-|---------------|----------------------------------------------------------------------------------------------------|
-| User ID       | An integer, the serialized ID that represents a user                                               |
-| Item ID       | An integer, the serialized ID that represents an item                                              |
-| Category ID   | An integer, the serialized ID that represents the category which the corresponding item belongs to |
-| Behavior type | A string, enum-type from ('pv', 'buy', 'cart', 'fav')                                              |
-| Timestamp     | An integer, the timestamp of the behavior                                                          |
+| Field         | Type      | Details                                                                                |
+|---------------|-----------|----------------------------------------------------------------------------------------|
+| User ID       | String    | The serialized ID that represents a user                                               |
+| Item ID       | String    | The serialized ID that represents an item                                              |
+| Category ID   | String    | The serialized ID that represents the category which the corresponding item belongs to |
+| Behavior type | String    | Enum-type from ('pv', 'buy', 'cart', 'fav')                                            |
+| Timestamp     | Timestamp | The timestamp of the behavior                                                          |
 
 Please download the demo data from [Google Drive](https://drive.google.com/file/d/1P4BAZnpCY-knMt5HFfcx3onVjykYt3et/view?usp=sharing) and move it into the `./datagen` folder (as `./data/user_behavior.log`).
 
@@ -76,6 +77,11 @@ docker-compose build
 ```
 
 ## The Demo
+
+The components required in this demo are all managed in containers, so we will use docker-compose as our demo environment.
+Our demo is running on `Flink` 1.13.1, `Pravega` 0.10.1 and `SchemaRegistry` 0.2.0.
+
+### Container introduction
 
 Our Docker Compose environment consists of the following containers:
 - **Flink SQL Client**: used to submit queries and visualize their results.
@@ -99,8 +105,7 @@ docker-compose up -d
 This command automatically starts all the containers defined in the Docker Compose configuration in a detached mode. 
 Run docker ps to check whether the 6 containers are running properly. You can also visit http://localhost:18081/ to see if Flink is running normally.
 
-### Start the SQL Client
-To enter the SQL CLI client run:
+Then we need to enter the SQL CLI client:
 ```
 docker-compose exec sql-client ./sql-client.sh
 ```
@@ -152,8 +157,7 @@ The command starts the SQL CLI client in the container. You should see the welco
 Flink SQL>
 ```
 
-### Create Pravega Catalog with DDL
-First we need to create a Pravega Catalog to access the data stored in Pravega.
+After that, we need to create a Pravega Catalog to access the data stored in Pravega.
 In order to use Pravega Catalog, we need to add schema registry group and register the schema of your serialization format to schema registry service.
 The datagen container has done these things, so the catalog can get the schema information, translate the Pravega stream into Flink table and show in the catalog.
 You can check this by calling Pravega Schema Registry's REST API:
@@ -161,12 +165,9 @@ You can check this by calling Pravega Schema Registry's REST API:
 docker-compose exec schemaregistry curl -X GET http://localhost:9092/v1/groups/userBehavior/schemas?namespace=examples
 ```
 
-
 Then the datagen container will send data to `userBehavior` stream in `examples` scope of Pravega. 
 Pravega will send data to Flink as a data source by Pravega Flink connector. 
 
-Pravega `scope` is mapped to Flink catalog `database` while Pravega `stream` is mapped to Flink catalog `table` automatically 
-so that we don't need to manually rewrite DDLs to create tables.
 We run the following DDL statement in SQL CLI to create a Flink catalog that connects to Pravega and schema-registry.
 We will use Avro as the format for serialization in table sink as predefined in datagen container.
 
@@ -197,7 +198,7 @@ SELECT * FROM userBehavior;
 One typical use case in the online services is to calculate the cumulative unique visitors continuously, i.e. every ten minutes in one day. 
 For example, the number of UV at 10:00 represents the total number of UV from 00:00 to 10:00.
 This can be easily and efficiently implemented by `CUMULATE` windowing.  
-You can check more about `CUMULATE` and other Windowing TVFs [here](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/table/sql/queries/window-tvf/).
+You can check more about `CUMULATE` and other Windowing TVFs [here](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/queries/window-tvf/).
 
 In order to enrich the table with the event time and watermark information since Pravega catalog do not support
 watermark, we need to extend the existing catalog table like this using [LIKE clause](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/table/sql/create/#like):
@@ -238,6 +239,14 @@ CREATE TABLE midnightTxn (
     ts TIMESTAMP(3)
 );
 ```
+You can check the stream creation in Pravega by using Pravega-cli:
+```
+docker-compose exec pravega bin/pravega-cli stream list examples
+```
+Also you can check the schema registered in Schema registry by calling Schema registry REST API:
+```
+docker-compose exec schemaregistry curl -X GET http://localhost:9092/v1/groups/midnightTxn/schemas?namespace=examples
+```
 Then we write query results into table:
 ```sql
 INSERT INTO midnightTxn
@@ -246,12 +255,8 @@ FROM userBehavior
 WHERE behavior = 'buy' AND HOUR(ts) <= 2;
 ```
 ![flink-running-job](images/flink-running-job.png)
-You can check the stream creation in Pravega by using Pravega-cli:
-```
-docker-compose exec pravega bin/pravega-cli stream list examples
-```
 
-You can also check by querying in the sql client:
+You can check by querying in the sql client:
 ```
 SELECT * FROM midnightTxn
 ```
