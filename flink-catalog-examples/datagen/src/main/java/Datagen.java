@@ -136,9 +136,9 @@ public class Datagen {
         Schema userBehavior = SchemaBuilder
                 .record("UserBehavior")
                 .fields()
-                .name("user_id").type(Schema.create(Schema.Type.STRING)).noDefault()
-                .name("item_id").type(Schema.create(Schema.Type.STRING)).noDefault()
-                .name("category_id").type(Schema.create(Schema.Type.STRING)).noDefault()
+                .name("user_id").type(Schema.create(Schema.Type.INT)).noDefault()
+                .name("item_id").type(Schema.create(Schema.Type.INT)).noDefault()
+                .name("category_id").type(Schema.create(Schema.Type.INT)).noDefault()
                 .name("behavior").type(Schema.create(Schema.Type.STRING)).noDefault()
                 .name("ts").type(LogicalTypes.timestampMillis().
                         addToSchema(Schema.create(Schema.Type.LONG))).noDefault()
@@ -161,9 +161,9 @@ public class Datagen {
                     long ts = Long.parseLong(splits[4]) * 1000L;
                     ts += TIME_ZONE.getOffset(ts);
                     GenericRecord record = new GenericData.Record(userBehavior);
-                    record.put(0, splits[0]);
-                    record.put(1, splits[1]);
-                    record.put(2, splits[2]);
+                    record.put(0, Integer.parseInt(splits[0]));
+                    record.put(1, Integer.parseInt(splits[1]));
+                    record.put(2, Integer.parseInt(splits[2]));
                     record.put(3, splits[3]);
                     record.put(4, ts);
                     writer.writeEvent(record);
