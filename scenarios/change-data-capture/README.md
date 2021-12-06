@@ -1,6 +1,10 @@
 # Pravega CDC Demo
 
-This page demonstrates how to preserve the CDC (Change Data Capture) from MySQL into Pravega and consume them in Flink.
+This page demonstrates how to preserve the CDC (change data capture) from MySQL into Pravega and consume them in Flink.
+
+> Change data capture (CDC) is used to determine and track the data that has changed so that actions can be taken using the changed data. It is often used in data-warehouse environments where we want have a copy or log of the existing data.
+
+We use Pravega as the streaming storage system which can preserve the continuous data stream, so the change data can be both written to and read from a durable, elastic and consistent place. Also, the debezium json format is used as the intermediate format when we transfer the data. You may have a look at [Pravega](https://cncf.pravega.io/) and [Debezium](https://debezium.io/) respectively at their homepage.
 
 ## Preparation
 
@@ -18,12 +22,12 @@ This command automatically starts all the containers defined in the docker compo
 
 The docker compose environment consists of the following containers:
 
-- Flink SQL CLI: used to submit queries and visualize their results.
-- Flink Cluster: a Flink JobManager and a Flink TaskManager container to execute queries.
+- Flink SQL CLI: Used to submit queries and visualize their results.
+- Flink Cluster: A Flink JobManager and a Flink TaskManager container to execute queries.
 - MySQL: MySQL 8 with some pre-populated tables in the database.
-- Pravega: preserve the MySQL change data.
-- Debezium: capture the MySQL change data and sink them to Pravega.
-- DataGen: the data generator. After the container is started, stock data from previous 5 days are pulled and updated to the MySQL. There were more than 1800 data points which should run at least half an hour.
+- Pravega: Preserve the MySQL change data.
+- Debezium: Capture the MySQL change data and sink them to Pravega.
+- DataGen: The data generator. After the container is started, stock data from the previous 5 days are pulled and updated to the MySQL. They are accelerated to be finished 5 days change into half an hour.
 
 You may stop the containers at any time by `Ctrl-C` and they can be totally removed with:
 
