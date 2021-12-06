@@ -1,4 +1,4 @@
-version: "3.9"
+version: "2.1"
 services:
   pravega:
     image: fyang86/pravega:0.10.1-65df3fbd-set-published-ip
@@ -6,6 +6,10 @@ services:
       - "9090:9090"
       - "12345:12345"
     command: standalone
+    healthcheck:
+      test: grep -F "Controller Services started successfully." standalone.log
+    environment:
+      HOST_IP: pravega
 
   mysql:
     image: thekingofcity/pravega-cdc-demo-mysql:0.1
@@ -13,22 +17,35 @@ services:
       - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=dbz
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
 
   datagen:
-    image: thekingofcity/pravega-cdc-demo-datagen:0.1
+    image: thekingofcity/pravega-cdc-demo-datagen:0.2
     depends_on:
-      - mysql
+      pravega:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_started
+    healthcheck:
+      test: grep -F "Scope and streams are created." log
     environment:
-      - wait_for=45
+      - mysql_password=dbz
 
   debezium:
     image: thekingofcity/pravega-cdc-demo-debezium:0.1
     depends_on:
-      - pravega
-      - datagen
-    command: sh -c "
-      sleep 60 &&
-      /debezium/run.sh"
+      pravega:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      datagen:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_started
+    command: sh -c "/debezium/run.sh"
 
   flink-jobmanager:
     image: flink:1.13.2-scala_2.12
@@ -55,7 +72,7 @@ services:
   flink-sql-client:
     image: thekingofcity/pravega-cdc-demo-flink-sql-client:0.1
     depends_on:
-      - flink-taskmanager
+      - flink-jobmanager
     environment:
       - |
         FLINK_PROPERTIES=

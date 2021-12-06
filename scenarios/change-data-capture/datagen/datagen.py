@@ -1,12 +1,7 @@
 import os
-
-wait_for = int(os.environ['wait_for']) if 'wait_for' in os.environ else 30
-
-print(f"Wait {wait_for} seconds.")
-
 import time
 
-time.sleep(wait_for)  # wait for pravega and mysql to start
+mysql_password = os.environ['mysql_password'] if 'mysql_password' in os.environ else 'dbz'
 
 ########################################################################
 
@@ -20,6 +15,10 @@ manager.create_stream('stock', 'dbserver1', 1)
 manager.create_stream('stock', 'dbserver1.stock.stock', 1)
 manager.create_stream('stock', 'dbserver1.stock.metadata', 1)
 
+# create a file so that the healthcheck will know pravega is ready
+with open('log', 'w') as fp:
+    fp.write('Scope and streams are created.')
+
 ########################################################################
 
 print("Get stock data.")
@@ -31,11 +30,12 @@ df = yf.download(tickers=tickers_list, period="5d", interval="1m")
 
 ########################################################################
 
-print("Update mysql.")
+print("Update MySQL.")
 
 import mysql.connector
 
-cnx = mysql.connector.connect(user='root', password='dbz',
+cnx = mysql.connector.connect(user='root',
+                              password=mysql_password,
                               host='mysql',
                               database='stock',
                               autocommit=True)
