@@ -150,7 +150,7 @@ And here comes the final output:
 SELECT sector, avg(`value`) as `index` FROM stock INNER JOIN metadata ON stock.id=metadata.id GROUP BY sector;
 ```
 
-![query result](./images/Flink_SQL_Query_Result.png)
+![query result](./images/Flink_SQL_Query_Result.gif)
 
 Finally we can sink them to somewhere we want:
 
