@@ -53,8 +53,8 @@ import java.net.URI;
 import java.util.TimeZone;
 
 /**
- * This class reads data from input dataset, register the
- * schema to Pravega schema registry service and then send the generated data to Pravega.
+ * This class reads data from input dataset, register the schema to Pravega schema registry service,
+ * convert the original csv format to avro format, and then send the generated data to Pravega.
  */
 public class Datagen {
 
@@ -133,15 +133,28 @@ public class Datagen {
                 .registerSchema(true)
                 .build();
 
+        /**
+         * generate the avro schema from original dataset, convert the timestamp format from integer to timestamp-millis
+         * that can be mapped to Flink SQL type TIMESTAMP
+         *
+         | field       | type             |
+         |-------------|------------------|
+         | user_id     | int              |
+         | item_id     | int              |
+         | category_id | int              |
+         | behavior    | string           |
+         | ts          | timestamp-millis |
+         *
+         */
         Schema userBehavior = SchemaBuilder
                 .record("UserBehavior")
                 .fields()
-                .name("user_id").type(Schema.create(Schema.Type.INT)).noDefault()
-                .name("item_id").type(Schema.create(Schema.Type.INT)).noDefault()
-                .name("category_id").type(Schema.create(Schema.Type.INT)).noDefault()
-                .name("behavior").type(Schema.create(Schema.Type.STRING)).noDefault()
+                .name("user_id").type().intType().noDefault()
+                .name("item_id").type().intType().noDefault()
+                .name("category_id").type().intType().noDefault()
+                .name("behavior").type().stringType().noDefault()
                 .name("ts").type(LogicalTypes.timestampMillis().
-                        addToSchema(Schema.create(Schema.Type.LONG))).noDefault()
+                        addToSchema(SchemaBuilder.builder().longType())).noDefault()
                 .endRecord();
         Serializer<GenericRecord> serializer = SerializerFactory.avroSerializer(serializerConfig, AvroSchema.ofRecord(userBehavior));
 
