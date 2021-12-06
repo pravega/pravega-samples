@@ -6,7 +6,7 @@ This page demonstrates how to preserve the CDC (Change Data Capture) from Mysql 
 
 The demo runs under `docker-compose`, so a Linux or Windows (WSL2) environment is required.
 
-With `docker` enabled, download the [`docker-compose.yml`](https://raw.githubusercontent.com/thekingofcity/Pravega-CDC-demo/master/docker-compose.yml) and put it anywhere you like.
+With `docker` enabled, download the [`docker-compose.yml`](./docker-compose.yml) and put it anywhere you like.
 
 After having the `docker-compose.yml`, start it like this:
 
@@ -106,7 +106,7 @@ docker-compose exec flink-sql-client ./bin/sql-client.sh embedded -l ./lib
 
 You should see the welcome screen of the CLI client.
 
-![welcome screen](./Flink_SQL_CLI.png)
+![welcome screen](./images/Flink_SQL_CLI.png)
 
 In order to make the events in the Pravega accessible to Flink SQL, we run the following DDL statement in SQL CLI to create a table that connects to the stream in Pravega:
 
@@ -145,7 +145,7 @@ And here comes the final output:
 SELECT sector, avg(`value`) as `index` FROM stock INNER JOIN metadata ON stock.id=metadata.id GROUP BY sector;
 ```
 
-![query result](./Flink_SQL_Query_Result.png)
+![query result](./images/Flink_SQL_Query_Result.png)
 
 Finally we can sink them to somewhere we want:
 
