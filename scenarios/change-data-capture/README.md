@@ -33,7 +33,7 @@ docker-compose down
 
 ## What happen in the data source
 
-**TL;DR** A datagen that update the `stock` table every second.
+**TL;DR** A datagen that update prices in the stock market table.
 
 The datagen container continuously update stock data in the MySQL table. It contains 8 selected companies and there corresponding sector. Each company stock lasts 5 days with 1 minute interval. All of them comes from [*Yahoo Finance*](https://github.com/ranaroussi/yfinance).
 
