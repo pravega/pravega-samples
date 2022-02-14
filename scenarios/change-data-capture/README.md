@@ -2,23 +2,23 @@
 
 This page demonstrates how to preserve the CDC (change data capture) from MySQL into Pravega and consume them in Flink.
 
-> Change data capture (CDC) is used to determine and track the data that has changed so that actions can be taken using the changed data. It is often used in data-warehouse environments where we want have a copy or log of the existing data.
+> Change data capture (CDC) is used to determine and track the data that has changed so that actions can be taken using the changed data. It is often used in data-warehouse environments where we want to have a copy or log of the existing data.
 
-We use Pravega as the streaming storage system which can preserve the continuous data stream, so the change data can be both written to and read from a durable, elastic and consistent place. Also, the debezium json format is used as the intermediate format when we transfer the data. You may have a look at [Pravega](https://cncf.pravega.io/) and [Debezium](https://debezium.io/) respectively at their homepage.
+We use Pravega as the streaming storage system which can preserve the continuous data stream, so the change data can be both written to and read from a durable, elastic and consistent place. Also, the debezium json format is used as the intermediate format when we transfer the data. You may have a look at the [Pravega](https://cncf.pravega.io/) and [Debezium](https://debezium.io/) homepages.
 
 ## Preparation
 
-The demo runs under `docker-compose`, so a Linux or Windows (WSL2) environment is required.
+The demo runs under `docker-compose`, so a Linux or Windows (WSL2) environment is recommended.
 
-With `docker` enabled, download the [`docker-compose.yml`](./docker-compose.yml) and put it anywhere you like.
+With `docker` running, download the [`docker-compose.yml`](./docker-compose.yml) and put it anywhere you like.
 
-After having the `docker-compose.yml`, start it like this:
+After having the `docker-compose.yml`, start the demo like this:
 
 ```bash
 docker-compose up -d
 ```
 
-This command automatically starts all the containers defined in the docker compose configuration in the detached mode. Run `docker ps` if you wish to check whether the 7 containers are running properly. `http://localhost:12081/` is also available for Flink UI.
+This command automatically starts in detached mode all the containers defined in the docker compose configuration. Run `docker ps` if you wish to check whether the 7 containers are running properly. `http://localhost:12081/` is also available for Flink UI.
 
 The docker compose environment consists of the following containers:
 
@@ -27,7 +27,7 @@ The docker compose environment consists of the following containers:
 - MySQL: MySQL 8 with some pre-populated tables in the database.
 - Pravega: Preserve the MySQL change data.
 - Debezium: Capture the MySQL change data and sink them to Pravega.
-- DataGen: The data generator. After the container is started, stock data from the previous 5 days are pulled and updated to the MySQL. They are accelerated to finish the 5 days change into half an hour.
+- DataGen: The data generator. After the container is started, stock data from the previous 5 days are pulled and updated to MySQL. They are accelerated to finish the 5 days change in half an hour.
 
 You may stop the containers at any time by `Ctrl-C` and they can be totally removed with:
 
@@ -35,13 +35,13 @@ You may stop the containers at any time by `Ctrl-C` and they can be totally remo
 docker-compose down
 ```
 
-## What happen in the data source
+## What happens in the data source
 
-**TL;DR** A datagen that update prices in the stock market table.
+**TL;DR** A datagen that updates prices in the stock market table.
 
-The datagen container continuously update stock data in the MySQL table. It contains 8 selected companies and there corresponding sector. Each company stock lasts 5 days with 1 minute interval. All of them comes from [*Yahoo Finance*](https://github.com/ranaroussi/yfinance).
+The datagen container continuously updates stock data in the MySQL table. It contains 8 selected companies and their corresponding sector. Each company stock lasts 5 days with 1 minute interval. All of them come from [*Yahoo Finance*](https://github.com/ranaroussi/yfinance).
 
-If you follows the log of `datagen` container via `docker-compose logs datagen`, similar outputs should seen below:
+If you follow the log of `datagen` container via `docker-compose logs datagen`, similar outputs should be seen below:
 
 ```
 datagen_1            | Wait 30 seconds.
@@ -58,7 +58,7 @@ datagen_1            | Update ['AAPL', 'IBM', 'MU', 'BA', 'TSLA', 'NKE', 'GE', '
 
 After the MySQL server is ready, it will update the stock data every second.
 
-On the MySQL side, two simple table are pre-populated so `UPDATE` command runs smoothly.
+On the MySQL side, two simple tables are pre-populated so `UPDATE` command runs smoothly.
 
 ```sql
 CREATE TABLE stock (
@@ -76,13 +76,13 @@ That's it, let's head into change data capture.
 
 ## Capture the change data
 
-**TL;DR** Store the change log captured by Debezium in Pravega.
+**TL;DR** Store in Pravega the changelog captured by Debezium.
 
 > [*Debezium*](https://debezium.io/) is an open source distributed platform for change data capture. Start it up, point it at your databases, and your apps can start responding to all of the inserts, updates, and deletes that other apps commit to your databases.
 
-The Debezium will start after MySQL is ready for any operation. As soon as the data is updated in the MySQL table, the Debezium server will read the binlog from MySQL and sink the change log to Pravega, a reliable stream storage system, where these change log are preserved.
+Debezium will start after MySQL is ready for any operation. As soon as the data is updated in the MySQL table, the Debezium server will read the binlog from MySQL and sink the changelog to Pravega, a reliable stream storage system, where these changelogs are preserved.
 
-A successful deployment will result the change log data similar like this:
+A successful deployment will result in the changelog data similar to this:
 
 ```bash
 $  docker-compose exec pravega ./bin/pravega-cli stream read stock/dbserver1.stock.stock
@@ -91,13 +91,13 @@ $  docker-compose exec pravega ./bin/pravega-cli stream read stock/dbserver1.sto
 {"before":{"id":"MU","value":67.13999938964844},"after":{"id":"MU","value":67.12999725341797},"source":{"version":"1.7.0.Final","connector":"mysql","name":"dbserver1","ts_ms":1634716546000,"snapshot":"false","db":"stock","sequence":null,"table":"stock","server_id":1,"gtid":null,"file":"binlog.000002","pos":25581,"row":0,"thread":null,"query":null},"op":"u","ts_ms":1634716546544,"transaction":null}
 ```
 
-> We read change log directly from Pravega.
+> We read the changelog directly from Pravega.
 >
 > Each field's meaning can be learned from [Debezium documentation](https://debezium.io/documentation/reference/1.7/connectors/mysql.html#mysql-connector-events_debezium).
 
-These are typical update operations that generated by Debezium from MySQL's binlog and are written into Pravega. We can tell what the value before the update and the value after it. Also, the `op` field indicates what the operation it is. (`r` for read, `u` for update, `c` for insert and `d` for delete).
+These are typical update operations as generated by Debezium from MySQL's binlog and as written into Pravega. We can tell what the value is before the update and after the update. Also, the `op` field indicates what the operation is. (`r` for read, `u` for update, `c` for insert and `d` for delete.).
 
-Now it's time to consume them.
+Now it's time to consume the data.
 
 ## Consume data
 
@@ -142,7 +142,7 @@ CREATE TABLE metadata (
 );
 ```
 
-The above snippet declares two table in the Flink SQL client. Each of them having two fields based on the data format in MySQL. The former one digests the changelog in the Debezium format and the latter one directly connects to MySQL.
+The above snippet declares two tables in the Flink SQL client. Each of them has two fields based on the data format in MySQL. The former one digests the changelog in the Debezium format and the latter one directly connects to MySQL.
 
 And here comes the final output:
 
@@ -152,7 +152,7 @@ SELECT sector, avg(`value`) as `index` FROM stock INNER JOIN metadata ON stock.i
 
 ![query result](./images/Flink_SQL_Query_Result.gif)
 
-Finally we can sink them to somewhere we want:
+Additionally, we can sink them to somewhere we want:
 
 ```sql
 CREATE TABLE `index` (
@@ -165,7 +165,7 @@ CREATE TABLE `index` (
 INSERT INTO `index` SELECT sector, avg(`value`) as `index` FROM stock INNER JOIN metadata ON stock.id=metadata.id GROUP BY sector;
 ```
 
-🎉 Well done, you've gone through all the parts used in this demo and are definitely be able to build your own big data pipeline with change data capture as the data source.
+🎉 Well done, you've gone through all the parts used in this demo and are now able to build your own big data pipeline with change data capture as the data source.
 
 ## Reference
 
