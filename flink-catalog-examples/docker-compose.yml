@@ -16,7 +16,7 @@
 version: '2.1'
 services:
   sql-client:
-    image: fyang86/catalog-demo-sql-client:0.1  # change to your own docker repo if you want to build this image
+    image: pravega/catalog-demo-flink-sql-client:1.0  # change to your own docker repo if you want to build this image
 #    build: ./sql-client  # uncomment this line to build image on your own
     depends_on:
       pravega:
@@ -48,7 +48,7 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 3
   pravega:
-    image: fyang86/pravega:0.10.1-65df3fbd-set-published-ip
+    image: pravega/pravega:0.10.2
     ports:
       - "9090:9090"
       - "12345:12345"
@@ -69,7 +69,7 @@ services:
     healthcheck:
       test: grep -F "Starting REST server listening on port" schema-registry.log
   datagen:
-    image: fyang86/catalog-demo-datagen:0.1 # change to your own docker repo if you want to build this image
+    image: pravega/catalog-demo-datagen:1.0 # change to your own docker repo if you want to build this image
 #    build: ./datagen  # uncomment this line to build image on your own
     command: "java -classpath /opt/datagen/datagen.jar Datagen -input /opt/datagen/user_behavior.log -speedup 1000
               -controlleruri tcp://pravega:9090 -schemaregistryuri http://schemaregistry:9092"

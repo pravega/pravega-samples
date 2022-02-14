@@ -37,9 +37,9 @@ it is feasible to map Pravega streams to Flink tables as the following table sho
 | table name                           | stream name       |
 
 With such mapping we don't need to rewrite DDLs to create table or manually deal with many connection parameters to create tables.
-It lets us clearly separate making the data available from consuming it. That separation improves productivity, security, and compliance when working with data.
+The catalog lets us clearly separate consuming the data from making the data available. That separation improves productivity, security, and compliance when working with data.
 
-To use Pravega Catalog, users can use SQL DDL or Java/Scala programatically to create and register Pravega Flink Catalog. You can find more details about Pravega Catalog 
+To use Pravega Catalog, users can use SQL DDL or Java/Scala programmatically to create and register Pravega Flink Catalog. You can find more details about Pravega Catalog 
 [here](https://github.com/pravega/flink-connectors/blob/master/documentation/src/docs/catalog.md).
 
 ## Prerequsites

@@ -104,7 +104,7 @@ public class Datagen {
                 .schemaRegistryUri(schemaregistryUri)
                 .build();
 
-        try (StreamManager streamManager = StreamManager.create(controllerUri)){
+        try (StreamManager streamManager = StreamManager.create(controllerUri)) {
             streamManager.createScope(DEFAULT_SCOPE);
             StreamConfiguration streamConfig = StreamConfiguration.builder()
                     .build();
@@ -158,11 +158,10 @@ public class Datagen {
                 .endRecord();
         Serializer<GenericRecord> serializer = SerializerFactory.avroSerializer(serializerConfig, AvroSchema.ofRecord(userBehavior));
 
-        try (
-                EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(DEFAULT_SCOPE, clientConfig);
-                EventStreamWriter<GenericRecord> writer = clientFactory.createEventWriter(DEFAULT_STREAM, serializer,
-                        EventWriterConfig.builder().build());
-                InputStream inputStream = new FileInputStream(userBehaviorFile)) {
+        try (EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(DEFAULT_SCOPE, clientConfig);
+             EventStreamWriter<GenericRecord> writer = clientFactory.createEventWriter(DEFAULT_STREAM, serializer,
+                     EventWriterConfig.builder().build());
+             InputStream inputStream = new FileInputStream(userBehaviorFile)) {
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             int counter = 0;
