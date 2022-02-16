@@ -12,7 +12,7 @@ services:
       HOST_IP: pravega
 
   mysql:
-    image: thekingofcity/pravega-cdc-demo-mysql:0.1
+    image: pravega/cdc-demo-mysql:1.0
     ports:
       - "3306:3306"
     environment:
@@ -21,7 +21,7 @@ services:
       test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
 
   datagen:
-    image: thekingofcity/pravega-cdc-demo-datagen:0.2
+    image: pravega/cdc-demo-datagen:1.0
     depends_on:
       pravega:
         condition: service_healthy
@@ -35,7 +35,7 @@ services:
       - mysql_password=dbz
 
   debezium:
-    image: thekingofcity/pravega-cdc-demo-debezium:0.1
+    image: pravega/cdc-demo-debezium:1.0
     depends_on:
       pravega:
         condition: service_healthy
@@ -70,7 +70,7 @@ services:
         taskmanager.numberOfTaskSlots: 2
 
   flink-sql-client:
-    image: thekingofcity/pravega-cdc-demo-flink-sql-client:0.1
+    image: pravega/cdc-demo-flink-sql-client:1.0
     depends_on:
       - flink-jobmanager
     environment:
