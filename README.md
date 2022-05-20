@@ -3,7 +3,7 @@
 This repository contains code samples to demonstrate how developers can work with 
 [Pravega](http://pravega.io). We also provide code samples to connect analytics 
 engines such as [Flink](https://flink.apache.org/) and
-[Hadoop](http://hadoop.apache.org/) with Pravega as a storage substrate for data 
+[Spark](http://spark.apache.org/) with Pravega as a storage substrate for data 
 streams. 
 We also provide samples for using new pravega schema registry with pravega applications. 
 
@@ -13,7 +13,7 @@ developer guide](http://pravega.io).
 # Repository Structure
 
 This repository is divided into sub-projects (`pravega-client-examples`, `flink-connector-examples`, 
-`hadoop-connector-examples`, `schema-registry-examples`, and `spark-connector-examples`), each one addressed to demonstrate a specific component. In these sub-projects, 
+`schema-registry-examples`, and `spark-connector-examples`), each one addressed to demonstrate a specific component. In these sub-projects, 
 we provide a battery of simple code examples aimed at illustrating how a particular 
 feature or API works. Moreover, we also include a `scenarios` folder that contains 
 more complex applications as sub-projects, which show use-cases exploiting one or multiple components.
@@ -40,14 +40,6 @@ The related documentation and instructions are [here](pravega-client-examples).
 | `streamcuts` | This sample demonstrates the use of Pravega StreamCuts in Flink applications. | [Java](flink-connector-examples/src/main/java/io/pravega/example/flink/streamcuts)
 
 The related documentation and instructions are [here](flink-connector-examples).
-
-## Hadoop Connector Examples
-| Example Name  | Description  | Language |
-| ------------- |:-----| :-----|
-| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
-| `terasort` | Sort events from an input Pravega `Stream` and then write sorted events to one or more streams. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/terasort)
-
-The related documentation and instructions are [here](hadoop-connector-examples).
 
 ## Scenarios
 | Example Name   | Description  | Language |
@@ -83,6 +75,14 @@ The related documentation and instructions are [here](schema-registry-examples).
 | `StreamPravegaToPravega` | Scala Spark Streaming job that reads from a Pravega stream and writes to another Pravega stream | [Scala](spark-connector-examples/src/main/scala/io/pravega/example/spark/StreamPravegaToPravega.scala)
 
 The related documentation and instructions are [here](spark-connector-examples).
+
+## Hadoop Connector Examples (_Retired: available up to Pravega Samples release 0.10_)
+| Example Name  | Description  | Language |
+| ------------- |:-----| :-----|
+| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
+| `terasort` | Sort events from an input Pravega `Stream` and then write sorted events to one or more streams. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/terasort)
+
+The related documentation and instructions are [here](hadoop-connector-examples).
 
 # Build Instructions
 
@@ -136,24 +136,6 @@ of `pravega-samples`.
 
 For more information, please visit [Flink Connectors](https://github.com/pravega/flink-connectors). 
 
-### Hadoop Connector Build Instructions
-
-To build the Hadoop connector from source, follow the below steps to build and publish artifacts from 
-source to local Maven repository:
-
-```
-$ git clone --recurse-submodules https://github.com/pravega/hadoop-connectors.git
-$ cd hadoop-connectors
-$ ./gradlew install
-```
-
-> Hint: For using in the sample applications the Hadoop connector version you just built, you need to update the 
-`hadoopConnectorVersion=<local_maven_hadoop_connector_version>` property in `gradle.properties` file 
-of `pravega-samples`.
-
-
-For more information, please visit [Hadoop Connectors](https://github.com/pravega/hadoop-connectors). 
-
 ### Schema Registry Build Instructions
 
 Schema registry uses pravega, so make sure pravega is installed and running before installing schema registry. 
@@ -187,7 +169,7 @@ such as `0.3.0-1889.2990193-SNAPSHOT`. These artifacts are the result from build
 3) The only thing you have to do is to set `pravegaVersion=0.3.0-1889.2990193-SNAPSHOT` in the `gradle.properties`
 file of `pravega-samples`.
 
-While this example is for Pravega, the same procedure applies for Flink and Hadoop connectors.
+While this example is for Pravega, the same procedure applies for Flink and Spark connectors.
 
 
 ## Pravega Samples Build Instructions
@@ -234,10 +216,10 @@ We propose a roadmap to proceed with the execution of examples based on their co
 First step to understand the basics of Pravega and exercise the concepts presented in the documentation. 
 2. [Flink connector examples](flink-connector-examples): 
 These examples show the basic functionality of the Flink connector for Pravega.
-3. [Hadoop connector examples](hadoop-connector-examples): 
-These examples show the basic functionality of the Hadoop connector for Pravega.
+3. [Spark connector examples](spark-connector-examples): 
+These examples show the basic functionality of the Spark connector for Pravega.
 4. [Scenarios](scenarios): Applications that go beyond the basic usage of Pravega APIs, which may include complex interactions 
-between Pravega and analytics engines (e.g., Flink, Hadoop, Spark) to demonstrate analytics use cases.
+between Pravega and analytics engines (e.g., Flink, Spark) to demonstrate analytics use cases.
 
 # Where to Find Help
 
