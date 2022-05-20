@@ -79,10 +79,10 @@ The related documentation and instructions are [here](spark-connector-examples).
 ## Hadoop Connector Examples (_Retired: available up to Pravega Samples release 0.10_)
 | Example Name  | Description  | Language |
 | ------------- |:-----| :-----|
-| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
-| `terasort` | Sort events from an input Pravega `Stream` and then write sorted events to one or more streams. | [Java](hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/terasort)
+| `wordcount` | Counts the words from a Pravega `Stream` filled with random text to demonstrate the usage of Hadoop connector for Pravega. | [Java](https://github.com/pravega/pravega-samples/tree/r0.10/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/wordcount)
+| `terasort` | Sort events from an input Pravega `Stream` and then write sorted events to one or more streams. | [Java](https://github.com/pravega/pravega-samples/tree/r0.10/hadoop-connector-examples/src/main/java/io/pravega/example/hadoop/terasort)
 
-The related documentation and instructions are [here](hadoop-connector-examples).
+The related documentation and instructions are [here](https://github.com/pravega/pravega-samples/tree/r0.10/hadoop-connector-examples).
 
 # Build Instructions
 
