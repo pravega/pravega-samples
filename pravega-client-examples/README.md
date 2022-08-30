@@ -77,7 +77,7 @@ All args are optional, if not included, the defaults are:
 
  * scope - "examples"
  * name - "someStream"
- * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes
+ * uri - "tcp://127.0.0.1" (the URI to one of the controller nodes)
  
 To run `ConsoleWriter`, please execute:
 
