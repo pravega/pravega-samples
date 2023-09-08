@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
+
+plugins {
+    id 'org.hidetake.ssh' version '2.8.0'
+}
+
+allprojects {
+    apply plugin: "idea"
+    apply plugin: "eclipse"
+}
+
+ext {
+    lombokVersion = loadProperties().getProperty("lombokVersion")
+    samplesVersion = loadProperties().getProperty("samplesVersion")
+}
+
+def loadProperties() {
+    def customPropertiesFile = file('../../gradle.properties')
+    def properties = new Properties()
+    customPropertiesFile.withInputStream { properties.load(it) }
+    return properties
+}
+
+subprojects {
+    if (file("src/main/java").isDirectory()) {
+        apply plugin: 'java'
+        dependencies {
+            compileOnly 'org.projectlombok:lombok:' + lombokVersion
+            testCompileOnly 'org.projectlombok:lombok:' + lombokVersion
+            annotationProcessor 'org.projectlombok:lombok:' + lombokVersion
+            testAnnotationProcessor 'org.projectlombok:lombok:' + lombokVersion
+        }
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url "https://repository.apache.org/snapshots"
+        }
+        maven {
+            url "https://maven.pkg.github.com/pravega/pravega"
+            credentials {
+                username = "pravega-public"
+                password = "\u0067\u0068\u0070\u005F\u0048\u0034\u0046\u0079\u0047\u005A\u0031\u006B\u0056\u0030\u0051\u0070\u006B\u0079\u0058\u006D\u0035\u0063\u0034\u0055\u0033\u006E\u0032\u0065\u0078\u0039\u0032\u0046\u006E\u0071\u0033\u0053\u0046\u0076\u005A\u0049"
+            }
+        }
+        maven {
+            url "https://maven.pkg.github.com/pravega/flink-connectors"
+            credentials {
+                username = "pravega-public"
+                password = "\u0067\u0068\u0070\u005F\u0048\u0034\u0046\u0079\u0047\u005A\u0031\u006B\u0056\u0030\u0051\u0070\u006B\u0079\u0058\u006D\u0035\u0063\u0034\u0055\u0033\u006E\u0032\u0065\u0078\u0039\u0032\u0046\u006E\u0071\u0033\u0053\u0046\u0076\u005A\u0049"
+            }
+        }
+    }
+    plugins.withType(org.gradle.api.plugins.JavaPlugin) {
+        group "io.pravega"
+        version samplesVersion
+    }
+}
