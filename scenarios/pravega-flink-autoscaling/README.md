@@ -1,6 +1,18 @@
 # Scaling Flink automatically on K8S by monitoring Pravega metrics
 
+## Summary
+This demo aims to show how [Pravega streams can 
+auto-scale](https://cncf.pravega.io/docs/latest/key-features/#auto-scaling)
+in coordination with [Flink task 
+managers](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/elastic_scaling/)
+via policies defined in the [Kubernetes Horizontal Pod 
+Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) (HPA)
+and real time metrics (collected by [Prometheus](https://prometheus.io/)) 
+from fluctuating workloads. In this example, we focus on keeping a number 
+of Flink task managers equal to the number of Pravega stream segments.
+
 ## Components
+
 The diagram below shows the deployment contained in this demo.
 First, we have a `Data Generator` application that writes data
 to a `Pravega` stream. Such data is continuously read by the `Flink`
@@ -28,7 +40,7 @@ and the scaling policy configured in the stream.
 
 ### 1. Build Docker Images
 
-Once `Pravega` and its dependencies are deployed, we can start building the
+First, we start by building the
 docker images for the `Data Generator` and the `Flink Application` that will
 be the producer and consumer entities of this demo, respectively.
 
@@ -58,10 +70,10 @@ data streams, as well as to be able to inspect metrics via dashboards.
 - First, let's install `Prometheus Operator`:
 ```
 cd prometheus
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml
-kubectl apply -f rbac-prometheus-operator.yaml
-kubectl apply -f prometheus.yaml
-kubectl apply -f controller-monitoring.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml
+kubectl create -f rbac-prometheus-operator.yaml
+kubectl create -f prometheus.yaml
+kubectl create -f controller-monitoring.yaml
 ```
 Note that the last step instructs `Prometheus` to scrape metrics from
 `Pravega` controller. This is important to exploit `Pravega` metrics
