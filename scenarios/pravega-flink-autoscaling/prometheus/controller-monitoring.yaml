@@ -1,0 +1,13 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pravega-controller-monitor
+spec:
+  selector:
+    matchLabels:
+      app: pravega-cluster
+      component: pravega-controller
+      pravega_cluster: pravega
+  endpoints:
+    - port: rest
+      path: "/prometheus"

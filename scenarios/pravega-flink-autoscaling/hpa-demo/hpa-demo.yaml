@@ -1,0 +1,22 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: podinfo
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flink-taskmanager
+  minReplicas: 1
+  maxReplicas: 32
+  metrics:
+    - type: External
+      external:
+        metric:
+          name: pravega_controller_segments_count
+        target:
+          type: AverageValue
+          averageValue: 1
+
+
