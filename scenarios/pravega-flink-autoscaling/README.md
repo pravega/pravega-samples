@@ -10,7 +10,7 @@ Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-auto
 and real time metrics (collected by [Prometheus](https://prometheus.io/)) 
 from fluctuating workloads. In this example, we focus on keeping a number 
 of Flink task managers equal to the number of Pravega stream segments.
-You can see a video for this demo [here](img%2Fdemo.mp4).
+You can watch a video for this demo [here](img%2Fdemo.mp4).
 
 ## Components
 
