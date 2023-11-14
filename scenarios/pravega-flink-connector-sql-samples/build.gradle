@@ -31,7 +31,7 @@ dependencies {
     compile "org.apache.flink:flink-table-api-java-bridge_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-clients_${flinkScalaVersion}:${flinkVersion}"
     compile "org.apache.flink:flink-json:${flinkVersion}"
-    compile "org.apache.flink:flink-table-planner-blink_${flinkScalaVersion}:${flinkVersion}"
+    compile "org.apache.flink:flink-table-planner_${flinkScalaVersion}:${flinkVersion}"
 
     compile "ch.qos.logback:logback-classic:1.1.7"
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.9"
