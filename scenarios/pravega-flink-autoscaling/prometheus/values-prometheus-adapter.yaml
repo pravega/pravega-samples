@@ -1,0 +1,11 @@
+prometheus:
+  url: http://PROMETHEUS_IP
+rules:
+  default: true
+  external:
+    - seriesQuery: 'pravega_controller_segments_count{scope="test",stream="stream",}'
+      resources:
+        overrides:
+          namespace: { resource: namespace }
+          pod: { resource: pod }
+      metricsQuery: 'pravega_controller_segments_count'

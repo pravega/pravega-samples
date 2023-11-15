@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-generator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data
+      component: generator
+  template:
+    metadata:
+      labels:
+        app: data
+        component: generator
+    spec:
+      #serviceAccount: monitoring-flink
+      #serviceAccountName: monitoring-flink
+      containers:
+        - name: data-generator
+          image: raulgracia/sinusoidal-data-generator:1.0
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["-c", "bin/sinusoidalWorkloadGenerator --scope test --stream stream --uri tcp://pravega-pravega-controller:9090 --scalingRate 800"]
+          resources:
+            requests:
+              cpu: 250m
+            limits:
+              cpu: 2000m
+          env:
+            - name: JAVA_HOME
+              value: '/opt/java/openjdk/'

@@ -1,0 +1,78 @@
+/*
+ * Copyright Pravega Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'java'
+apply plugin: 'distribution'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+archivesBaseName = 'data-generator'
+
+resources
+
+ext {
+    junitVersion = '4.11'
+    commonsCLIVersion = '1.4'
+    pravegaVersion = loadProperties().getProperty("pravegaVersion")
+    pravegaKeycloakVersion = loadProperties().getProperty("pravegaKeycloakVersion")
+}
+
+def loadProperties() {
+    def customPropertiesFile = file('../../../gradle.properties')
+    def properties = new Properties()
+    customPropertiesFile.withInputStream { properties.load(it) }
+    return properties
+}
+
+dependencies {
+    testCompile "junit:junit:${junitVersion}"
+
+    compile "io.pravega:pravega-client:${pravegaVersion}",
+            "io.pravega:pravega-common:${pravegaVersion}",
+            "io.pravega:pravega-keycloak-client:${pravegaKeycloakVersion}",
+            "commons-cli:commons-cli:${commonsCLIVersion}"
+
+    compile "org.slf4j:slf4j-api:1.7.14"
+    compile "ch.qos.logback:logback-classic:1.1.7"
+}
+
+// Build examples
+
+task scriptSinusoidalWorkloadGenerator(type: CreateStartScripts) {
+    outputDir = file('build/scripts')
+    mainClassName = 'io.pravega.example.datagenerator.SinusoidalWorkloadGenerator'
+    applicationName = 'sinusoidalWorkloadGenerator'
+    defaultJvmOpts = ["-Dlogback.configurationFile=file:conf/logback.xml"]
+    classpath = files(jar.archivePath) + sourceSets.main.runtimeClasspath
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('bin') {
+                from project.scriptSinusoidalWorkloadGenerator
+            }
+            into('lib') {
+                from(jar)
+                from(project.configurations.runtime)
+            }
+            into('conf') {
+                from(project.file('src/main/resources/logback.xml'))
+            }
+        }
+    }
+}

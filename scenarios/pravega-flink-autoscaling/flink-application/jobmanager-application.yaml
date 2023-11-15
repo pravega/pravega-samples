@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flink-jobmanager
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: '9249'
+        prometheus.io/scrape: 'true'
+      labels:
+        app: flink
+        component: jobmanager-1
+    spec:
+      #serviceAccount: monitoring-flink
+      #serviceAccountName: monitoring-flink
+      restartPolicy: OnFailure
+      containers:
+        - name: jobmanager
+          image: raulgracia/flink-busy-reader:1.0
+          imagePullPolicy: Always
+          env:
+            - name: JAVA_HOME
+              value: '/usr/local/openjdk-11'
+          args: ["standalone-job", "--job-classname", "io.pravega.example.flink.reader.FlinkReaderApplication", "--controller", "tcp://pravega-pravega-controller:9090", "--iterations", "200"]
+          ports:
+            - containerPort: 6123
+              name: rpc
+            - containerPort: 6124
+              name: blob-server
+            - containerPort: 8081
+              name: webui
+          livenessProbe:
+            tcpSocket:
+              port: 6123
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          volumeMounts:
+            - name: flink-config-volume
+              mountPath: /opt/flink/conf
+          securityContext:
+            runAsUser: 9999  # refers to user _flink_ from official flink image, change if necessary
+      volumes:
+        - name: flink-config-volume
+          configMap:
+            name: flink-config
+            items:
+              - key: flink-conf.yaml
+                path: flink-conf.yaml
+              - key: log4j-console.properties
+                path: log4j-console.properties
